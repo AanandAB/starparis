@@ -1,5 +1,6 @@
 .env.local
 .dev.vars
+seeds/*.sql
 *.db
 *.sqlite
 build/

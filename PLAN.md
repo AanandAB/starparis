@@ -445,10 +445,12 @@ the owner will ask "why is this 122?" on day one, and the answer must be on scre
 ```json
 {
   "id": "rule_lamination_matt",
-  "applies_to": {"product_kind": ["sheet"]},
-  "when": [{"option.finish": "contains:matt_lamination"}],
-  "basis": "per_sheet_side",
-  "rate_fils": 40,
+  "label": "Matt lamination (both sides)",
+  "phase": "finishing",
+  "basis": "per_sheet",
+  "rate_fils": 80,
+  "product_kinds": ["sheet"],
+  "when": [{"field": "finish", "op": "contains", "value": "matt_lamination"}],
   "min_charge_fils": 0,
   "priority": 40
 }

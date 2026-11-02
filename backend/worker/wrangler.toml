@@ -1,0 +1,38 @@
+# Star Paris API — Cloudflare Worker + D1.
+#
+# The database id below is the `starparis-dev` database on the project's
+# Cloudflare account. Staging has its own database and its own Worker name.
+# Production is deliberately absent: the client owns it, and it will be added
+# when the account handover happens (PLAN.md §19 item 9). Swapping accounts is
+# a change to this file and two secrets — no application code moves.
+
+name = "starparis-api"
+main = "src/index.ts"
+compatibility_date = "2026-10-30"
+workers_dev = true
+
+[vars]
+MIN_APP_VERSION = "0.1.0"
+ENVIRONMENT = "dev"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "starparis-dev"
+database_id = "6fe7f317-af18-4fb3-9924-e567e610e215"
+migrations_dir = "migrations"
+
+[observability]
+enabled = true
+
+[env.staging]
+name = "starparis-api-staging"
+
+[env.staging.vars]
+MIN_APP_VERSION = "0.1.0"
+ENVIRONMENT = "staging"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "starparis-staging"
+database_id = "7b38701d-3ae6-4387-aaf8-e6cff494c76e"
+migrations_dir = "migrations"

@@ -1,0 +1,7 @@
+# Keep the repository LF-only regardless of the Windows checkout, so that
+# diffs and generated code stay comparable across machines.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.pdf binary
+*.ico binary

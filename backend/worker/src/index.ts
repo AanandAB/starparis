@@ -1,0 +1,244 @@
+/**
+ * HTTP surface. Small by design: five things the device actually needs —
+ * sign in, push, pull, a cheap head check, and a number block.
+ *
+ * Everything else (lists, search, pricing, PDFs, Excel) happens on the device
+ * against its local database, which is why the counter keeps working when the
+ * internet does not.
+ */
+
+import { Hono } from 'hono';
+import { z } from 'zod';
+
+import { error, loadSession, login, loginSchema, refreshSchema, refreshSession, revokeDevice } from './auth';
+import { verifyAccessToken } from './crypto';
+import { leaseBlock } from './numbers';
+import { currentHead, pullChanges, pushMutations } from './sync';
+import type { AuthContext, Env, Mutation } from './types';
+
+type Variables = { auth: AuthContext };
+const app = new Hono<{ Bindings: Env; Variables: Variables }>();
+
+const MAX_BODY_BYTES = 262_144; // 256 KB: a full batch of 100 mutations fits easily
+
+app.onError((err, c) => {
+  console.error(JSON.stringify({ level: 'error', message: err.message }));
+  return c.json(
+    error('INTERNAL', 'Something went wrong on the server. Please try again.'),
+    500,
+  );
+});
+
+app.notFound((c) => c.json(error('NOT_FOUND', 'No such endpoint.'), 404));
+
+// ---------------------------------------------------------------------------
+// Public
+// ---------------------------------------------------------------------------
+
+app.get('/v1/health', (c) =>
+  c.json({
+    ok: true,
+    environment: c.env.ENVIRONMENT,
+    schema: 1,
+    server_time: new Date().toISOString(),
+  }),
+);
+
+app.post('/v1/auth/login', async (c) => {
+  const tooLarge = rejectLargeBody(c.req.header('content-length'));
+  if (tooLarge) return tooLarge;
+
+  const parsed = loginSchema.safeParse(await safeJson(c));
+  if (!parsed.success) {
+    return c.json(error('BAD_REQUEST', 'Phone, password and device are required.'), 400);
+  }
+
+  const result = await login(c.env, parsed.data);
+  return c.json(result.body, result.status as 200);
+});
+
+app.post('/v1/auth/refresh', async (c) => {
+  const parsed = refreshSchema.safeParse(await safeJson(c));
+  if (!parsed.success) {
+    return c.json(error('BAD_REQUEST', 'refresh_token is required.'), 400);
+  }
+  const result = await refreshSession(c.env, parsed.data.refresh_token);
+  return c.json(result.body, result.status as 200);
+});
+
+// ---------------------------------------------------------------------------
+// Authenticated
+// ---------------------------------------------------------------------------
+
+app.use('/v1/*', async (c, next) => {
+  const path = c.req.path;
+  if (path === '/v1/health' || path.startsWith('/v1/auth/')) {
+    return next();
+  }
+
+  const header = c.req.header('authorization') ?? '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : '';
+  const claims = token ? await verifyAccessToken(token, c.env.JWT_SECRET) : null;
+  if (!claims) {
+    return c.json(error('UNAUTHORIZED', 'Sign in again.'), 401);
+  }
+
+  c.set('auth', claims);
+  await next();
+});
+
+app.post('/v1/auth/logout', async (c) => {
+  await revokeDevice(c.env, c.get('auth'));
+  return c.json({ ok: true });
+});
+
+/**
+ * The cheap poll. Returns one number, supports ETag so an unchanged answer is a
+ * 304 with no body, and carries the permission version that drives revocation.
+ */
+app.get('/v1/head', async (c) => {
+  const ctx = c.get('auth');
+  const session = await loadSession(c.env, ctx);
+  if (!session.ok) {
+    return c.json(error(session.code, session.message), 401);
+  }
+
+  const head = await currentHead(c.env, ctx.tenantId);
+  const etag = `W/"${head}-${session.permissionVersion}"`;
+  if (c.req.header('if-none-match') === etag) {
+    return c.body(null, 304);
+  }
+
+  return c.json(
+    {
+      head,
+      pv: session.permissionVersion,
+      min_app_version: c.env.MIN_APP_VERSION,
+      server_time: new Date().toISOString(),
+    },
+    200,
+    { ETag: etag },
+  );
+});
+
+const mutationSchema = z.object({
+  mutation_id: z.string().min(8),
+  entity: z.string().min(1),
+  row_id: z.string().min(8),
+  op: z.enum(['insert', 'patch', 'delete']),
+  fields: z.record(z.string(), z.unknown()).optional(),
+  base_version: z.number().int().min(0),
+  device_ts: z.string().min(10),
+  job_id: z.string().nullable().optional(),
+});
+
+const pushSchema = z.object({
+  device_id: z.string().min(8),
+  mutations: z.array(mutationSchema).min(1).max(100),
+});
+
+app.post('/v1/push', async (c) => {
+  const tooLarge = rejectLargeBody(c.req.header('content-length'));
+  if (tooLarge) return tooLarge;
+
+  const ctx = c.get('auth');
+  const session = await loadSession(c.env, ctx);
+  if (!session.ok) {
+    return c.json(error(session.code, session.message), 401);
+  }
+
+  const parsed = pushSchema.safeParse(await safeJson(c));
+  if (!parsed.success) {
+    return c.json(error('BAD_REQUEST', 'Malformed push batch.'), 400);
+  }
+  if (parsed.data.device_id !== ctx.deviceId) {
+    return c.json(error('DEVICE_MISMATCH', 'This token belongs to another device.'), 403);
+  }
+
+  const response = await pushMutations(
+    c.env,
+    ctx,
+    parsed.data.mutations as unknown as Mutation[],
+  );
+  return c.json(response);
+});
+
+app.get('/v1/pull', async (c) => {
+  const ctx = c.get('auth');
+  const since = Number(c.req.query('since') ?? '0');
+  const limit = Number(c.req.query('limit') ?? '200');
+
+  const response = await pullChanges(
+    c.env,
+    ctx,
+    Number.isFinite(since) ? Math.max(since, 0) : 0,
+    Number.isFinite(limit) ? limit : 200,
+  );
+  return c.json(response);
+});
+
+/**
+ * First install. Paged replay of the change log from zero: the device applies
+ * rows in order, so a row touched several times converges to its latest state.
+ * A snapshot-per-entity bootstrap is the optimisation for later; correctness
+ * first.
+ */
+app.get('/v1/bootstrap', async (c) => {
+  const ctx = c.get('auth');
+  const page = Math.max(Number(c.req.query('page') ?? '0'), 0);
+  const pageSize = 500;
+  const response = await pullChanges(c.env, ctx, page * pageSize, pageSize);
+  return c.json({
+    ...response,
+    page,
+    done: response.rows.length < pageSize,
+  });
+});
+
+const leaseSchema = z.object({
+  series: z.string().min(3).max(32),
+  size: z.number().int().min(1).max(1000).default(100),
+});
+
+app.post('/v1/number-blocks/lease', async (c) => {
+  const ctx = c.get('auth');
+  const parsed = leaseSchema.safeParse(await safeJson(c));
+  if (!parsed.success) {
+    return c.json(error('BAD_REQUEST', 'series is required.'), 400);
+  }
+
+  const block = await leaseBlock(
+    c.env,
+    ctx.tenantId,
+    ctx.deviceId,
+    parsed.data.series,
+    parsed.data.size,
+  );
+  return c.json({ series: parsed.data.series, start: block.start, end: block.end });
+});
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+async function safeJson(c: { req: { json: () => Promise<unknown> } }): Promise<unknown> {
+  try {
+    return await c.req.json();
+  } catch {
+    return {};
+  }
+}
+
+function rejectLargeBody(contentLength: string | undefined): Response | null {
+  if (!contentLength) return null;
+  const size = Number(contentLength);
+  if (Number.isFinite(size) && size > MAX_BODY_BYTES) {
+    return Response.json(
+      error('PAYLOAD_TOO_LARGE', 'Send at most 100 mutations per batch.'),
+      { status: 413 },
+    );
+  }
+  return null;
+}
+
+export default app;
