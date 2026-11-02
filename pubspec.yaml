@@ -1,0 +1,14 @@
+name: starparis
+description: Star Paris Graphic — Shop Management System. Workspace root.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.13.0
+
+workspace:
+  - packages/domain
+  - packages/pricing_engine
+
+dev_dependencies:
+  lints: ^6.1.0

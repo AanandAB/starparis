@@ -1,0 +1,47 @@
+{
+  "name": "Outsourced roll-up stand — vendor cost plus 30% markup",
+  "note": "A brokered job: the vendor charges AED 120.00, the shop sells at cost + 30% = 156.00, VAT 7.80, total 163.80. The vendor cost is carried as cost so the margin (23.08%) is visible on the job, but it is never printed on the customer's document.",
+  "request": {
+    "product_id": "prod_rollup_stand",
+    "kind": "outsourced",
+    "quantity": 1,
+    "priority": "normal",
+    "customer_tier": "corporate"
+  },
+  "context": {
+    "price_book_version": 12,
+    "mode": "vendor_markup",
+    "vendor_cost_fils": 12000,
+    "markup_bps": 3000,
+    "min_order_fils": 0,
+    "rounding_step_fils": 100,
+    "vat_bps": 500
+  },
+  "expected": {
+    "price_book_version": 12,
+    "lines": [
+      {
+        "code": "vendor_cost",
+        "label": "Vendor cost",
+        "kind": "cost",
+        "quantity": 1,
+        "rate_fils": 12000,
+        "amount_fils": 12000,
+        "explain": "vendor invoice"
+      }
+    ],
+    "cost_subtotal_fils": 12000,
+    "add_ons_fils": 0,
+    "price_before_surcharges_fils": 15600,
+    "surcharges_fils": 0,
+    "price_before_discount_fils": 15600,
+    "discount_fils": 0,
+    "net_before_rounding_fils": 15600,
+    "rounding_adjustment_fils": 0,
+    "total_fils": 15600,
+    "vat_bps": 500,
+    "vat_fils": 780,
+    "grand_total_fils": 16380,
+    "rounding_step_fils": 100
+  }
+}

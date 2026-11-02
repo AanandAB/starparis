@@ -1,0 +1,71 @@
+{
+  "name": "Two 3×1 m banners — flex, eyelets, area pricing",
+  "note": "Area products are priced per square metre, never per piece: 3.000 m² per banner × 2 = 6.000 m² at AED 25.00 = 150.00, plus eyelets 10.00. Cost 160.00, markup 40% = 64.00, price 224.00, VAT 11.20, total 235.20.",
+  "request": {
+    "product_id": "prod_banner_flex",
+    "kind": "area",
+    "quantity": 2,
+    "width_mm": 3000,
+    "height_mm": 1000,
+    "material": "flex_440",
+    "finish": ["eyelets"],
+    "priority": "normal",
+    "customer_tier": "trade"
+  },
+  "context": {
+    "price_book_version": 7,
+    "mode": "cost_plus",
+    "area_rate_fils_per_sqm": 2500,
+    "rules": [
+      {
+        "id": "rule_eyelets",
+        "label": "Eyelets",
+        "phase": "finishing",
+        "basis": "flat",
+        "rate_fils": 1000,
+        "when": [{"field": "finish", "op": "contains", "value": "eyelets"}],
+        "priority": 50
+      }
+    ],
+    "markup_bps": 4000,
+    "min_order_fils": 10000,
+    "rounding_step_fils": 100,
+    "vat_bps": 500
+  },
+  "expected": {
+    "price_book_version": 7,
+    "lines": [
+      {
+        "code": "area",
+        "label": "Material — 6.000 m²",
+        "kind": "cost",
+        "quantity": 6000,
+        "rate_fils": 2500,
+        "amount_fils": 15000,
+        "explain": "6.000 m² × AED 25.00"
+      },
+      {
+        "code": "rule_eyelets",
+        "label": "Eyelets",
+        "kind": "cost",
+        "quantity": 1,
+        "rate_fils": 1000,
+        "amount_fils": 1000,
+        "explain": "flat charge"
+      }
+    ],
+    "cost_subtotal_fils": 16000,
+    "add_ons_fils": 0,
+    "price_before_surcharges_fils": 22400,
+    "surcharges_fils": 0,
+    "price_before_discount_fils": 22400,
+    "discount_fils": 0,
+    "net_before_rounding_fils": 22400,
+    "rounding_adjustment_fils": 0,
+    "total_fils": 22400,
+    "vat_bps": 500,
+    "vat_fils": 1120,
+    "grand_total_fils": 23520,
+    "rounding_step_fils": 100
+  }
+}

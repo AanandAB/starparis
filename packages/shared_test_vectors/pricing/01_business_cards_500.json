@@ -1,0 +1,121 @@
+{
+  "name": "500 business cards — 350 gsm art card, double sided, matt lamination",
+  "note": "The worked example from the design document §7.5. 90×55 mm cards with 3 mm bleed pack 3 across and 7 down on SRA3 (320×450), so 21 up. 500 ÷ 21 = 24 trim sheets. Spoilage is 5% (1.2 sheets, rounded up to 2) plus 2 make-ready sheets = 28 billable sheets. Material 28 × AED 0.60 = 16.80; print 28 × 2 sides × 0.35 = 19.60; lamination 28 × 0.80 = 22.40; cutting 5.00; file check 10.00. Cost 73.80, markup 65% = 47.97, price 121.77, rounded to AED 122.00, VAT 5% = 6.10, total 128.10.",
+  "request": {
+    "product_id": "prod_business_cards",
+    "kind": "sheet",
+    "quantity": 500,
+    "width_mm": 90,
+    "height_mm": 55,
+    "sides": 2,
+    "material": "art_card_350",
+    "finish": ["matt_lamination"],
+    "priority": "normal",
+    "customer_tier": "retail"
+  },
+  "context": {
+    "price_book_version": 7,
+    "mode": "cost_plus",
+    "sheet": {"width_mm": 320, "height_mm": 450, "bleed_mm": 3, "gutter_mm": 3, "label": "SRA3"},
+    "setup_sheets": 2,
+    "spoilage_bps": 500,
+    "material_cost_per_sheet_fils": 60,
+    "print_rate_per_sheet_side_fils": 35,
+    "rules": [
+      {
+        "id": "rule_lamination_matt",
+        "label": "Matt lamination (both sides)",
+        "phase": "finishing",
+        "basis": "per_sheet",
+        "rate_fils": 80,
+        "product_kinds": ["sheet"],
+        "when": [{"field": "finish", "op": "contains", "value": "matt_lamination"}],
+        "priority": 40
+      },
+      {
+        "id": "rule_cutting",
+        "label": "Cutting",
+        "phase": "finishing",
+        "basis": "flat",
+        "rate_fils": 500,
+        "product_kinds": ["sheet"],
+        "priority": 60
+      },
+      {
+        "id": "rule_file_check",
+        "label": "File check and setup",
+        "phase": "setup",
+        "basis": "flat",
+        "rate_fils": 1000,
+        "priority": 95
+      }
+    ],
+    "markup_bps": 6500,
+    "min_order_fils": 0,
+    "rounding_step_fils": 100,
+    "vat_bps": 500
+  },
+  "expected": {
+    "price_book_version": 7,
+    "lines": [
+      {
+        "code": "material",
+        "label": "Material — art_card_350",
+        "kind": "cost",
+        "quantity": 28,
+        "rate_fils": 60,
+        "amount_fils": 1680,
+        "explain": "28 sheets × AED 0.60"
+      },
+      {
+        "code": "print",
+        "label": "Printing",
+        "kind": "cost",
+        "quantity": 56,
+        "rate_fils": 35,
+        "amount_fils": 1960,
+        "explain": "28 sheets × 2 sides × AED 0.35"
+      },
+      {
+        "code": "rule_lamination_matt",
+        "label": "Matt lamination (both sides)",
+        "kind": "cost",
+        "quantity": 28,
+        "rate_fils": 80,
+        "amount_fils": 2240,
+        "explain": "28 sheets × AED 0.80"
+      },
+      {
+        "code": "rule_cutting",
+        "label": "Cutting",
+        "kind": "cost",
+        "quantity": 1,
+        "rate_fils": 500,
+        "amount_fils": 500,
+        "explain": "flat charge"
+      },
+      {
+        "code": "rule_file_check",
+        "label": "File check and setup",
+        "kind": "cost",
+        "quantity": 1,
+        "rate_fils": 1000,
+        "amount_fils": 1000,
+        "explain": "flat charge"
+      }
+    ],
+    "cost_subtotal_fils": 7380,
+    "add_ons_fils": 0,
+    "price_before_surcharges_fils": 12177,
+    "surcharges_fils": 0,
+    "price_before_discount_fils": 12177,
+    "discount_fils": 0,
+    "net_before_rounding_fils": 12177,
+    "rounding_adjustment_fils": 23,
+    "total_fils": 12200,
+    "vat_bps": 500,
+    "vat_fils": 610,
+    "grand_total_fils": 12810,
+    "rounding_step_fils": 100
+  }
+}

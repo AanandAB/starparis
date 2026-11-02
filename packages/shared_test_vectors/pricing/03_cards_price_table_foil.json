@@ -1,0 +1,79 @@
+{
+  "name": "500 business cards from a price table, with foil stamping added",
+  "note": "Most print shops already work from a price list, so table pricing is the mode they start with. 500 cards falls in the 500–2499 break at AED 0.17 each = 85.00, and foil is charged per piece on top: 500 × AED 0.40 = 200.00. No markup is applied in table mode — the table is the price. Total 285.00, VAT 14.25, grand total 299.25.",
+  "request": {
+    "product_id": "prod_cards_table",
+    "kind": "sheet",
+    "quantity": 500,
+    "width_mm": 90,
+    "height_mm": 55,
+    "sides": 2,
+    "material": "art_card_350",
+    "finish": ["foil"],
+    "priority": "normal",
+    "customer_tier": "retail"
+  },
+  "context": {
+    "price_book_version": 12,
+    "mode": "price_table",
+    "sheet": {"width_mm": 320, "height_mm": 450, "bleed_mm": 3, "gutter_mm": 3, "label": "SRA3"},
+    "setup_sheets": 2,
+    "spoilage_bps": 500,
+    "tiers": [
+      {"qty_from": 250, "qty_to": 499, "unit_price_fils": 19},
+      {"qty_from": 500, "qty_to": 2499, "unit_price_fils": 17}
+    ],
+    "rules": [
+      {
+        "id": "rule_foil",
+        "label": "Foil stamping",
+        "phase": "finishing",
+        "basis": "per_piece",
+        "rate_fils": 40,
+        "product_kinds": ["sheet"],
+        "when": [{"field": "finish", "op": "contains", "value": "foil"}],
+        "priority": 40
+      }
+    ],
+    "markup_bps": 0,
+    "min_order_fils": 0,
+    "rounding_step_fils": 25,
+    "vat_bps": 500
+  },
+  "expected": {
+    "price_book_version": 12,
+    "lines": [
+      {
+        "code": "table_price",
+        "label": "Table price",
+        "kind": "table_price",
+        "quantity": 500,
+        "rate_fils": 17,
+        "amount_fils": 8500,
+        "explain": "500 pieces × AED 0.17"
+      },
+      {
+        "code": "rule_foil",
+        "label": "Foil stamping",
+        "kind": "add_on",
+        "quantity": 500,
+        "rate_fils": 40,
+        "amount_fils": 20000,
+        "explain": "500 pieces × AED 0.40"
+      }
+    ],
+    "cost_subtotal_fils": 0,
+    "add_ons_fils": 20000,
+    "price_before_surcharges_fils": 28500,
+    "surcharges_fils": 0,
+    "price_before_discount_fils": 28500,
+    "discount_fils": 0,
+    "net_before_rounding_fils": 28500,
+    "rounding_adjustment_fils": 0,
+    "total_fils": 28500,
+    "vat_bps": 500,
+    "vat_fils": 1425,
+    "grand_total_fils": 29925,
+    "rounding_step_fils": 25
+  }
+}
