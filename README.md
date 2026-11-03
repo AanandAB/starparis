@@ -449,6 +449,26 @@ Live, through the app's own client:
 That last figure is the point: 8.72 charged on sales minus 5.00 already paid on materials = 3.72 owed.
 63 worker tests (1 new), 6 app tests, analyzer clean, Windows build green.
 
+### Phase 5A — the Android APK
+
+Android SDK licences accepted (`flutter doctor --android-licenses`), `flutter doctor` now clean on
+every line. The Android side needed one real change: `INTERNET` and `ACCESS_NETWORK_STATE` in the
+manifest — a debug build gets INTERNET for free, a release build does not, and an offline-first app
+that syncs still needs it.
+
+    flutter build apk --release --split-per-abi
+    app-arm64-v8a-release.apk     21.9 MB
+    app-armeabi-v7a-release.apk   19.6 MB
+    app-x86_64-release.apk        23.4 MB
+    app-release.apk (universal)   64.1 MB
+
+`aapt2 dump badging`: package `ae.starparis.shop_app`, versionName 0.1.0, minSdk 24, targetSdk 36,
+INTERNET granted. The APK carries `libsqlite3mc.so` for arm64-v8a, armeabi-v7a and x86_64 — the
+encrypted database is the same SQLCipher build on Android as on Windows, not a plain SQLite fallback.
+
+Still to confirm on a device: release signing with the client's own keystore (the release build is
+signed with debug keys today, which is fine for testing and wrong for the Play Store).
+
 ## Commands
 ```bash
 # Dart workspace
