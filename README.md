@@ -81,6 +81,28 @@ rates, minimum charges, markups, print rates, area rates, rounding and minimum o
 What it does **not** yet do: schedule a change for a future date (effective-dated price books),
 and import a whole price list from Excel.
 
+### Phase 2C — quotes and documents
+
+| Piece | State |
+|---|---|
+| `packages/documents` | quotation (A4) and job ticket (A5) as PDF, pure Dart, no Flutter |
+| Quotes | "Save as quote" in the builder, `QT-00045` numbering, convert to order keeps the frozen prices |
+| Order sheet | Quote PDF, Job ticket, WhatsApp, and Convert to order for quotes |
+| WhatsApp | click-to-chat `wa.me` link with the message pre-filled; staff review and send |
+| Output files | saved to `Documents/StarParis`, opened with one tap |
+
+Sample output you can open: `docs/samples/sample-quote.pdf` and `docs/samples/sample-job-ticket.pdf`.
+The quote's text layer reads back as:
+
+    QT-SHJ1-PC1-00045        Valid until 10 Nov 2026
+    Business cards | 500 | 90 x 55 mm | double sided | matt lamination   500   2.44   122.00
+    Subtotal AED 122.00   VAT 5% AED 6.10   Total AED 128.10
+
+Arabic is deliberately **not** in these documents yet. `package:pdf` lays out bidirectional text
+but does not shape Arabic letters, so an Arabic invoice would print isolated letterforms —
+worse than an English one for a legal document. The decision and the three candidate solutions
+are in PLAN.md ADR-009; it needs the accountant and a font before it ships.
+
 ## Commands
 ```bash
 # Dart workspace
@@ -115,6 +137,9 @@ cd apps/shop_app
 flutter run -d windows
 flutter build windows --release
 flutter build apk --release        # needs Android licences accepted once
+
+# Sample documents (writes docs/samples/*.pdf)
+cd packages/documents && dart run tool/make_samples.dart
 ```
 
 Credentials live in `.env.local` (git-ignored). The demo login is

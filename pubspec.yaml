@@ -11,6 +11,7 @@ workspace:
   - packages/pricing_engine
   - packages/sync_engine
   - packages/design_system
+  - packages/documents
   - apps/shop_app
 
 # Bundle SQLite3MultipleCiphers instead of plain SQLite, so the local database

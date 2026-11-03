@@ -35,6 +35,8 @@ class _OrderBuilderScreenState extends ConsumerState<OrderBuilderScreen> {
   String? _customerId;
   String? _error;
 
+  final TextEditingController _notes = TextEditingController();
+
   PriceBreakdown? _price;
   bool _saving = false;
   int _pricingToken = 0;
@@ -49,6 +51,12 @@ class _OrderBuilderScreenState extends ConsumerState<OrderBuilderScreen> {
         await bootstrap.catalogue.refresh(force: true);
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _notes.dispose();
+    super.dispose();
   }
 
   Future<void> _selectProduct(Product product) async {
@@ -110,7 +118,7 @@ class _OrderBuilderScreenState extends ConsumerState<OrderBuilderScreen> {
     }
   }
 
-  Future<void> _confirm() async {
+  Future<void> _confirm({bool asQuote = false}) async {
     final session = ref.read(sessionProvider);
     final product = _product;
     final price = _price;
@@ -134,8 +142,9 @@ class _OrderBuilderScreenState extends ConsumerState<OrderBuilderScreen> {
       final issued = await NumberSeries(
         db: bootstrap.db,
         api: bootstrap.api,
-        series: 'JOB',
+        series: asQuote ? 'QT' : 'JOB',
       ).next();
+      final display = asQuote ? 'QT-${issued.display}' : issued.display;
 
       final description = ProductPricer.describe(
         product: product,
@@ -161,10 +170,13 @@ class _OrderBuilderScreenState extends ConsumerState<OrderBuilderScreen> {
         customerId: customerId,
         customerName: customerName,
         userId: session.userId,
-        numberDisplay: issued.display,
+        numberDisplay: display,
         number: issued.number,
         dueAt: _dueAt,
         priority: _priority.wire,
+        status: asQuote ? 'draft' : 'confirmed',
+        isQuote: asQuote,
+        notes: _notes.text.trim(),
         lines: <OrderLineDraft>[
           OrderLineDraft(
             productId: product.id,
@@ -195,9 +207,11 @@ class _OrderBuilderScreenState extends ConsumerState<OrderBuilderScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            issued.isTemporary
-                ? 'Order ${issued.display} saved. It gets a real number when the internet returns.'
-                : 'Order ${issued.display} saved.',
+            asQuote
+                ? 'Quote $display saved. Send it from the order sheet.'
+                : issued.isTemporary
+                ? 'Order $display saved. It gets a real number when the internet returns.'
+                : 'Order $display saved.',
           ),
         ),
       );
@@ -450,6 +464,17 @@ class _OrderBuilderScreenState extends ConsumerState<OrderBuilderScreen> {
                 ],
               ),
             ),
+            _Section(
+              title: 'Notes for the shop',
+              child: TextField(
+                controller: _notes,
+                maxLines: 2,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(
+                  hintText: 'Artwork coming by WhatsApp, delivery after 4pm…',
+                ),
+              ),
+            ),
           ],
           if (_error != null)
             Padding(
@@ -496,6 +521,13 @@ class _OrderBuilderScreenState extends ConsumerState<OrderBuilderScreen> {
                       ),
               ),
               const SizedBox(width: StarSpace.md),
+              OutlinedButton(
+                onPressed: _saving || price == null || _customerId == null
+                    ? null
+                    : () => _confirm(asQuote: true),
+                child: const Text('Save as quote'),
+              ),
+              const SizedBox(width: StarSpace.sm),
               FilledButton.icon(
                 onPressed: _saving || price == null || _customerId == null
                     ? null

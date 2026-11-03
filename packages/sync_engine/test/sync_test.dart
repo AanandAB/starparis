@@ -453,6 +453,56 @@ void main() {
     });
   });
 
+  group('quotes', () {
+    test('converting a quote copies the frozen lines and marks it converted', () async {
+      const breakdown = '{"total_fils":12200,"vat_fils":610,"grand_total_fils":12810}';
+      final quoteId = await db.createOrderLocal(
+        tenantId: 't1',
+        branchId: 'b1',
+        customerId: 'c1',
+        customerName: 'Ahmed Traders',
+        userId: 'u1',
+        numberDisplay: 'QT-00001',
+        number: 1,
+        isQuote: true,
+        status: 'draft',
+        lines: const <OrderLineDraft>[
+          OrderLineDraft(
+            productId: 'prod_cards',
+            description: 'Business cards | 500 | 90x55 | matt',
+            optionsJson: '{"quantity":500}',
+            quantity: 500,
+            priceBookVersion: 7,
+            breakdownJson: breakdown,
+            subtotalFils: 12200,
+            vatFils: 610,
+            totalFils: 12810,
+          ),
+        ],
+      );
+
+      final orderId = await db.convertQuoteToOrder(
+        quoteId: quoteId,
+        numberDisplay: '10452',
+        number: 10452,
+        userId: 'u1',
+      );
+
+      final order = await db.orderById(orderId);
+      expect(order, isNotNull);
+      expect(order!.isQuote, isFalse);
+      expect(order.numberDisplay, '10452');
+      expect(order.totalFils, 12810);
+
+      final quote = await db.orderById(quoteId);
+      expect(quote!.status, 'converted');
+
+      final convertedItems = await db.itemsFor(orderId);
+      expect(convertedItems, hasLength(1));
+      expect(convertedItems.single.breakdownJson, breakdown);
+    });
+  });
+
   group('state', () {
     test('emits syncing then synced', () async {
       final phases = <SyncPhase>[];

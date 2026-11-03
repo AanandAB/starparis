@@ -990,8 +990,156 @@ class LocalDatabase extends _$LocalDatabase {
   Future<List<OrderItem>> itemsFor(String orderId) =>
       (select(orderItems)..where((t) => t.orderId.equals(orderId))).get();
 
+  /// The number to WhatsApp or call: the primary one, else any live number.
+  Future<String?> primaryPhoneFor(String customerId) async {
+    final row =
+        await (select(customerPhones)
+              ..where(
+                (t) => t.customerId.equals(customerId) & t.deletedAt.isNull(),
+              )
+              ..orderBy(<OrderClauseGenerator<$CustomerPhonesTable>>[
+                (t) => OrderingTerm(
+                  expression: t.isPrimary,
+                  mode: OrderingMode.desc,
+                ),
+              ])
+              ..limit(1))
+            .getSingleOrNull();
+    return row?.e164;
+  }
+
   Future<Order?> orderById(String id) =>
       (select(orders)..where((t) => t.id.equals(id))).getSingleOrNull();
+
+  /// Turns a quote into an order: copies the lines with their frozen
+  /// breakdowns (never re-prices them), marks the quote converted, and queues
+  /// everything so the server sees both changes in the next push.
+  Future<String> convertQuoteToOrder({
+    required String quoteId,
+    required String numberDisplay,
+    required int? number,
+    required String userId,
+  }) async {
+    final quote = await orderById(quoteId);
+    if (quote == null) {
+      throw StateError('Quote $quoteId not found');
+    }
+    if (!quote.isQuote) {
+      throw StateError('Order ${quote.numberDisplay} is not a quote');
+    }
+
+    final items = await itemsFor(quoteId);
+    final now = DateTime.now().toUtc();
+    final orderId = Uuid7.generate();
+
+    await transaction(() async {
+      await into(orders).insert(
+        OrdersCompanion.insert(
+          id: orderId,
+          tenantId: quote.tenantId,
+          branchId: Value(quote.branchId),
+          number: Value(number),
+          numberDisplay: numberDisplay,
+          isQuote: const Value(false),
+          customerId: quote.customerId,
+          customerName: Value(quote.customerName),
+          status: const Value('confirmed'),
+          priority: Value(quote.priority),
+          dueAt: Value(quote.dueAt),
+          deliveryMethod: Value(quote.deliveryMethod),
+          notes: Value(quote.notes),
+          subtotalFils: Value(quote.subtotalFils),
+          vatFils: Value(quote.vatFils),
+          totalFils: Value(quote.totalFils),
+          itemCount: Value(items.length),
+          createdAt: now,
+          updatedAt: now,
+          createdBy: Value(userId),
+        ),
+      );
+      await _enqueue(
+        entity: 'orders',
+        rowId: orderId,
+        op: 'insert',
+        baseVersion: 0,
+        fields: <String, Object?>{
+          'number': number,
+          'number_display': numberDisplay,
+          'is_quote': 0,
+          'customer_id': quote.customerId,
+          'customer_name': quote.customerName,
+          'status': 'confirmed',
+          'priority': quote.priority,
+          'due_at': quote.dueAt?.toIso8601String(),
+          'delivery_method': quote.deliveryMethod,
+          'notes': quote.notes,
+          'subtotal_fils': quote.subtotalFils,
+          'vat_fils': quote.vatFils,
+          'total_fils': quote.totalFils,
+          'item_count': items.length,
+        },
+      );
+
+      for (final item in items) {
+        final itemId = Uuid7.generate();
+        await into(orderItems).insert(
+          OrderItemsCompanion.insert(
+            id: itemId,
+            tenantId: item.tenantId,
+            branchId: Value(item.branchId),
+            orderId: orderId,
+            productId: item.productId,
+            description: item.description,
+            optionsJson: Value(item.optionsJson),
+            quantity: item.quantity,
+            priceBookVersion: item.priceBookVersion,
+            breakdownJson: item.breakdownJson,
+            subtotalFils: item.subtotalFils,
+            vatFils: item.vatFils,
+            totalFils: item.totalFils,
+            createdAt: now,
+            updatedAt: now,
+            createdBy: Value(userId),
+          ),
+        );
+        await _enqueue(
+          entity: 'order_items',
+          rowId: itemId,
+          op: 'insert',
+          baseVersion: 0,
+          fields: <String, Object?>{
+            'order_id': orderId,
+            'product_id': item.productId,
+            'description': item.description,
+            'options_json': item.optionsJson,
+            'quantity': item.quantity,
+            'price_book_version': item.priceBookVersion,
+            'breakdown_json': item.breakdownJson,
+            'subtotal_fils': item.subtotalFils,
+            'vat_fils': item.vatFils,
+            'total_fils': item.totalFils,
+            'status': 'pending',
+          },
+        );
+      }
+
+      await (update(orders)..where((t) => t.id.equals(quoteId))).write(
+        OrdersCompanion(
+          status: const Value('converted'),
+          updatedAt: Value(now),
+        ),
+      );
+      await _enqueue(
+        entity: 'orders',
+        rowId: quoteId,
+        op: 'patch',
+        baseVersion: quote.version,
+        fields: <String, Object?>{'status': 'converted'},
+      );
+    });
+
+    return orderId;
+  }
 
   // -------------------------------------------------------------------------
   // Helpers

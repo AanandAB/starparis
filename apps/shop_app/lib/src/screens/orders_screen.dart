@@ -1,10 +1,17 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:starparis_design/starparis_design.dart';
 import 'package:starparis_domain/starparis_domain.dart';
 import 'package:starparis_sync/starparis_sync.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../app_config.dart';
 import '../providers.dart';
+import '../sales/documents_service.dart';
+import '../sales/whatsapp.dart';
 import 'order_builder_screen.dart';
 
 /// Today's work, newest first. The job number is the biggest thing on the row
@@ -154,51 +161,7 @@ class _OrderRow extends StatelessWidget {
             ),
         ],
       ),
-      onTap: () => _showSummary(context, order),
-    );
-  }
-
-  static void _showSummary(BuildContext context, Order order) {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => Padding(
-        padding: const EdgeInsets.fromLTRB(
-          StarSpace.lg,
-          StarSpace.sm,
-          StarSpace.lg,
-          StarSpace.xl,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Text(
-              'Job ${order.numberDisplay}',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: StarSpace.md),
-            _SummaryRow(label: 'Customer', value: order.customerName ?? '—'),
-            _SummaryRow(label: 'Status', value: _statusLabel(order.status)),
-            _SummaryRow(label: 'Priority', value: order.priority),
-            _SummaryRow(
-              label: 'Subtotal',
-              value: Fils(order.subtotalFils).aedLabel,
-            ),
-            _SummaryRow(label: 'VAT', value: Fils(order.vatFils).aedLabel),
-            _SummaryRow(
-              label: 'Total',
-              value: Fils(order.totalFils).aedLabel,
-              emphatic: true,
-            ),
-            const SizedBox(height: StarSpace.md),
-            Text(
-              'The job ticket, tasks and production stages arrive in Phase 3.',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
-        ),
-      ),
+      onTap: () => showOrderSheet(context, order),
     );
   }
 
@@ -217,6 +180,278 @@ class _OrderRow extends StatelessWidget {
     'delivered' => StatusTone.done,
     _ => StatusTone.neutral,
   };
+}
+
+Future<void> showOrderSheet(BuildContext context, Order order) {
+  return showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    isScrollControlled: true,
+    builder: (_) => _OrderSheet(order: order),
+  );
+}
+
+class _OrderSheet extends ConsumerStatefulWidget {
+  const _OrderSheet({required this.order});
+
+  final Order order;
+
+  @override
+  ConsumerState<_OrderSheet> createState() => _OrderSheetState();
+}
+
+class _OrderSheetState extends ConsumerState<_OrderSheet> {
+  bool _busy = false;
+
+  Future<void> _makeDocument({required bool quote}) async {
+    setState(() => _busy = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final service = DocumentsService(db: ref.read(bootstrapProvider).db);
+      final file = quote
+          ? await service.quoteFor(widget.order)
+          : await service.jobTicketFor(widget.order);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Saved ${file.path.split(Platform.pathSeparator).last}',
+          ),
+          action: SnackBarAction(
+            label: 'Open',
+            onPressed: () => _openPath(file.path),
+          ),
+        ),
+      );
+    } catch (error) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Could not build the PDF: $error')),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _openWhatsApp() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final db = ref.read(bootstrapProvider).db;
+    final phone = await db.primaryPhoneFor(widget.order.customerId);
+    if (phone == null) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('No phone number saved for this customer.'),
+        ),
+      );
+      return;
+    }
+
+    final order = widget.order;
+    final message = order.isQuote
+        ? WhatsApp.quoteMessage(
+            customerName: order.customerName ?? 'there',
+            quoteNumber: order.numberDisplay,
+            total: Fils(order.totalFils).aedLabel,
+            shopName: AppConfig.company.name,
+            validUntil: _formatDate(
+              order.createdAt.add(const Duration(days: 7)),
+            ),
+          )
+        : WhatsApp.readyMessage(
+            customerName: order.customerName ?? 'there',
+            jobNumber: order.numberDisplay,
+            total: Fils(order.totalFils).aedLabel,
+            shopName: AppConfig.company.name,
+          );
+
+    final opened = await WhatsApp.open(phoneE164: phone, message: message);
+    if (!opened && mounted) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('WhatsApp did not open. Is it installed?'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _convert() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Convert quote to order'),
+        content: Text(
+          'This creates a job from quote ${widget.order.numberDisplay} and locks '
+          'the prices exactly as quoted. The quote is marked converted.',
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Convert'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _busy = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final bootstrap = ref.read(bootstrapProvider);
+      final session = ref.read(sessionProvider);
+      if (session == null) throw StateError('Session expired');
+
+      final issued = await NumberSeries(
+        db: bootstrap.db,
+        api: bootstrap.api,
+        series: 'JOB',
+      ).next();
+
+      await bootstrap.db.convertQuoteToOrder(
+        quoteId: widget.order.id,
+        numberDisplay: issued.display,
+        number: issued.number,
+        userId: session.userId,
+      );
+      unawaited(bootstrap.engine?.syncNow() ?? Future<void>.value());
+
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Order ${issued.display} created from quote ${widget.order.numberDisplay}.',
+          ),
+        ),
+      );
+    } catch (error) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Could not convert: $error')),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  static Future<void> _openPath(String path) async {
+    if (Platform.isWindows) {
+      await Process.run('cmd', <String>['/c', 'start', '', path]);
+    } else {
+      await launchUrl(Uri.file(path), mode: LaunchMode.externalApplication);
+    }
+  }
+
+  static String _formatDate(DateTime value) {
+    const months = <String>[
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${value.day} ${months[value.month - 1]} ${value.year}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final order = widget.order;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        StarSpace.lg,
+        StarSpace.sm,
+        StarSpace.lg,
+        StarSpace.xl,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  '${order.isQuote ? 'Quote' : 'Job'} ${order.numberDisplay}',
+                  style: theme.textTheme.titleLarge,
+                ),
+              ),
+              if (order.isQuote)
+                const StatusChip(label: 'Quote', tone: StatusTone.paused),
+            ],
+          ),
+          const SizedBox(height: StarSpace.md),
+          _SummaryRow(label: 'Customer', value: order.customerName ?? '-'),
+          _SummaryRow(
+            label: 'Status',
+            value: _OrderRow._statusLabel(order.status),
+          ),
+          _SummaryRow(label: 'Priority', value: order.priority),
+          if (order.dueAt != null)
+            _SummaryRow(
+              label: 'Due',
+              value:
+                  '${order.dueAt!.day}/${order.dueAt!.month}/${order.dueAt!.year}',
+            ),
+          const Divider(height: StarSpace.lg),
+          _SummaryRow(
+            label: 'Subtotal',
+            value: Fils(order.subtotalFils).aedLabel,
+          ),
+          _SummaryRow(label: 'VAT', value: Fils(order.vatFils).aedLabel),
+          _SummaryRow(
+            label: 'Total',
+            value: Fils(order.totalFils).aedLabel,
+            emphatic: true,
+          ),
+          const SizedBox(height: StarSpace.lg),
+          Wrap(
+            spacing: StarSpace.sm,
+            runSpacing: StarSpace.sm,
+            children: <Widget>[
+              OutlinedButton.icon(
+                onPressed: _busy ? null : () => _makeDocument(quote: true),
+                icon: const Icon(Icons.description_outlined, size: 18),
+                label: const Text('Quote PDF'),
+              ),
+              OutlinedButton.icon(
+                onPressed: _busy ? null : () => _makeDocument(quote: false),
+                icon: const Icon(Icons.confirmation_number_outlined, size: 18),
+                label: const Text('Job ticket'),
+              ),
+              FilledButton.icon(
+                onPressed: _busy ? null : _openWhatsApp,
+                icon: const Icon(Icons.chat_outlined, size: 18),
+                label: const Text('WhatsApp'),
+              ),
+              if (order.isQuote)
+                FilledButton.icon(
+                  onPressed: _busy ? null : _convert,
+                  icon: const Icon(Icons.arrow_forward, size: 18),
+                  label: const Text('Convert to order'),
+                ),
+            ],
+          ),
+          const SizedBox(height: StarSpace.sm),
+          Text(
+            'Documents are saved to Documents/StarParis. WhatsApp opens with the '
+            'message written; you review and send it yourself.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _SummaryRow extends StatelessWidget {
