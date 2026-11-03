@@ -1246,6 +1246,81 @@ describe('credit notes and refunds', () => {
   });
 });
 
+describe('reports', () => {
+  const today = new Date();
+  const range = `from=2020-01-01&to=${new Date(today.getTime() + 86_400_000).toISOString()}`;
+
+  it('summarises output VAT, credits and cash for a period', async () => {
+    const response = await api(`/v1/reports/vat?${range}`, authed(owner.access_token));
+    expect(response.status).toBe(200);
+
+    const body = (await response.json()) as {
+      sales_net_fils: number;
+      output_vat_fils: number;
+      credited_vat_fils: number;
+      net_vat_due_fils: number;
+      collected_fils: number;
+      refunded_fils: number;
+      collected_by_method: Record<string, number>;
+    };
+
+    // One invoice: 122.00 net + 6.10 VAT. One credit note: 47.62 + 2.38.
+    expect(body.sales_net_fils).toBeGreaterThanOrEqual(12200);
+    expect(body.output_vat_fils).toBeGreaterThanOrEqual(610);
+    expect(body.credited_vat_fils).toBe(238);
+    expect(body.net_vat_due_fils).toBe(body.output_vat_fils - 238);
+    expect(body.collected_fils).toBeGreaterThanOrEqual(12810);
+    expect(body.refunded_fils).toBe(5000);
+    expect(body.collected_by_method['cash']).toBeGreaterThanOrEqual(5000);
+  });
+
+  it('buckets what customers still owe by age', async () => {
+    const old = new Date(today.getTime() - 45 * 86_400_000).toISOString();
+    await env.DB.prepare(
+      `INSERT INTO invoices (id, tenant_id, branch_id, order_id, number, issued_at,
+                             customer_id, customer_name, subtotal_fils, vat_bps, vat_fils,
+                             total_fils, paid_fils, credited_fils, status,
+                             created_at, updated_at, version)
+       VALUES (?, ?, ?, ?, 'INV-SHJ1-PC1-09999', ?, 'cust-ageing', 'Ageing Customer',
+               10000, 500, 500, 10500, 0, 0, 'issued', ?, ?, 1)`,
+    )
+      .bind(
+        '0193f0b1-0000-7000-8000-0000000000fb',
+        TENANT,
+        BRANCH_SHJ,
+        '0193f0b1-0000-7000-8000-0000000000ac',
+        old,
+        old,
+        old,
+      )
+      .run();
+
+    const response = await api(
+      `/v1/reports/ageing?as_of=${new Date().toISOString()}`,
+      authed(owner.access_token),
+    );
+    expect(response.status).toBe(200);
+
+    const body = (await response.json()) as {
+      buckets: Array<{ customer_name: string; days_31_60_fils: number; total_fils: number }>;
+      totals: { days_31_60_fils: number };
+    };
+    const row = body.buckets.find((bucket) => bucket.customer_name === 'Ageing Customer');
+    expect(row).toBeDefined();
+    expect(row!.days_31_60_fils).toBe(10500);
+    expect(row!.total_fils).toBe(10500);
+    expect(body.totals.days_31_60_fils).toBeGreaterThanOrEqual(10500);
+  });
+
+  it('does not let the counter read the books', async () => {
+    const vat = await api(`/v1/reports/vat?${range}`, authed(counter.access_token));
+    expect(vat.status).toBe(403);
+
+    const ageing = await api('/v1/reports/ageing', authed(counter.access_token));
+    expect(ageing.status).toBe(403);
+  });
+});
+
 describe('price book editing', () => {
   it('lets the owner change a rate and the catalogue reflects it', async () => {
     const response = await api(

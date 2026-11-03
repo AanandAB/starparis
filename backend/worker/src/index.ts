@@ -22,6 +22,8 @@ import {
 } from './price_book';
 import { verifyAccessToken } from './crypto';
 import { leaseBlock } from './numbers';
+import { can } from './policy';
+import { ageingReport, vatSummary } from './reports';
 import { currentHead, pullChanges, pushMutations } from './sync';
 import type { AuthContext, Env, Mutation } from './types';
 
@@ -220,6 +222,38 @@ app.post('/v1/price-book/bulk-adjust', async (c) => {
 
   const result = await bulkAdjust(c.env, ctx, parsed.data);
   return c.json(result.body, result.status as 200);
+});
+
+// --- reports (read-only) ---------------------------------------------------
+
+app.get('/v1/reports/vat', async (c) => {
+  const ctx = c.get('auth');
+  const session = await loadSession(c.env, ctx);
+  if (!session.ok) return c.json(error(session.code, session.message), 401);
+  if (!can(ctx.role as never, 'report.view')) {
+    return c.json(error('PERMISSION_DENIED', 'Reports need report.view.'), 403);
+  }
+
+  const to = c.req.query('to') ?? new Date().toISOString();
+  const from = c.req.query('from') ?? to.slice(0, 8) + '01';
+  // Only owner and accountant see every branch; everyone else sees their own.
+  const branchId = ['owner', 'accountant'].includes(ctx.role) ? null : ctx.branchId;
+
+  const summary = await vatSummary(c.env, ctx.tenantId, from, to, branchId);
+  return c.json(summary);
+});
+
+app.get('/v1/reports/ageing', async (c) => {
+  const ctx = c.get('auth');
+  const session = await loadSession(c.env, ctx);
+  if (!session.ok) return c.json(error(session.code, session.message), 401);
+  if (!can(ctx.role as never, 'report.view')) {
+    return c.json(error('PERMISSION_DENIED', 'Reports need report.view.'), 403);
+  }
+
+  const asOf = c.req.query('as_of') ?? new Date().toISOString();
+  const report = await ageingReport(c.env, ctx, asOf);
+  return c.json(report);
 });
 
 app.get('/v1/pull', async (c) => {

@@ -290,6 +290,30 @@ layouts for two halves of the same transaction is how they drift apart.
 Still to come in money: ageing by customer, till sessions and cash-up, expenses, and the VAT summary
 export for the accountant.
 
+### Phase 4C — reports: VAT and ageing
+
+Two read-only endpoints, both summing the `vat_fils` frozen on each document rather than recalculating
+anything:
+
+| Endpoint | Returns |
+|---|---|
+| `GET /v1/reports/vat?from&to` | sales net / output VAT / gross, credits net / VAT / gross, **net VAT due**, cash collected by method, refunds |
+| `GET /v1/reports/ageing?as_of` | per customer: current, 31–60, 61–90, 90+, total — outstanding = total − paid − credited |
+
+`report.view` is required (owner, manager, accountant); everyone but owner/accountant is scoped to
+their own branch. The counter gets a 403, and there is a test that says so.
+
+Live against the deployed Worker and real D1:
+
+    vat:  sales_net 12200  output_vat 610  credited_vat 238  due 372  collected 12810  refunded 5000
+    ageing: customers 1  outstanding 10500  buckets {current 0, 31-60 10500, 61-90 0, 90+ 0}
+
+The ageing probe was a real 45-day-old unpaid invoice pushed through `/v1/push`, so the bucket path is
+proven against D1, not only in unit tests.
+
+Still to come in money: the Reports screen in the app (the endpoints are in place), till sessions and
+cash-up, expenses, and the VAT export file for the accountant.
+
 ## Commands
 ```bash
 # Dart workspace
