@@ -81,6 +81,19 @@ class CatalogueAdminService {
     });
   }
 
+  /// Sets the sell price at one quantity. The same quantity is an edit.
+  Future<void> setPriceBreak({
+    required String productId,
+    required int quantity,
+    required int amountFils,
+  }) async {
+    await _send('POST', '/v1/catalogue/price-breaks', <String, Object?>{
+      'product_id': productId,
+      'quantity': quantity,
+      'amount_fils': amountFils,
+    });
+  }
+
   Future<Map<String, Object?>> _send(
     String method,
     String path,

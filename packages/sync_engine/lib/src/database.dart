@@ -556,6 +556,19 @@ class VendorJobs extends Table {
 }
 
 /// A press or finishing machine, with the numbers its time is bought at.
+/// The sell price at a quantity: "500 cards, AED 122". The backbone of the
+/// price-table pricing mode, and the answer to "what for 1000?".
+class PriceBreaks extends Table {
+  TextColumn get id => text()();
+  TextColumn get tenantId => text()();
+  TextColumn get productId => text()();
+  IntColumn get quantity => integer()();
+  IntColumn get amountFils => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
 class Machines extends Table {
   TextColumn get id => text()();
   TextColumn get tenantId => text()();
@@ -618,6 +631,7 @@ class SyncMeta extends Table {
     VendorJobs,
     Machines,
     Operations,
+    PriceBreaks,
     Products,
     Materials,
     PriceRules,
@@ -631,7 +645,7 @@ class LocalDatabase extends _$LocalDatabase {
   LocalDatabase(super.executor);
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -681,6 +695,9 @@ class LocalDatabase extends _$LocalDatabase {
       if (from < 12) {
         await m.createTable(machines);
         await m.createTable(operations);
+      }
+      if (from < 13) {
+        await m.createTable(priceBreaks);
       }
       if (from < 11) {
         if (from >= 1) {
@@ -1373,6 +1390,15 @@ class LocalDatabase extends _$LocalDatabase {
         active: Value((row['active'] as num?)?.toInt() != 0),
       );
 
+  PriceBreaksCompanion _breakFromServer(Map<String, Object?> row) =>
+      PriceBreaksCompanion.insert(
+        id: row['id']! as String,
+        tenantId: row['tenant_id'] as String? ?? '',
+        productId: row['product_id'] as String? ?? '',
+        quantity: (row['quantity'] as num?)?.toInt() ?? 0,
+        amountFils: (row['amount_fils'] as num?)?.toInt() ?? 0,
+      );
+
   OperationsCompanion _operationFromServer(Map<String, Object?> row) =>
       OperationsCompanion.insert(
         id: row['id']! as String,
@@ -1662,6 +1688,7 @@ class LocalDatabase extends _$LocalDatabase {
     List<Map<String, Object?>> stageRows = const <Map<String, Object?>>[],
     List<Map<String, Object?>> machineRows = const <Map<String, Object?>>[],
     List<Map<String, Object?>> operationRows = const <Map<String, Object?>>[],
+    List<Map<String, Object?>> breakRows = const <Map<String, Object?>>[],
   }) async {
     await transaction(() async {
       await delete(products).go();
@@ -1669,6 +1696,7 @@ class LocalDatabase extends _$LocalDatabase {
       await delete(priceRules).go();
       await delete(machines).go();
       await delete(operations).go();
+      await delete(priceBreaks).go();
       if (stageRows.isNotEmpty) {
         await delete(workflowStages).go();
       }
@@ -1687,6 +1715,9 @@ class LocalDatabase extends _$LocalDatabase {
       }
       for (final row in operationRows) {
         await into(operations).insert(_operationFromServer(row));
+      }
+      for (final row in breakRows) {
+        await into(priceBreaks).insert(_breakFromServer(row));
       }
       for (final row in stageRows) {
         await into(workflowStages).insert(
@@ -2964,6 +2995,16 @@ class LocalDatabase extends _$LocalDatabase {
           )
           ..orderBy(<OrderClauseGenerator<$ExpensesTable>>[
             (t) => OrderingTerm.desc(t.spentAt),
+          ]))
+        .watch();
+  }
+
+  /// The rungs for one product, cheapest quantity first.
+  Stream<List<PriceBreak>> watchBreaksFor(String productId) {
+    return (select(priceBreaks)
+          ..where((t) => t.productId.equals(productId))
+          ..orderBy(<OrderClauseGenerator<$PriceBreaksTable>>[
+            (t) => OrderingTerm(expression: t.quantity),
           ]))
         .watch();
   }

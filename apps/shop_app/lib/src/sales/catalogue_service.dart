@@ -56,6 +56,7 @@ class CatalogueService {
       stageRows: _rows(body['workflow_stages']),
       machineRows: _rows(body['machines']),
       operationRows: _rows(body['operations']),
+      breakRows: _rows(body['price_breaks']),
       priceBookVersion: (body['price_book_version'] as num?)?.toInt() ?? 0,
       vatBps: (tax?['vat_bps'] as num?)?.toInt() ?? 500,
     );

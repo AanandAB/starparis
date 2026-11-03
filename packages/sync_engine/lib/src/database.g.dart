@@ -15077,6 +15077,371 @@ class OperationsCompanion extends UpdateCompanion<Operation> {
   }
 }
 
+class $PriceBreaksTable extends PriceBreaks
+    with TableInfo<$PriceBreaksTable, PriceBreak> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PriceBreaksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tenantIdMeta = const VerificationMeta(
+    'tenantId',
+  );
+  @override
+  late final GeneratedColumn<String> tenantId = GeneratedColumn<String>(
+    'tenant_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _productIdMeta = const VerificationMeta(
+    'productId',
+  );
+  @override
+  late final GeneratedColumn<String> productId = GeneratedColumn<String>(
+    'product_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _quantityMeta = const VerificationMeta(
+    'quantity',
+  );
+  @override
+  late final GeneratedColumn<int> quantity = GeneratedColumn<int>(
+    'quantity',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _amountFilsMeta = const VerificationMeta(
+    'amountFils',
+  );
+  @override
+  late final GeneratedColumn<int> amountFils = GeneratedColumn<int>(
+    'amount_fils',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    tenantId,
+    productId,
+    quantity,
+    amountFils,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'price_breaks';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PriceBreak> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('tenant_id')) {
+      context.handle(
+        _tenantIdMeta,
+        tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tenantIdMeta);
+    }
+    if (data.containsKey('product_id')) {
+      context.handle(
+        _productIdMeta,
+        productId.isAcceptableOrUnknown(data['product_id']!, _productIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_productIdMeta);
+    }
+    if (data.containsKey('quantity')) {
+      context.handle(
+        _quantityMeta,
+        quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_quantityMeta);
+    }
+    if (data.containsKey('amount_fils')) {
+      context.handle(
+        _amountFilsMeta,
+        amountFils.isAcceptableOrUnknown(data['amount_fils']!, _amountFilsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_amountFilsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PriceBreak map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PriceBreak(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      tenantId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tenant_id'],
+      )!,
+      productId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}product_id'],
+      )!,
+      quantity: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}quantity'],
+      )!,
+      amountFils: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}amount_fils'],
+      )!,
+    );
+  }
+
+  @override
+  $PriceBreaksTable createAlias(String alias) {
+    return $PriceBreaksTable(attachedDatabase, alias);
+  }
+}
+
+class PriceBreak extends DataClass implements Insertable<PriceBreak> {
+  final String id;
+  final String tenantId;
+  final String productId;
+  final int quantity;
+  final int amountFils;
+  const PriceBreak({
+    required this.id,
+    required this.tenantId,
+    required this.productId,
+    required this.quantity,
+    required this.amountFils,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['tenant_id'] = Variable<String>(tenantId);
+    map['product_id'] = Variable<String>(productId);
+    map['quantity'] = Variable<int>(quantity);
+    map['amount_fils'] = Variable<int>(amountFils);
+    return map;
+  }
+
+  PriceBreaksCompanion toCompanion(bool nullToAbsent) {
+    return PriceBreaksCompanion(
+      id: Value(id),
+      tenantId: Value(tenantId),
+      productId: Value(productId),
+      quantity: Value(quantity),
+      amountFils: Value(amountFils),
+    );
+  }
+
+  factory PriceBreak.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PriceBreak(
+      id: serializer.fromJson<String>(json['id']),
+      tenantId: serializer.fromJson<String>(json['tenantId']),
+      productId: serializer.fromJson<String>(json['productId']),
+      quantity: serializer.fromJson<int>(json['quantity']),
+      amountFils: serializer.fromJson<int>(json['amountFils']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'tenantId': serializer.toJson<String>(tenantId),
+      'productId': serializer.toJson<String>(productId),
+      'quantity': serializer.toJson<int>(quantity),
+      'amountFils': serializer.toJson<int>(amountFils),
+    };
+  }
+
+  PriceBreak copyWith({
+    String? id,
+    String? tenantId,
+    String? productId,
+    int? quantity,
+    int? amountFils,
+  }) => PriceBreak(
+    id: id ?? this.id,
+    tenantId: tenantId ?? this.tenantId,
+    productId: productId ?? this.productId,
+    quantity: quantity ?? this.quantity,
+    amountFils: amountFils ?? this.amountFils,
+  );
+  PriceBreak copyWithCompanion(PriceBreaksCompanion data) {
+    return PriceBreak(
+      id: data.id.present ? data.id.value : this.id,
+      tenantId: data.tenantId.present ? data.tenantId.value : this.tenantId,
+      productId: data.productId.present ? data.productId.value : this.productId,
+      quantity: data.quantity.present ? data.quantity.value : this.quantity,
+      amountFils: data.amountFils.present
+          ? data.amountFils.value
+          : this.amountFils,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PriceBreak(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('productId: $productId, ')
+          ..write('quantity: $quantity, ')
+          ..write('amountFils: $amountFils')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, tenantId, productId, quantity, amountFils);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PriceBreak &&
+          other.id == this.id &&
+          other.tenantId == this.tenantId &&
+          other.productId == this.productId &&
+          other.quantity == this.quantity &&
+          other.amountFils == this.amountFils);
+}
+
+class PriceBreaksCompanion extends UpdateCompanion<PriceBreak> {
+  final Value<String> id;
+  final Value<String> tenantId;
+  final Value<String> productId;
+  final Value<int> quantity;
+  final Value<int> amountFils;
+  final Value<int> rowid;
+  const PriceBreaksCompanion({
+    this.id = const Value.absent(),
+    this.tenantId = const Value.absent(),
+    this.productId = const Value.absent(),
+    this.quantity = const Value.absent(),
+    this.amountFils = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PriceBreaksCompanion.insert({
+    required String id,
+    required String tenantId,
+    required String productId,
+    required int quantity,
+    required int amountFils,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       tenantId = Value(tenantId),
+       productId = Value(productId),
+       quantity = Value(quantity),
+       amountFils = Value(amountFils);
+  static Insertable<PriceBreak> custom({
+    Expression<String>? id,
+    Expression<String>? tenantId,
+    Expression<String>? productId,
+    Expression<int>? quantity,
+    Expression<int>? amountFils,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (tenantId != null) 'tenant_id': tenantId,
+      if (productId != null) 'product_id': productId,
+      if (quantity != null) 'quantity': quantity,
+      if (amountFils != null) 'amount_fils': amountFils,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PriceBreaksCompanion copyWith({
+    Value<String>? id,
+    Value<String>? tenantId,
+    Value<String>? productId,
+    Value<int>? quantity,
+    Value<int>? amountFils,
+    Value<int>? rowid,
+  }) {
+    return PriceBreaksCompanion(
+      id: id ?? this.id,
+      tenantId: tenantId ?? this.tenantId,
+      productId: productId ?? this.productId,
+      quantity: quantity ?? this.quantity,
+      amountFils: amountFils ?? this.amountFils,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (tenantId.present) {
+      map['tenant_id'] = Variable<String>(tenantId.value);
+    }
+    if (productId.present) {
+      map['product_id'] = Variable<String>(productId.value);
+    }
+    if (quantity.present) {
+      map['quantity'] = Variable<int>(quantity.value);
+    }
+    if (amountFils.present) {
+      map['amount_fils'] = Variable<int>(amountFils.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PriceBreaksCompanion(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('productId: $productId, ')
+          ..write('quantity: $quantity, ')
+          ..write('amountFils: $amountFils, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -20907,6 +21272,7 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
   late final $VendorJobsTable vendorJobs = $VendorJobsTable(this);
   late final $MachinesTable machines = $MachinesTable(this);
   late final $OperationsTable operations = $OperationsTable(this);
+  late final $PriceBreaksTable priceBreaks = $PriceBreaksTable(this);
   late final $ProductsTable products = $ProductsTable(this);
   late final $MaterialsTable materials = $MaterialsTable(this);
   late final $PriceRulesTable priceRules = $PriceRulesTable(this);
@@ -20938,6 +21304,7 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
     vendorJobs,
     machines,
     operations,
+    priceBreaks,
     products,
     materials,
     priceRules,
@@ -27986,6 +28353,217 @@ typedef $$OperationsTableProcessedTableManager =
       Operation,
       PrefetchHooks Function()
     >;
+typedef $$PriceBreaksTableCreateCompanionBuilder =
+    PriceBreaksCompanion Function({
+      required String id,
+      required String tenantId,
+      required String productId,
+      required int quantity,
+      required int amountFils,
+      Value<int> rowid,
+    });
+typedef $$PriceBreaksTableUpdateCompanionBuilder =
+    PriceBreaksCompanion Function({
+      Value<String> id,
+      Value<String> tenantId,
+      Value<String> productId,
+      Value<int> quantity,
+      Value<int> amountFils,
+      Value<int> rowid,
+    });
+
+class $$PriceBreaksTableFilterComposer
+    extends Composer<_$LocalDatabase, $PriceBreaksTable> {
+  $$PriceBreaksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tenantId => $composableBuilder(
+    column: $table.tenantId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get productId => $composableBuilder(
+    column: $table.productId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get quantity => $composableBuilder(
+    column: $table.quantity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get amountFils => $composableBuilder(
+    column: $table.amountFils,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PriceBreaksTableOrderingComposer
+    extends Composer<_$LocalDatabase, $PriceBreaksTable> {
+  $$PriceBreaksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tenantId => $composableBuilder(
+    column: $table.tenantId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get productId => $composableBuilder(
+    column: $table.productId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get quantity => $composableBuilder(
+    column: $table.quantity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get amountFils => $composableBuilder(
+    column: $table.amountFils,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PriceBreaksTableAnnotationComposer
+    extends Composer<_$LocalDatabase, $PriceBreaksTable> {
+  $$PriceBreaksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get tenantId =>
+      $composableBuilder(column: $table.tenantId, builder: (column) => column);
+
+  GeneratedColumn<String> get productId =>
+      $composableBuilder(column: $table.productId, builder: (column) => column);
+
+  GeneratedColumn<int> get quantity =>
+      $composableBuilder(column: $table.quantity, builder: (column) => column);
+
+  GeneratedColumn<int> get amountFils => $composableBuilder(
+    column: $table.amountFils,
+    builder: (column) => column,
+  );
+}
+
+class $$PriceBreaksTableTableManager
+    extends
+        RootTableManager<
+          _$LocalDatabase,
+          $PriceBreaksTable,
+          PriceBreak,
+          $$PriceBreaksTableFilterComposer,
+          $$PriceBreaksTableOrderingComposer,
+          $$PriceBreaksTableAnnotationComposer,
+          $$PriceBreaksTableCreateCompanionBuilder,
+          $$PriceBreaksTableUpdateCompanionBuilder,
+          (
+            PriceBreak,
+            BaseReferences<_$LocalDatabase, $PriceBreaksTable, PriceBreak>,
+          ),
+          PriceBreak,
+          PrefetchHooks Function()
+        > {
+  $$PriceBreaksTableTableManager(_$LocalDatabase db, $PriceBreaksTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PriceBreaksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PriceBreaksTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PriceBreaksTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> tenantId = const Value.absent(),
+                Value<String> productId = const Value.absent(),
+                Value<int> quantity = const Value.absent(),
+                Value<int> amountFils = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PriceBreaksCompanion(
+                id: id,
+                tenantId: tenantId,
+                productId: productId,
+                quantity: quantity,
+                amountFils: amountFils,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String tenantId,
+                required String productId,
+                required int quantity,
+                required int amountFils,
+                Value<int> rowid = const Value.absent(),
+              }) => PriceBreaksCompanion.insert(
+                id: id,
+                tenantId: tenantId,
+                productId: productId,
+                quantity: quantity,
+                amountFils: amountFils,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$PriceBreaksTable, PriceBreak>(table),
+                  BaseReferences<
+                    _$LocalDatabase,
+                    $PriceBreaksTable,
+                    PriceBreak
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PriceBreaksTableProcessedTableManager =
+    ProcessedTableManager<
+      _$LocalDatabase,
+      $PriceBreaksTable,
+      PriceBreak,
+      $$PriceBreaksTableFilterComposer,
+      $$PriceBreaksTableOrderingComposer,
+      $$PriceBreaksTableAnnotationComposer,
+      $$PriceBreaksTableCreateCompanionBuilder,
+      $$PriceBreaksTableUpdateCompanionBuilder,
+      (
+        PriceBreak,
+        BaseReferences<_$LocalDatabase, $PriceBreaksTable, PriceBreak>,
+      ),
+      PriceBreak,
+      PrefetchHooks Function()
+    >;
 typedef $$ProductsTableCreateCompanionBuilder = ProductsCompanion Function({
   required String id,
   required String tenantId,
@@ -30770,6 +31348,8 @@ class $LocalDatabaseManager {
       $$MachinesTableTableManager(_db, _db.machines);
   $$OperationsTableTableManager get operations =>
       $$OperationsTableTableManager(_db, _db.operations);
+  $$PriceBreaksTableTableManager get priceBreaks =>
+      $$PriceBreaksTableTableManager(_db, _db.priceBreaks);
   $$ProductsTableTableManager get products =>
       $$ProductsTableTableManager(_db, _db.products);
   $$MaterialsTableTableManager get materials =>

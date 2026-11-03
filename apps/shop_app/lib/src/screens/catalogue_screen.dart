@@ -61,6 +61,25 @@ class CatalogueScreen extends ConsumerWidget {
                   ListTile(
                     dense: true,
                     onTap: () => _edit(context, ref, products[i], machines),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(
+                          products[i].markupBps == 0
+                              ? 'no markup'
+                              : '${(products[i].markupBps / 100).toStringAsFixed(1)}%',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Price breaks',
+                          onPressed: () =>
+                              showPriceBreaks(context, products[i]),
+                          icon: const Icon(Icons.stairs_outlined, size: 18),
+                        ),
+                      ],
+                    ),
                     leading: Icon(switch (products[i].kind) {
                       'service' => Icons.support_agent_outlined,
                       'area' => Icons.crop_landscape_outlined,
@@ -80,14 +99,6 @@ class CatalogueScreen extends ConsumerWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    trailing: Text(
-                      products[i].markupBps == 0
-                          ? 'no markup'
-                          : '${(products[i].markupBps / 100).toStringAsFixed(1)}% markup',
-                      style: theme.textTheme.labelSmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
@@ -633,6 +644,154 @@ class _NumbersDialogState extends State<_NumbersDialog> {
           },
           child: const Text('Save'),
         ),
+      ],
+    );
+  }
+}
+
+/// Price breaks: what this product costs at 100, 500, 1000.
+///
+/// The rungs are what the counter quotes from, and what the price-table pricing
+/// mode prices with. Same quantity twice is an edit, never a second row.
+Future<void> showPriceBreaks(BuildContext context, Product product) {
+  return showDialog<void>(
+    context: context,
+    builder: (_) => _BreaksDialog(product: product),
+  );
+}
+
+class _BreaksDialog extends ConsumerStatefulWidget {
+  const _BreaksDialog({required this.product});
+
+  final Product product;
+
+  @override
+  ConsumerState<_BreaksDialog> createState() => _BreaksDialogState();
+}
+
+class _BreaksDialogState extends ConsumerState<_BreaksDialog> {
+  final TextEditingController _quantity = TextEditingController();
+  final TextEditingController _amount = TextEditingController();
+  bool _busy = false;
+
+  @override
+  void dispose() {
+    _quantity.dispose();
+    _amount.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final quantity = int.tryParse(_quantity.text.trim());
+    final amount = double.tryParse(_amount.text.trim());
+    final messenger = ScaffoldMessenger.of(context);
+
+    if (quantity == null || quantity <= 0) {
+      messenger.showSnackBar(const SnackBar(content: Text('Give a quantity.')));
+      return;
+    }
+    if (amount == null || amount < 0) {
+      messenger.showSnackBar(const SnackBar(content: Text('Give a price.')));
+      return;
+    }
+
+    setState(() => _busy = true);
+    final bootstrap = ref.read(bootstrapProvider);
+    final service = CatalogueAdminService(
+      baseUrl: AppConfig.apiBaseUrl,
+      tokenProvider: bootstrap.auth.accessToken,
+    );
+    try {
+      await service.setPriceBreak(
+        productId: widget.product.id,
+        quantity: quantity,
+        amountFils: (amount * 100).round(),
+      );
+      await bootstrap.catalogue.refresh(force: true);
+      _quantity.clear();
+      _amount.clear();
+    } catch (error) {
+      messenger.showSnackBar(SnackBar(content: Text('$error')));
+    } finally {
+      service.dispose();
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final db = ref.watch(bootstrapProvider).db;
+
+    return AlertDialog(
+      title: Text('Price breaks — ${widget.product.nameEn}'),
+      content: SizedBox(
+        width: 460,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            StreamBuilder<List<PriceBreak>>(
+              stream: db.watchBreaksFor(widget.product.id),
+              builder: (context, snapshot) {
+                final breaks = snapshot.data ?? const <PriceBreak>[];
+                if (breaks.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.all(StarSpace.md),
+                    child: Text(
+                      'No rungs yet. Add what 100, 500 or 1000 cost and the '
+                      'counter quotes from these instead of a formula.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  );
+                }
+                return Column(
+                  children: <Widget>[
+                    for (final row in breaks)
+                      ListTile(
+                        dense: true,
+                        title: Text('${row.quantity} pcs'),
+                        trailing: MoneyText(Fils(row.amountFils)),
+                      ),
+                  ],
+                );
+              },
+            ),
+            const Divider(),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: TextField(
+                    controller: _quantity,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'Quantity'),
+                  ),
+                ),
+                const SizedBox(width: StarSpace.md),
+                Expanded(
+                  child: TextField(
+                    controller: _amount,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: 'Price',
+                      prefixText: 'AED ',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Close'),
+        ),
+        FilledButton(onPressed: _busy ? null : _save, child: const Text('Set')),
       ],
     );
   }
