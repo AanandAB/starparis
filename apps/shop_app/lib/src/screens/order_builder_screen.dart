@@ -177,6 +177,8 @@ class _OrderBuilderScreenState extends ConsumerState<OrderBuilderScreen> {
         status: asQuote ? 'draft' : 'confirmed',
         isQuote: asQuote,
         notes: _notes.text.trim(),
+        workflowKey: product.workflowKey,
+        jobTitle: '$display · $customerName',
         lines: <OrderLineDraft>[
           OrderLineDraft(
             productId: product.id,

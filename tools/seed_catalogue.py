@@ -180,6 +180,25 @@ def main() -> None:
         f"VALUES ({q(TENANT)}, 'tax', '{{\"vat_bps\": 500}}', {q(now)}, 1);"
     )
 
+    # The production workflow. Same stages the app falls back to when a tenant
+    # has none (see DEFAULT_WORKFLOW in backend/worker/src/tasks.ts), written as
+    # rows so the owner can rename or reorder them later without a release.
+    stages = [
+        ("design", "Design", "التصميم", 10, "designer"),
+        ("print", "Print", "الطباعة", 20, "operator"),
+        ("finish", "Finishing", "التشطيب", 30, "operator"),
+        ("qc", "Quality check", "فحص الجودة", 40, "manager"),
+        ("delivery", "Delivery", "التوصيل", 50, "driver"),
+    ]
+    for key, name_en, name_ar, sequence, role in stages:
+        print(
+            "INSERT OR REPLACE INTO workflow_stages ("
+            "id, tenant_id, workflow_key, stage_key, name_en, name_ar, sequence, "
+            "required_role, waits_for_previous, created_at, updated_at, version) VALUES ("
+            f"{q('wf_print_std_' + key)}, {q(TENANT)}, 'print_std', {q(key)}, {q(name_en)}, "
+            f"{q(name_ar)}, {sequence}, {q(role)}, 1, {q(now)}, {q(now)}, 1);"
+        )
+
 
 if __name__ == "__main__":
     main()

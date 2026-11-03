@@ -19,6 +19,7 @@
 
 import type { AuthContext, Env, Mutation, MutationResult } from './types';
 import { can, permits, redactCosts, type Permission, type RoleKey } from './policy';
+import { cascadeStage, prepareTaskPatch, taskEventStatement } from './tasks';
 
 interface EntityDef {
   table: string;
@@ -31,6 +32,15 @@ interface EntityDef {
   /** True when the row carries the caller's branch. */
   branchScoped: boolean;
   softDelete: boolean;
+  /**
+   * Server-owned rules for a patch: may complete or reject the fields. Used by
+   * tasks for the state machine and for timestamps the client must not set.
+   */
+  mutate?: (input: {
+    fields: Row;
+    existing: Row;
+    ctx: AuthContext;
+  }) => { fields: Row } | { error: { code: string; message: string } };
 }
 
 export const ENTITIES: Record<string, EntityDef> = {
@@ -107,6 +117,35 @@ export const ENTITIES: Record<string, EntityDef> = {
     mergeable: false,
     branchScoped: true,
     softDelete: true,
+  },
+  tasks: {
+    table: 'tasks',
+    columns: new Set([
+      'order_id',
+      'order_item_id',
+      'stage_key',
+      'stage_name',
+      'sequence',
+      'title',
+      'status',
+      'assigned_to',
+      'required_role',
+      'qty',
+      'priority',
+      'due_at',
+      'started_at',
+      'done_at',
+      'reason',
+      'rework_count',
+      'notes',
+      'branch_id',
+    ]),
+    required: ['order_id', 'stage_key', 'stage_name', 'sequence', 'title', 'required_role'],
+    permission: 'task.update',
+    mergeable: false,
+    branchScoped: true,
+    softDelete: true,
+    mutate: ({ fields, existing, ctx }) => prepareTaskPatch(fields, existing, ctx),
   },
 };
 
@@ -279,6 +318,17 @@ async function patchRow(
     return reject(mutation, 'SCOPE_DENIED', 'Not allowed to change this record');
   }
 
+  // Server-owned rules run before anything is written: an illegal transition
+  // must be rejected even when the version matches.
+  let working = fields;
+  if (def.mutate) {
+    const outcome = def.mutate({ fields, existing, ctx });
+    if ('error' in outcome) {
+      return reject(mutation, outcome.error.code, outcome.error.message);
+    }
+    working = outcome.fields;
+  }
+
   const currentVersion = Number(existing['version'] ?? 0);
   const versionMatches = currentVersion === mutation.base_version;
 
@@ -298,14 +348,14 @@ async function patchRow(
 
   // Which fields actually disagree with the server? Those are the ones a
   // manager needs to see side by side when the versions did not match.
-  const differing = Object.entries(fields)
+  const differing = Object.entries(working)
     .filter(([key, value]) => existing[key] !== value)
     .map(([key]) => key);
 
   const nextVersion = currentVersion + 1;
-  const row: Row = { ...existing, ...fields, version: nextVersion, updated_at: nowIso(), updated_by: ctx.userId };
+  const row: Row = { ...existing, ...working, version: nextVersion, updated_at: nowIso(), updated_by: ctx.userId };
 
-  if (Object.keys(fields).length === 0) {
+  if (Object.keys(working).length === 0) {
     return {
       mutation_id: mutation.mutation_id,
       status: 'applied',
@@ -315,7 +365,7 @@ async function patchRow(
     };
   }
 
-  const assignments = Object.keys(fields)
+  const assignments = Object.keys(working)
     .map((column) => `${column} = ?`)
     .join(', ');
   const update = env.DB.prepare(
@@ -323,7 +373,7 @@ async function patchRow(
         SET ${assignments}, version = ?, updated_at = ?, updated_by = ?
       WHERE id = ? AND tenant_id = ? AND version = ?`,
   ).bind(
-    ...Object.keys(fields).map((column) => fields[column] as never),
+    ...Object.keys(working).map((column) => working[column] as never),
     nextVersion,
     row['updated_at'] as string,
     ctx.userId,
@@ -331,6 +381,10 @@ async function patchRow(
     ctx.tenantId,
     currentVersion,
   );
+
+  const statusChanged =
+    working['status'] !== undefined &&
+    String(working['status']) !== String(existing['status']);
 
   const statements = [
     update,
@@ -340,18 +394,46 @@ async function patchRow(
       op: 'patch',
       row,
       version: nextVersion,
-      changedFields: Object.keys(fields),
+      changedFields: Object.keys(working),
     }),
     markApplied(env, ctx, mutation, versionMatches ? 'applied' : 'merged'),
   ];
 
+  if (statusChanged && mutation.entity === 'tasks') {
+    statements.push(
+      taskEventStatement(
+        env,
+        ctx,
+        mutation.row_id,
+        String(existing['status'] ?? '') || null,
+        String(working['status']),
+        working['reason'] === undefined || working['reason'] === null
+          ? null
+          : String(working['reason']),
+      ),
+    );
+  }
+
   if (!versionMatches && differing.length > 0) {
     statements.push(
-      buildConflict(env, ctx, mutation, fields, existing, differing),
+      buildConflict(env, ctx, mutation, working, existing, differing),
     );
   }
 
   await env.DB.batch(statements);
+
+  // Outside the batch on purpose: a failed cascade leaves the next stage
+  // waiting, which is visible on the board and safe to repeat — whereas a
+  // half-applied cascade inside the batch would be invisible.
+  if (mutation.entity === 'tasks' && statusChanged) {
+    await cascadeStage(
+      env,
+      ctx,
+      String(row['order_id']),
+      Number(row['sequence']),
+      String(working['status']),
+    );
+  }
 
   return {
     mutation_id: mutation.mutation_id,

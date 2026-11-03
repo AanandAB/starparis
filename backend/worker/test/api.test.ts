@@ -560,6 +560,177 @@ describe('orders', () => {
   });
 });
 
+describe('tasks', () => {
+  const designTask = '0193f0b1-0000-7000-8000-0000000000ba';
+  const printTask = '0193f0b1-0000-7000-8000-0000000000bb';
+  const ORDER = '0193f0b1-0000-7000-8000-0000000000aa';
+
+  async function taskRow(id: string): Promise<Record<string, unknown>> {
+    return (await env.DB.prepare('SELECT * FROM tasks WHERE id = ?').bind(id).first()) as Record<
+      string,
+      unknown
+    >;
+  }
+
+  async function pushTask(
+    session: Session,
+    id: string,
+    status: string,
+    baseVersion: number,
+    extra: Record<string, unknown> = {},
+  ) {
+    const response = await api(
+      '/v1/push',
+      authed(session.access_token, {
+        device_id: session.device_id,
+        mutations: [
+          mutation({
+            mutation_id: `m-${id}-${status}-${baseVersion}`,
+            entity: 'tasks',
+            op: 'patch',
+            row_id: id,
+            base_version: baseVersion,
+            fields: { status, ...extra },
+          }),
+        ],
+      }),
+    );
+    return (await response.json()) as {
+      results: Array<{ status: string; error?: { code: string }; row?: Record<string, unknown> }>;
+    };
+  }
+
+  it('takes the stage tasks that the device generated', async () => {
+    const response = await api(
+      '/v1/push',
+      authed(designer.access_token, {
+        device_id: designer.device_id,
+        mutations: [
+          mutation({
+            mutation_id: 'm-task-design',
+            entity: 'tasks',
+            row_id: designTask,
+            fields: {
+              order_id: ORDER,
+              stage_key: 'design',
+              stage_name: 'Design',
+              sequence: 10,
+              title: '10452 - Ahmed Traders - Design',
+              status: 'available',
+              required_role: 'designer',
+              qty: 500,
+              priority: 'normal',
+            },
+          }),
+          mutation({
+            mutation_id: 'm-task-print',
+            entity: 'tasks',
+            row_id: printTask,
+            fields: {
+              order_id: ORDER,
+              stage_key: 'print',
+              stage_name: 'Print',
+              sequence: 20,
+              title: '10452 - Ahmed Traders - Print',
+              status: 'waiting',
+              required_role: 'operator',
+              qty: 500,
+              priority: 'normal',
+            },
+          }),
+        ],
+      }),
+    );
+    const body = (await response.json()) as { results: Array<{ status: string }> };
+    expect(body.results.map((result) => result.status)).toEqual(['applied', 'applied']);
+
+    const design = await taskRow(designTask);
+    expect(design['branch_id']).toBe(BRANCH_SHJ);
+    expect(design['version']).toBe(1);
+  });
+
+  it('refuses a jump from waiting straight to done', async () => {
+    const body = await pushTask(designer, printTask, 'done', 1);
+    expect(body.results[0]!.status).toBe('rejected');
+    expect(body.results[0]!.error!.code).toBe('ILLEGAL_TRANSITION');
+    expect((await taskRow(printTask))['status']).toBe('waiting');
+  });
+
+  it('lets the designer claim and start their own task', async () => {
+    const claim = await pushTask(designer, designTask, 'assigned', 1);
+    expect(claim.results[0]!.status).toBe('applied');
+    expect((await taskRow(designTask))['assigned_to']).toBe(USER_DESIGNER);
+
+    const start = await pushTask(designer, designTask, 'in_progress', 2);
+    expect(start.results[0]!.status).toBe('applied');
+
+    const row = await taskRow(designTask);
+    expect(row['started_at']).toBeTruthy();
+  });
+
+  it('needs a reason to pause', async () => {
+    const body = await pushTask(designer, designTask, 'paused', 3);
+    expect(body.results[0]!.status).toBe('rejected');
+    expect(body.results[0]!.error!.code).toBe('REASON_REQUIRED');
+
+    const withReason = await pushTask(designer, designTask, 'paused', 3, {
+      reason: 'Waiting for the customer to send the logo',
+    });
+    expect(withReason.results[0]!.status).toBe('applied');
+
+    const back = await pushTask(designer, designTask, 'in_progress', 4);
+    expect(back.results[0]!.status).toBe('applied');
+  });
+
+  it('finishing a stage opens the next one on the server too', async () => {
+    const body = await pushTask(designer, designTask, 'done', 5);
+    expect(body.results[0]!.status).toBe('applied');
+
+    const design = await taskRow(designTask);
+    expect(design['done_at']).toBeTruthy();
+
+    const print = await taskRow(printTask);
+    expect(print['status']).toBe('available');
+    expect(print['version']).toBe(2);
+  });
+
+  it('does not let a designer cancel work', async () => {
+    const print = await taskRow(printTask);
+    const body = await pushTask(
+      designer,
+      printTask,
+      'cancelled',
+      Number(print['version']),
+      { reason: 'not needed' },
+    );
+    expect(body.results[0]!.status).toBe('rejected');
+    expect(body.results[0]!.error!.code).toBe('PERMISSION_DENIED');
+  });
+
+  it('lets a manager cancel work, with the reason kept', async () => {
+    const print = await taskRow(printTask);
+    const body = await pushTask(
+      owner,
+      printTask,
+      'cancelled',
+      Number(print['version']),
+      { reason: 'Customer cancelled the job' },
+    );
+    expect(body.results[0]!.status).toBe('applied');
+
+    const row = await taskRow(printTask);
+    expect(row['status']).toBe('cancelled');
+    expect(row['reason']).toBe('Customer cancelled the job');
+
+    const events = await env.DB.prepare(
+      'SELECT * FROM task_events WHERE task_id = ? ORDER BY created_at',
+    )
+      .bind(printTask)
+      .all<{ to_status: string }>();
+    expect(events.results.map((event) => event.to_status)).toContain('cancelled');
+  });
+});
+
 describe('price book editing', () => {
   it('lets the owner change a rate and the catalogue reflects it', async () => {
     const response = await api(

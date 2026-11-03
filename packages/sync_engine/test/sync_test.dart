@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
+import 'package:starparis_domain/starparis_domain.dart';
 import 'package:starparis_sync/starparis_sync.dart';
 import 'package:test/test.dart';
 
@@ -500,6 +501,108 @@ void main() {
       final convertedItems = await db.itemsFor(orderId);
       expect(convertedItems, hasLength(1));
       expect(convertedItems.single.breakdownJson, breakdown);
+    });
+  });
+
+  group('production', () {
+    Future<String> placedOrder() => db.createOrderLocal(
+      tenantId: 't1',
+      branchId: 'b1',
+      customerId: 'c1',
+      customerName: 'Ahmed Traders',
+      userId: 'u1',
+      numberDisplay: '10452',
+      number: 10452,
+      jobTitle: '10452 - Ahmed Traders',
+      lines: const <OrderLineDraft>[
+        OrderLineDraft(
+          productId: 'prod_cards',
+          description: 'Business cards - 500',
+          optionsJson: '{"quantity":500}',
+          quantity: 500,
+          priceBookVersion: 7,
+          breakdownJson: '{"total_fils":12200}',
+          subtotalFils: 12200,
+          vatFils: 610,
+          totalFils: 12810,
+        ),
+      ],
+    );
+
+    test('an order opens one task per stage; only the first is offered', () async {
+      final orderId = await placedOrder();
+      final tasks = await db.tasksForOrder(orderId);
+
+      expect(tasks, hasLength(5));
+      expect(
+        tasks.map((task) => task.stageKey).toList(),
+        <String>['design', 'print', 'finish', 'qc', 'delivery'],
+      );
+      expect(tasks.map((task) => task.sequence).toList(), <int>[10, 20, 30, 40, 50]);
+      expect(tasks.first.status, 'available');
+      expect(
+        tasks.skip(1).every((task) => task.status == 'waiting'),
+        isTrue,
+        reason: 'later stages must not pretend to be startable',
+      );
+      expect(tasks.first.requiredRole, 'designer');
+    });
+
+    test('finishing a stage opens the next one locally', () async {
+      final orderId = await placedOrder();
+      var design = (await db.tasksForOrder(orderId)).first;
+
+      await db.transitionTask(task: design, to: TaskStatus.assigned, userId: 'u1');
+      design = (await db.tasksForOrder(orderId)).first;
+      expect(design.status, 'assigned');
+
+      await db.transitionTask(task: design, to: TaskStatus.inProgress, userId: 'u1');
+      design = (await db.tasksForOrder(orderId)).first;
+      expect(design.startedAt, isNotNull);
+
+      await db.transitionTask(task: design, to: TaskStatus.done, userId: 'u1');
+
+      final after = await db.tasksForOrder(orderId);
+      expect(after.first.status, 'done');
+      expect(after.first.doneAt, isNotNull);
+      expect(after[1].status, 'available', reason: 'print opens when design is done');
+      expect(after[2].status, 'waiting');
+    });
+
+    test('an illegal jump is refused before it reaches the outbox', () async {
+      final orderId = await placedOrder();
+      final tasks = await db.tasksForOrder(orderId);
+
+      await expectLater(
+        db.transitionTask(task: tasks[3], to: TaskStatus.done, userId: 'u1'),
+        throwsA(isA<StateError>()),
+      );
+      expect((await db.tasksForOrder(orderId))[3].status, 'waiting');
+    });
+
+    test('sending work back needs a reason', () async {
+      final orderId = await placedOrder();
+      var task = (await db.tasksForOrder(orderId)).first;
+      await db.transitionTask(task: task, to: TaskStatus.assigned, userId: 'u1');
+      task = (await db.tasksForOrder(orderId)).first;
+      await db.transitionTask(task: task, to: TaskStatus.inProgress, userId: 'u1');
+      task = (await db.tasksForOrder(orderId)).first;
+
+      await expectLater(
+        db.transitionTask(task: task, to: TaskStatus.rework, userId: 'u1'),
+        throwsA(isA<StateError>()),
+      );
+
+      await db.transitionTask(
+        task: task,
+        to: TaskStatus.rework,
+        userId: 'u1',
+        reason: 'Customer changed the artwork',
+      );
+      final after = (await db.tasksForOrder(orderId)).first;
+      expect(after.status, 'rework');
+      expect(after.reworkCount, 1);
+      expect(after.reason, contains('artwork'));
     });
   });
 

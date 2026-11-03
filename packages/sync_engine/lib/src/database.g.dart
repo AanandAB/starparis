@@ -1469,6 +1469,1909 @@ class CustomerPhonesCompanion extends UpdateCompanion<CustomerPhone> {
   }
 }
 
+class $WorkflowStagesTable extends WorkflowStages
+    with TableInfo<$WorkflowStagesTable, WorkflowStage> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WorkflowStagesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tenantIdMeta = const VerificationMeta(
+    'tenantId',
+  );
+  @override
+  late final GeneratedColumn<String> tenantId = GeneratedColumn<String>(
+    'tenant_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _workflowKeyMeta = const VerificationMeta(
+    'workflowKey',
+  );
+  @override
+  late final GeneratedColumn<String> workflowKey = GeneratedColumn<String>(
+    'workflow_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('print_std'),
+  );
+  static const VerificationMeta _stageKeyMeta = const VerificationMeta(
+    'stageKey',
+  );
+  @override
+  late final GeneratedColumn<String> stageKey = GeneratedColumn<String>(
+    'stage_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameEnMeta = const VerificationMeta('nameEn');
+  @override
+  late final GeneratedColumn<String> nameEn = GeneratedColumn<String>(
+    'name_en',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameArMeta = const VerificationMeta('nameAr');
+  @override
+  late final GeneratedColumn<String> nameAr = GeneratedColumn<String>(
+    'name_ar',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sequenceMeta = const VerificationMeta(
+    'sequence',
+  );
+  @override
+  late final GeneratedColumn<int> sequence = GeneratedColumn<int>(
+    'sequence',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _requiredRoleMeta = const VerificationMeta(
+    'requiredRole',
+  );
+  @override
+  late final GeneratedColumn<String> requiredRole = GeneratedColumn<String>(
+    'required_role',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _waitsForPreviousMeta = const VerificationMeta(
+    'waitsForPrevious',
+  );
+  @override
+  late final GeneratedColumn<bool> waitsForPrevious = GeneratedColumn<bool>(
+    'waits_for_previous',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("waits_for_previous" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    tenantId,
+    workflowKey,
+    stageKey,
+    nameEn,
+    nameAr,
+    sequence,
+    requiredRole,
+    waitsForPrevious,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'workflow_stages';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WorkflowStage> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('tenant_id')) {
+      context.handle(
+        _tenantIdMeta,
+        tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tenantIdMeta);
+    }
+    if (data.containsKey('workflow_key')) {
+      context.handle(
+        _workflowKeyMeta,
+        workflowKey.isAcceptableOrUnknown(
+          data['workflow_key']!,
+          _workflowKeyMeta,
+        ),
+      );
+    }
+    if (data.containsKey('stage_key')) {
+      context.handle(
+        _stageKeyMeta,
+        stageKey.isAcceptableOrUnknown(data['stage_key']!, _stageKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_stageKeyMeta);
+    }
+    if (data.containsKey('name_en')) {
+      context.handle(
+        _nameEnMeta,
+        nameEn.isAcceptableOrUnknown(data['name_en']!, _nameEnMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameEnMeta);
+    }
+    if (data.containsKey('name_ar')) {
+      context.handle(
+        _nameArMeta,
+        nameAr.isAcceptableOrUnknown(data['name_ar']!, _nameArMeta),
+      );
+    }
+    if (data.containsKey('sequence')) {
+      context.handle(
+        _sequenceMeta,
+        sequence.isAcceptableOrUnknown(data['sequence']!, _sequenceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sequenceMeta);
+    }
+    if (data.containsKey('required_role')) {
+      context.handle(
+        _requiredRoleMeta,
+        requiredRole.isAcceptableOrUnknown(
+          data['required_role']!,
+          _requiredRoleMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_requiredRoleMeta);
+    }
+    if (data.containsKey('waits_for_previous')) {
+      context.handle(
+        _waitsForPreviousMeta,
+        waitsForPrevious.isAcceptableOrUnknown(
+          data['waits_for_previous']!,
+          _waitsForPreviousMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  WorkflowStage map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkflowStage(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      tenantId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tenant_id'],
+      )!,
+      workflowKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workflow_key'],
+      )!,
+      stageKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}stage_key'],
+      )!,
+      nameEn: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name_en'],
+      )!,
+      nameAr: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name_ar'],
+      ),
+      sequence: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sequence'],
+      )!,
+      requiredRole: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}required_role'],
+      )!,
+      waitsForPrevious: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}waits_for_previous'],
+      )!,
+    );
+  }
+
+  @override
+  $WorkflowStagesTable createAlias(String alias) {
+    return $WorkflowStagesTable(attachedDatabase, alias);
+  }
+}
+
+class WorkflowStage extends DataClass implements Insertable<WorkflowStage> {
+  final String id;
+  final String tenantId;
+  final String workflowKey;
+  final String stageKey;
+  final String nameEn;
+  final String? nameAr;
+  final int sequence;
+  final String requiredRole;
+  final bool waitsForPrevious;
+  const WorkflowStage({
+    required this.id,
+    required this.tenantId,
+    required this.workflowKey,
+    required this.stageKey,
+    required this.nameEn,
+    this.nameAr,
+    required this.sequence,
+    required this.requiredRole,
+    required this.waitsForPrevious,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['tenant_id'] = Variable<String>(tenantId);
+    map['workflow_key'] = Variable<String>(workflowKey);
+    map['stage_key'] = Variable<String>(stageKey);
+    map['name_en'] = Variable<String>(nameEn);
+    if (!nullToAbsent || nameAr != null) {
+      map['name_ar'] = Variable<String>(nameAr);
+    }
+    map['sequence'] = Variable<int>(sequence);
+    map['required_role'] = Variable<String>(requiredRole);
+    map['waits_for_previous'] = Variable<bool>(waitsForPrevious);
+    return map;
+  }
+
+  WorkflowStagesCompanion toCompanion(bool nullToAbsent) {
+    return WorkflowStagesCompanion(
+      id: Value(id),
+      tenantId: Value(tenantId),
+      workflowKey: Value(workflowKey),
+      stageKey: Value(stageKey),
+      nameEn: Value(nameEn),
+      nameAr: nameAr == null && nullToAbsent
+          ? const Value.absent()
+          : Value(nameAr),
+      sequence: Value(sequence),
+      requiredRole: Value(requiredRole),
+      waitsForPrevious: Value(waitsForPrevious),
+    );
+  }
+
+  factory WorkflowStage.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkflowStage(
+      id: serializer.fromJson<String>(json['id']),
+      tenantId: serializer.fromJson<String>(json['tenantId']),
+      workflowKey: serializer.fromJson<String>(json['workflowKey']),
+      stageKey: serializer.fromJson<String>(json['stageKey']),
+      nameEn: serializer.fromJson<String>(json['nameEn']),
+      nameAr: serializer.fromJson<String?>(json['nameAr']),
+      sequence: serializer.fromJson<int>(json['sequence']),
+      requiredRole: serializer.fromJson<String>(json['requiredRole']),
+      waitsForPrevious: serializer.fromJson<bool>(json['waitsForPrevious']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'tenantId': serializer.toJson<String>(tenantId),
+      'workflowKey': serializer.toJson<String>(workflowKey),
+      'stageKey': serializer.toJson<String>(stageKey),
+      'nameEn': serializer.toJson<String>(nameEn),
+      'nameAr': serializer.toJson<String?>(nameAr),
+      'sequence': serializer.toJson<int>(sequence),
+      'requiredRole': serializer.toJson<String>(requiredRole),
+      'waitsForPrevious': serializer.toJson<bool>(waitsForPrevious),
+    };
+  }
+
+  WorkflowStage copyWith({
+    String? id,
+    String? tenantId,
+    String? workflowKey,
+    String? stageKey,
+    String? nameEn,
+    Value<String?> nameAr = const Value.absent(),
+    int? sequence,
+    String? requiredRole,
+    bool? waitsForPrevious,
+  }) => WorkflowStage(
+    id: id ?? this.id,
+    tenantId: tenantId ?? this.tenantId,
+    workflowKey: workflowKey ?? this.workflowKey,
+    stageKey: stageKey ?? this.stageKey,
+    nameEn: nameEn ?? this.nameEn,
+    nameAr: nameAr.present ? nameAr.value : this.nameAr,
+    sequence: sequence ?? this.sequence,
+    requiredRole: requiredRole ?? this.requiredRole,
+    waitsForPrevious: waitsForPrevious ?? this.waitsForPrevious,
+  );
+  WorkflowStage copyWithCompanion(WorkflowStagesCompanion data) {
+    return WorkflowStage(
+      id: data.id.present ? data.id.value : this.id,
+      tenantId: data.tenantId.present ? data.tenantId.value : this.tenantId,
+      workflowKey: data.workflowKey.present
+          ? data.workflowKey.value
+          : this.workflowKey,
+      stageKey: data.stageKey.present ? data.stageKey.value : this.stageKey,
+      nameEn: data.nameEn.present ? data.nameEn.value : this.nameEn,
+      nameAr: data.nameAr.present ? data.nameAr.value : this.nameAr,
+      sequence: data.sequence.present ? data.sequence.value : this.sequence,
+      requiredRole: data.requiredRole.present
+          ? data.requiredRole.value
+          : this.requiredRole,
+      waitsForPrevious: data.waitsForPrevious.present
+          ? data.waitsForPrevious.value
+          : this.waitsForPrevious,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkflowStage(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('workflowKey: $workflowKey, ')
+          ..write('stageKey: $stageKey, ')
+          ..write('nameEn: $nameEn, ')
+          ..write('nameAr: $nameAr, ')
+          ..write('sequence: $sequence, ')
+          ..write('requiredRole: $requiredRole, ')
+          ..write('waitsForPrevious: $waitsForPrevious')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    tenantId,
+    workflowKey,
+    stageKey,
+    nameEn,
+    nameAr,
+    sequence,
+    requiredRole,
+    waitsForPrevious,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkflowStage &&
+          other.id == this.id &&
+          other.tenantId == this.tenantId &&
+          other.workflowKey == this.workflowKey &&
+          other.stageKey == this.stageKey &&
+          other.nameEn == this.nameEn &&
+          other.nameAr == this.nameAr &&
+          other.sequence == this.sequence &&
+          other.requiredRole == this.requiredRole &&
+          other.waitsForPrevious == this.waitsForPrevious);
+}
+
+class WorkflowStagesCompanion extends UpdateCompanion<WorkflowStage> {
+  final Value<String> id;
+  final Value<String> tenantId;
+  final Value<String> workflowKey;
+  final Value<String> stageKey;
+  final Value<String> nameEn;
+  final Value<String?> nameAr;
+  final Value<int> sequence;
+  final Value<String> requiredRole;
+  final Value<bool> waitsForPrevious;
+  final Value<int> rowid;
+  const WorkflowStagesCompanion({
+    this.id = const Value.absent(),
+    this.tenantId = const Value.absent(),
+    this.workflowKey = const Value.absent(),
+    this.stageKey = const Value.absent(),
+    this.nameEn = const Value.absent(),
+    this.nameAr = const Value.absent(),
+    this.sequence = const Value.absent(),
+    this.requiredRole = const Value.absent(),
+    this.waitsForPrevious = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WorkflowStagesCompanion.insert({
+    required String id,
+    required String tenantId,
+    this.workflowKey = const Value.absent(),
+    required String stageKey,
+    required String nameEn,
+    this.nameAr = const Value.absent(),
+    required int sequence,
+    required String requiredRole,
+    this.waitsForPrevious = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       tenantId = Value(tenantId),
+       stageKey = Value(stageKey),
+       nameEn = Value(nameEn),
+       sequence = Value(sequence),
+       requiredRole = Value(requiredRole);
+  static Insertable<WorkflowStage> custom({
+    Expression<String>? id,
+    Expression<String>? tenantId,
+    Expression<String>? workflowKey,
+    Expression<String>? stageKey,
+    Expression<String>? nameEn,
+    Expression<String>? nameAr,
+    Expression<int>? sequence,
+    Expression<String>? requiredRole,
+    Expression<bool>? waitsForPrevious,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (tenantId != null) 'tenant_id': tenantId,
+      if (workflowKey != null) 'workflow_key': workflowKey,
+      if (stageKey != null) 'stage_key': stageKey,
+      if (nameEn != null) 'name_en': nameEn,
+      if (nameAr != null) 'name_ar': nameAr,
+      if (sequence != null) 'sequence': sequence,
+      if (requiredRole != null) 'required_role': requiredRole,
+      if (waitsForPrevious != null) 'waits_for_previous': waitsForPrevious,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WorkflowStagesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? tenantId,
+    Value<String>? workflowKey,
+    Value<String>? stageKey,
+    Value<String>? nameEn,
+    Value<String?>? nameAr,
+    Value<int>? sequence,
+    Value<String>? requiredRole,
+    Value<bool>? waitsForPrevious,
+    Value<int>? rowid,
+  }) {
+    return WorkflowStagesCompanion(
+      id: id ?? this.id,
+      tenantId: tenantId ?? this.tenantId,
+      workflowKey: workflowKey ?? this.workflowKey,
+      stageKey: stageKey ?? this.stageKey,
+      nameEn: nameEn ?? this.nameEn,
+      nameAr: nameAr ?? this.nameAr,
+      sequence: sequence ?? this.sequence,
+      requiredRole: requiredRole ?? this.requiredRole,
+      waitsForPrevious: waitsForPrevious ?? this.waitsForPrevious,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (tenantId.present) {
+      map['tenant_id'] = Variable<String>(tenantId.value);
+    }
+    if (workflowKey.present) {
+      map['workflow_key'] = Variable<String>(workflowKey.value);
+    }
+    if (stageKey.present) {
+      map['stage_key'] = Variable<String>(stageKey.value);
+    }
+    if (nameEn.present) {
+      map['name_en'] = Variable<String>(nameEn.value);
+    }
+    if (nameAr.present) {
+      map['name_ar'] = Variable<String>(nameAr.value);
+    }
+    if (sequence.present) {
+      map['sequence'] = Variable<int>(sequence.value);
+    }
+    if (requiredRole.present) {
+      map['required_role'] = Variable<String>(requiredRole.value);
+    }
+    if (waitsForPrevious.present) {
+      map['waits_for_previous'] = Variable<bool>(waitsForPrevious.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkflowStagesCompanion(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('workflowKey: $workflowKey, ')
+          ..write('stageKey: $stageKey, ')
+          ..write('nameEn: $nameEn, ')
+          ..write('nameAr: $nameAr, ')
+          ..write('sequence: $sequence, ')
+          ..write('requiredRole: $requiredRole, ')
+          ..write('waitsForPrevious: $waitsForPrevious, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TasksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tenantIdMeta = const VerificationMeta(
+    'tenantId',
+  );
+  @override
+  late final GeneratedColumn<String> tenantId = GeneratedColumn<String>(
+    'tenant_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _branchIdMeta = const VerificationMeta(
+    'branchId',
+  );
+  @override
+  late final GeneratedColumn<String> branchId = GeneratedColumn<String>(
+    'branch_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _orderIdMeta = const VerificationMeta(
+    'orderId',
+  );
+  @override
+  late final GeneratedColumn<String> orderId = GeneratedColumn<String>(
+    'order_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _orderItemIdMeta = const VerificationMeta(
+    'orderItemId',
+  );
+  @override
+  late final GeneratedColumn<String> orderItemId = GeneratedColumn<String>(
+    'order_item_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _stageKeyMeta = const VerificationMeta(
+    'stageKey',
+  );
+  @override
+  late final GeneratedColumn<String> stageKey = GeneratedColumn<String>(
+    'stage_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _stageNameMeta = const VerificationMeta(
+    'stageName',
+  );
+  @override
+  late final GeneratedColumn<String> stageName = GeneratedColumn<String>(
+    'stage_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sequenceMeta = const VerificationMeta(
+    'sequence',
+  );
+  @override
+  late final GeneratedColumn<int> sequence = GeneratedColumn<int>(
+    'sequence',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('waiting'),
+  );
+  static const VerificationMeta _assignedToMeta = const VerificationMeta(
+    'assignedTo',
+  );
+  @override
+  late final GeneratedColumn<String> assignedTo = GeneratedColumn<String>(
+    'assigned_to',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _requiredRoleMeta = const VerificationMeta(
+    'requiredRole',
+  );
+  @override
+  late final GeneratedColumn<String> requiredRole = GeneratedColumn<String>(
+    'required_role',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _qtyMeta = const VerificationMeta('qty');
+  @override
+  late final GeneratedColumn<int> qty = GeneratedColumn<int>(
+    'qty',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _priorityMeta = const VerificationMeta(
+    'priority',
+  );
+  @override
+  late final GeneratedColumn<String> priority = GeneratedColumn<String>(
+    'priority',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('normal'),
+  );
+  static const VerificationMeta _dueAtMeta = const VerificationMeta('dueAt');
+  @override
+  late final GeneratedColumn<DateTime> dueAt = GeneratedColumn<DateTime>(
+    'due_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _startedAtMeta = const VerificationMeta(
+    'startedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startedAt = GeneratedColumn<DateTime>(
+    'started_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _doneAtMeta = const VerificationMeta('doneAt');
+  @override
+  late final GeneratedColumn<DateTime> doneAt = GeneratedColumn<DateTime>(
+    'done_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _reasonMeta = const VerificationMeta('reason');
+  @override
+  late final GeneratedColumn<String> reason = GeneratedColumn<String>(
+    'reason',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _reworkCountMeta = const VerificationMeta(
+    'reworkCount',
+  );
+  @override
+  late final GeneratedColumn<int> reworkCount = GeneratedColumn<int>(
+    'rework_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdByMeta = const VerificationMeta(
+    'createdBy',
+  );
+  @override
+  late final GeneratedColumn<String> createdBy = GeneratedColumn<String>(
+    'created_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _versionMeta = const VerificationMeta(
+    'version',
+  );
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+    'version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    tenantId,
+    branchId,
+    orderId,
+    orderItemId,
+    stageKey,
+    stageName,
+    sequence,
+    title,
+    status,
+    assignedTo,
+    requiredRole,
+    qty,
+    priority,
+    dueAt,
+    startedAt,
+    doneAt,
+    reason,
+    reworkCount,
+    notes,
+    createdAt,
+    updatedAt,
+    createdBy,
+    version,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'tasks';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Task> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('tenant_id')) {
+      context.handle(
+        _tenantIdMeta,
+        tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tenantIdMeta);
+    }
+    if (data.containsKey('branch_id')) {
+      context.handle(
+        _branchIdMeta,
+        branchId.isAcceptableOrUnknown(data['branch_id']!, _branchIdMeta),
+      );
+    }
+    if (data.containsKey('order_id')) {
+      context.handle(
+        _orderIdMeta,
+        orderId.isAcceptableOrUnknown(data['order_id']!, _orderIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_orderIdMeta);
+    }
+    if (data.containsKey('order_item_id')) {
+      context.handle(
+        _orderItemIdMeta,
+        orderItemId.isAcceptableOrUnknown(
+          data['order_item_id']!,
+          _orderItemIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('stage_key')) {
+      context.handle(
+        _stageKeyMeta,
+        stageKey.isAcceptableOrUnknown(data['stage_key']!, _stageKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_stageKeyMeta);
+    }
+    if (data.containsKey('stage_name')) {
+      context.handle(
+        _stageNameMeta,
+        stageName.isAcceptableOrUnknown(data['stage_name']!, _stageNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_stageNameMeta);
+    }
+    if (data.containsKey('sequence')) {
+      context.handle(
+        _sequenceMeta,
+        sequence.isAcceptableOrUnknown(data['sequence']!, _sequenceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sequenceMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('assigned_to')) {
+      context.handle(
+        _assignedToMeta,
+        assignedTo.isAcceptableOrUnknown(data['assigned_to']!, _assignedToMeta),
+      );
+    }
+    if (data.containsKey('required_role')) {
+      context.handle(
+        _requiredRoleMeta,
+        requiredRole.isAcceptableOrUnknown(
+          data['required_role']!,
+          _requiredRoleMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_requiredRoleMeta);
+    }
+    if (data.containsKey('qty')) {
+      context.handle(
+        _qtyMeta,
+        qty.isAcceptableOrUnknown(data['qty']!, _qtyMeta),
+      );
+    }
+    if (data.containsKey('priority')) {
+      context.handle(
+        _priorityMeta,
+        priority.isAcceptableOrUnknown(data['priority']!, _priorityMeta),
+      );
+    }
+    if (data.containsKey('due_at')) {
+      context.handle(
+        _dueAtMeta,
+        dueAt.isAcceptableOrUnknown(data['due_at']!, _dueAtMeta),
+      );
+    }
+    if (data.containsKey('started_at')) {
+      context.handle(
+        _startedAtMeta,
+        startedAt.isAcceptableOrUnknown(data['started_at']!, _startedAtMeta),
+      );
+    }
+    if (data.containsKey('done_at')) {
+      context.handle(
+        _doneAtMeta,
+        doneAt.isAcceptableOrUnknown(data['done_at']!, _doneAtMeta),
+      );
+    }
+    if (data.containsKey('reason')) {
+      context.handle(
+        _reasonMeta,
+        reason.isAcceptableOrUnknown(data['reason']!, _reasonMeta),
+      );
+    }
+    if (data.containsKey('rework_count')) {
+      context.handle(
+        _reworkCountMeta,
+        reworkCount.isAcceptableOrUnknown(
+          data['rework_count']!,
+          _reworkCountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('created_by')) {
+      context.handle(
+        _createdByMeta,
+        createdBy.isAcceptableOrUnknown(data['created_by']!, _createdByMeta),
+      );
+    }
+    if (data.containsKey('version')) {
+      context.handle(
+        _versionMeta,
+        version.isAcceptableOrUnknown(data['version']!, _versionMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Task map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Task(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      tenantId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tenant_id'],
+      )!,
+      branchId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}branch_id'],
+      ),
+      orderId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}order_id'],
+      )!,
+      orderItemId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}order_item_id'],
+      ),
+      stageKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}stage_key'],
+      )!,
+      stageName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}stage_name'],
+      )!,
+      sequence: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sequence'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      assignedTo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}assigned_to'],
+      ),
+      requiredRole: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}required_role'],
+      )!,
+      qty: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}qty'],
+      )!,
+      priority: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}priority'],
+      )!,
+      dueAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}due_at'],
+      ),
+      startedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}started_at'],
+      ),
+      doneAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}done_at'],
+      ),
+      reason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reason'],
+      ),
+      reworkCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rework_count'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      createdBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}created_by'],
+      ),
+      version: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}version'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $TasksTable createAlias(String alias) {
+    return $TasksTable(attachedDatabase, alias);
+  }
+}
+
+class Task extends DataClass implements Insertable<Task> {
+  final String id;
+  final String tenantId;
+  final String? branchId;
+  final String orderId;
+  final String? orderItemId;
+  final String stageKey;
+  final String stageName;
+  final int sequence;
+  final String title;
+
+  /// waiting, available, assigned, in_progress, paused, done, rework, cancelled
+  final String status;
+  final String? assignedTo;
+  final String requiredRole;
+  final int qty;
+  final String priority;
+  final DateTime? dueAt;
+  final DateTime? startedAt;
+  final DateTime? doneAt;
+  final String? reason;
+  final int reworkCount;
+  final String? notes;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String? createdBy;
+  final int version;
+  final DateTime? deletedAt;
+  const Task({
+    required this.id,
+    required this.tenantId,
+    this.branchId,
+    required this.orderId,
+    this.orderItemId,
+    required this.stageKey,
+    required this.stageName,
+    required this.sequence,
+    required this.title,
+    required this.status,
+    this.assignedTo,
+    required this.requiredRole,
+    required this.qty,
+    required this.priority,
+    this.dueAt,
+    this.startedAt,
+    this.doneAt,
+    this.reason,
+    required this.reworkCount,
+    this.notes,
+    required this.createdAt,
+    required this.updatedAt,
+    this.createdBy,
+    required this.version,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['tenant_id'] = Variable<String>(tenantId);
+    if (!nullToAbsent || branchId != null) {
+      map['branch_id'] = Variable<String>(branchId);
+    }
+    map['order_id'] = Variable<String>(orderId);
+    if (!nullToAbsent || orderItemId != null) {
+      map['order_item_id'] = Variable<String>(orderItemId);
+    }
+    map['stage_key'] = Variable<String>(stageKey);
+    map['stage_name'] = Variable<String>(stageName);
+    map['sequence'] = Variable<int>(sequence);
+    map['title'] = Variable<String>(title);
+    map['status'] = Variable<String>(status);
+    if (!nullToAbsent || assignedTo != null) {
+      map['assigned_to'] = Variable<String>(assignedTo);
+    }
+    map['required_role'] = Variable<String>(requiredRole);
+    map['qty'] = Variable<int>(qty);
+    map['priority'] = Variable<String>(priority);
+    if (!nullToAbsent || dueAt != null) {
+      map['due_at'] = Variable<DateTime>(dueAt);
+    }
+    if (!nullToAbsent || startedAt != null) {
+      map['started_at'] = Variable<DateTime>(startedAt);
+    }
+    if (!nullToAbsent || doneAt != null) {
+      map['done_at'] = Variable<DateTime>(doneAt);
+    }
+    if (!nullToAbsent || reason != null) {
+      map['reason'] = Variable<String>(reason);
+    }
+    map['rework_count'] = Variable<int>(reworkCount);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || createdBy != null) {
+      map['created_by'] = Variable<String>(createdBy);
+    }
+    map['version'] = Variable<int>(version);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  TasksCompanion toCompanion(bool nullToAbsent) {
+    return TasksCompanion(
+      id: Value(id),
+      tenantId: Value(tenantId),
+      branchId: branchId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(branchId),
+      orderId: Value(orderId),
+      orderItemId: orderItemId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(orderItemId),
+      stageKey: Value(stageKey),
+      stageName: Value(stageName),
+      sequence: Value(sequence),
+      title: Value(title),
+      status: Value(status),
+      assignedTo: assignedTo == null && nullToAbsent
+          ? const Value.absent()
+          : Value(assignedTo),
+      requiredRole: Value(requiredRole),
+      qty: Value(qty),
+      priority: Value(priority),
+      dueAt: dueAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dueAt),
+      startedAt: startedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(startedAt),
+      doneAt: doneAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(doneAt),
+      reason: reason == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reason),
+      reworkCount: Value(reworkCount),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      createdBy: createdBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdBy),
+      version: Value(version),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory Task.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Task(
+      id: serializer.fromJson<String>(json['id']),
+      tenantId: serializer.fromJson<String>(json['tenantId']),
+      branchId: serializer.fromJson<String?>(json['branchId']),
+      orderId: serializer.fromJson<String>(json['orderId']),
+      orderItemId: serializer.fromJson<String?>(json['orderItemId']),
+      stageKey: serializer.fromJson<String>(json['stageKey']),
+      stageName: serializer.fromJson<String>(json['stageName']),
+      sequence: serializer.fromJson<int>(json['sequence']),
+      title: serializer.fromJson<String>(json['title']),
+      status: serializer.fromJson<String>(json['status']),
+      assignedTo: serializer.fromJson<String?>(json['assignedTo']),
+      requiredRole: serializer.fromJson<String>(json['requiredRole']),
+      qty: serializer.fromJson<int>(json['qty']),
+      priority: serializer.fromJson<String>(json['priority']),
+      dueAt: serializer.fromJson<DateTime?>(json['dueAt']),
+      startedAt: serializer.fromJson<DateTime?>(json['startedAt']),
+      doneAt: serializer.fromJson<DateTime?>(json['doneAt']),
+      reason: serializer.fromJson<String?>(json['reason']),
+      reworkCount: serializer.fromJson<int>(json['reworkCount']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      createdBy: serializer.fromJson<String?>(json['createdBy']),
+      version: serializer.fromJson<int>(json['version']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'tenantId': serializer.toJson<String>(tenantId),
+      'branchId': serializer.toJson<String?>(branchId),
+      'orderId': serializer.toJson<String>(orderId),
+      'orderItemId': serializer.toJson<String?>(orderItemId),
+      'stageKey': serializer.toJson<String>(stageKey),
+      'stageName': serializer.toJson<String>(stageName),
+      'sequence': serializer.toJson<int>(sequence),
+      'title': serializer.toJson<String>(title),
+      'status': serializer.toJson<String>(status),
+      'assignedTo': serializer.toJson<String?>(assignedTo),
+      'requiredRole': serializer.toJson<String>(requiredRole),
+      'qty': serializer.toJson<int>(qty),
+      'priority': serializer.toJson<String>(priority),
+      'dueAt': serializer.toJson<DateTime?>(dueAt),
+      'startedAt': serializer.toJson<DateTime?>(startedAt),
+      'doneAt': serializer.toJson<DateTime?>(doneAt),
+      'reason': serializer.toJson<String?>(reason),
+      'reworkCount': serializer.toJson<int>(reworkCount),
+      'notes': serializer.toJson<String?>(notes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'createdBy': serializer.toJson<String?>(createdBy),
+      'version': serializer.toJson<int>(version),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  Task copyWith({
+    String? id,
+    String? tenantId,
+    Value<String?> branchId = const Value.absent(),
+    String? orderId,
+    Value<String?> orderItemId = const Value.absent(),
+    String? stageKey,
+    String? stageName,
+    int? sequence,
+    String? title,
+    String? status,
+    Value<String?> assignedTo = const Value.absent(),
+    String? requiredRole,
+    int? qty,
+    String? priority,
+    Value<DateTime?> dueAt = const Value.absent(),
+    Value<DateTime?> startedAt = const Value.absent(),
+    Value<DateTime?> doneAt = const Value.absent(),
+    Value<String?> reason = const Value.absent(),
+    int? reworkCount,
+    Value<String?> notes = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<String?> createdBy = const Value.absent(),
+    int? version,
+    Value<DateTime?> deletedAt = const Value.absent(),
+  }) => Task(
+    id: id ?? this.id,
+    tenantId: tenantId ?? this.tenantId,
+    branchId: branchId.present ? branchId.value : this.branchId,
+    orderId: orderId ?? this.orderId,
+    orderItemId: orderItemId.present ? orderItemId.value : this.orderItemId,
+    stageKey: stageKey ?? this.stageKey,
+    stageName: stageName ?? this.stageName,
+    sequence: sequence ?? this.sequence,
+    title: title ?? this.title,
+    status: status ?? this.status,
+    assignedTo: assignedTo.present ? assignedTo.value : this.assignedTo,
+    requiredRole: requiredRole ?? this.requiredRole,
+    qty: qty ?? this.qty,
+    priority: priority ?? this.priority,
+    dueAt: dueAt.present ? dueAt.value : this.dueAt,
+    startedAt: startedAt.present ? startedAt.value : this.startedAt,
+    doneAt: doneAt.present ? doneAt.value : this.doneAt,
+    reason: reason.present ? reason.value : this.reason,
+    reworkCount: reworkCount ?? this.reworkCount,
+    notes: notes.present ? notes.value : this.notes,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    createdBy: createdBy.present ? createdBy.value : this.createdBy,
+    version: version ?? this.version,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  Task copyWithCompanion(TasksCompanion data) {
+    return Task(
+      id: data.id.present ? data.id.value : this.id,
+      tenantId: data.tenantId.present ? data.tenantId.value : this.tenantId,
+      branchId: data.branchId.present ? data.branchId.value : this.branchId,
+      orderId: data.orderId.present ? data.orderId.value : this.orderId,
+      orderItemId: data.orderItemId.present
+          ? data.orderItemId.value
+          : this.orderItemId,
+      stageKey: data.stageKey.present ? data.stageKey.value : this.stageKey,
+      stageName: data.stageName.present ? data.stageName.value : this.stageName,
+      sequence: data.sequence.present ? data.sequence.value : this.sequence,
+      title: data.title.present ? data.title.value : this.title,
+      status: data.status.present ? data.status.value : this.status,
+      assignedTo: data.assignedTo.present
+          ? data.assignedTo.value
+          : this.assignedTo,
+      requiredRole: data.requiredRole.present
+          ? data.requiredRole.value
+          : this.requiredRole,
+      qty: data.qty.present ? data.qty.value : this.qty,
+      priority: data.priority.present ? data.priority.value : this.priority,
+      dueAt: data.dueAt.present ? data.dueAt.value : this.dueAt,
+      startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
+      doneAt: data.doneAt.present ? data.doneAt.value : this.doneAt,
+      reason: data.reason.present ? data.reason.value : this.reason,
+      reworkCount: data.reworkCount.present
+          ? data.reworkCount.value
+          : this.reworkCount,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      createdBy: data.createdBy.present ? data.createdBy.value : this.createdBy,
+      version: data.version.present ? data.version.value : this.version,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Task(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('branchId: $branchId, ')
+          ..write('orderId: $orderId, ')
+          ..write('orderItemId: $orderItemId, ')
+          ..write('stageKey: $stageKey, ')
+          ..write('stageName: $stageName, ')
+          ..write('sequence: $sequence, ')
+          ..write('title: $title, ')
+          ..write('status: $status, ')
+          ..write('assignedTo: $assignedTo, ')
+          ..write('requiredRole: $requiredRole, ')
+          ..write('qty: $qty, ')
+          ..write('priority: $priority, ')
+          ..write('dueAt: $dueAt, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('doneAt: $doneAt, ')
+          ..write('reason: $reason, ')
+          ..write('reworkCount: $reworkCount, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('createdBy: $createdBy, ')
+          ..write('version: $version, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+    id,
+    tenantId,
+    branchId,
+    orderId,
+    orderItemId,
+    stageKey,
+    stageName,
+    sequence,
+    title,
+    status,
+    assignedTo,
+    requiredRole,
+    qty,
+    priority,
+    dueAt,
+    startedAt,
+    doneAt,
+    reason,
+    reworkCount,
+    notes,
+    createdAt,
+    updatedAt,
+    createdBy,
+    version,
+    deletedAt,
+  ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Task &&
+          other.id == this.id &&
+          other.tenantId == this.tenantId &&
+          other.branchId == this.branchId &&
+          other.orderId == this.orderId &&
+          other.orderItemId == this.orderItemId &&
+          other.stageKey == this.stageKey &&
+          other.stageName == this.stageName &&
+          other.sequence == this.sequence &&
+          other.title == this.title &&
+          other.status == this.status &&
+          other.assignedTo == this.assignedTo &&
+          other.requiredRole == this.requiredRole &&
+          other.qty == this.qty &&
+          other.priority == this.priority &&
+          other.dueAt == this.dueAt &&
+          other.startedAt == this.startedAt &&
+          other.doneAt == this.doneAt &&
+          other.reason == this.reason &&
+          other.reworkCount == this.reworkCount &&
+          other.notes == this.notes &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.createdBy == this.createdBy &&
+          other.version == this.version &&
+          other.deletedAt == this.deletedAt);
+}
+
+class TasksCompanion extends UpdateCompanion<Task> {
+  final Value<String> id;
+  final Value<String> tenantId;
+  final Value<String?> branchId;
+  final Value<String> orderId;
+  final Value<String?> orderItemId;
+  final Value<String> stageKey;
+  final Value<String> stageName;
+  final Value<int> sequence;
+  final Value<String> title;
+  final Value<String> status;
+  final Value<String?> assignedTo;
+  final Value<String> requiredRole;
+  final Value<int> qty;
+  final Value<String> priority;
+  final Value<DateTime?> dueAt;
+  final Value<DateTime?> startedAt;
+  final Value<DateTime?> doneAt;
+  final Value<String?> reason;
+  final Value<int> reworkCount;
+  final Value<String?> notes;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String?> createdBy;
+  final Value<int> version;
+  final Value<DateTime?> deletedAt;
+  final Value<int> rowid;
+  const TasksCompanion({
+    this.id = const Value.absent(),
+    this.tenantId = const Value.absent(),
+    this.branchId = const Value.absent(),
+    this.orderId = const Value.absent(),
+    this.orderItemId = const Value.absent(),
+    this.stageKey = const Value.absent(),
+    this.stageName = const Value.absent(),
+    this.sequence = const Value.absent(),
+    this.title = const Value.absent(),
+    this.status = const Value.absent(),
+    this.assignedTo = const Value.absent(),
+    this.requiredRole = const Value.absent(),
+    this.qty = const Value.absent(),
+    this.priority = const Value.absent(),
+    this.dueAt = const Value.absent(),
+    this.startedAt = const Value.absent(),
+    this.doneAt = const Value.absent(),
+    this.reason = const Value.absent(),
+    this.reworkCount = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.createdBy = const Value.absent(),
+    this.version = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TasksCompanion.insert({
+    required String id,
+    required String tenantId,
+    this.branchId = const Value.absent(),
+    required String orderId,
+    this.orderItemId = const Value.absent(),
+    required String stageKey,
+    required String stageName,
+    required int sequence,
+    required String title,
+    this.status = const Value.absent(),
+    this.assignedTo = const Value.absent(),
+    required String requiredRole,
+    this.qty = const Value.absent(),
+    this.priority = const Value.absent(),
+    this.dueAt = const Value.absent(),
+    this.startedAt = const Value.absent(),
+    this.doneAt = const Value.absent(),
+    this.reason = const Value.absent(),
+    this.reworkCount = const Value.absent(),
+    this.notes = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.createdBy = const Value.absent(),
+    this.version = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       tenantId = Value(tenantId),
+       orderId = Value(orderId),
+       stageKey = Value(stageKey),
+       stageName = Value(stageName),
+       sequence = Value(sequence),
+       title = Value(title),
+       requiredRole = Value(requiredRole),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<Task> custom({
+    Expression<String>? id,
+    Expression<String>? tenantId,
+    Expression<String>? branchId,
+    Expression<String>? orderId,
+    Expression<String>? orderItemId,
+    Expression<String>? stageKey,
+    Expression<String>? stageName,
+    Expression<int>? sequence,
+    Expression<String>? title,
+    Expression<String>? status,
+    Expression<String>? assignedTo,
+    Expression<String>? requiredRole,
+    Expression<int>? qty,
+    Expression<String>? priority,
+    Expression<DateTime>? dueAt,
+    Expression<DateTime>? startedAt,
+    Expression<DateTime>? doneAt,
+    Expression<String>? reason,
+    Expression<int>? reworkCount,
+    Expression<String>? notes,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? createdBy,
+    Expression<int>? version,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (tenantId != null) 'tenant_id': tenantId,
+      if (branchId != null) 'branch_id': branchId,
+      if (orderId != null) 'order_id': orderId,
+      if (orderItemId != null) 'order_item_id': orderItemId,
+      if (stageKey != null) 'stage_key': stageKey,
+      if (stageName != null) 'stage_name': stageName,
+      if (sequence != null) 'sequence': sequence,
+      if (title != null) 'title': title,
+      if (status != null) 'status': status,
+      if (assignedTo != null) 'assigned_to': assignedTo,
+      if (requiredRole != null) 'required_role': requiredRole,
+      if (qty != null) 'qty': qty,
+      if (priority != null) 'priority': priority,
+      if (dueAt != null) 'due_at': dueAt,
+      if (startedAt != null) 'started_at': startedAt,
+      if (doneAt != null) 'done_at': doneAt,
+      if (reason != null) 'reason': reason,
+      if (reworkCount != null) 'rework_count': reworkCount,
+      if (notes != null) 'notes': notes,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (createdBy != null) 'created_by': createdBy,
+      if (version != null) 'version': version,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TasksCompanion copyWith({
+    Value<String>? id,
+    Value<String>? tenantId,
+    Value<String?>? branchId,
+    Value<String>? orderId,
+    Value<String?>? orderItemId,
+    Value<String>? stageKey,
+    Value<String>? stageName,
+    Value<int>? sequence,
+    Value<String>? title,
+    Value<String>? status,
+    Value<String?>? assignedTo,
+    Value<String>? requiredRole,
+    Value<int>? qty,
+    Value<String>? priority,
+    Value<DateTime?>? dueAt,
+    Value<DateTime?>? startedAt,
+    Value<DateTime?>? doneAt,
+    Value<String?>? reason,
+    Value<int>? reworkCount,
+    Value<String?>? notes,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String?>? createdBy,
+    Value<int>? version,
+    Value<DateTime?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return TasksCompanion(
+      id: id ?? this.id,
+      tenantId: tenantId ?? this.tenantId,
+      branchId: branchId ?? this.branchId,
+      orderId: orderId ?? this.orderId,
+      orderItemId: orderItemId ?? this.orderItemId,
+      stageKey: stageKey ?? this.stageKey,
+      stageName: stageName ?? this.stageName,
+      sequence: sequence ?? this.sequence,
+      title: title ?? this.title,
+      status: status ?? this.status,
+      assignedTo: assignedTo ?? this.assignedTo,
+      requiredRole: requiredRole ?? this.requiredRole,
+      qty: qty ?? this.qty,
+      priority: priority ?? this.priority,
+      dueAt: dueAt ?? this.dueAt,
+      startedAt: startedAt ?? this.startedAt,
+      doneAt: doneAt ?? this.doneAt,
+      reason: reason ?? this.reason,
+      reworkCount: reworkCount ?? this.reworkCount,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      createdBy: createdBy ?? this.createdBy,
+      version: version ?? this.version,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (tenantId.present) {
+      map['tenant_id'] = Variable<String>(tenantId.value);
+    }
+    if (branchId.present) {
+      map['branch_id'] = Variable<String>(branchId.value);
+    }
+    if (orderId.present) {
+      map['order_id'] = Variable<String>(orderId.value);
+    }
+    if (orderItemId.present) {
+      map['order_item_id'] = Variable<String>(orderItemId.value);
+    }
+    if (stageKey.present) {
+      map['stage_key'] = Variable<String>(stageKey.value);
+    }
+    if (stageName.present) {
+      map['stage_name'] = Variable<String>(stageName.value);
+    }
+    if (sequence.present) {
+      map['sequence'] = Variable<int>(sequence.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (assignedTo.present) {
+      map['assigned_to'] = Variable<String>(assignedTo.value);
+    }
+    if (requiredRole.present) {
+      map['required_role'] = Variable<String>(requiredRole.value);
+    }
+    if (qty.present) {
+      map['qty'] = Variable<int>(qty.value);
+    }
+    if (priority.present) {
+      map['priority'] = Variable<String>(priority.value);
+    }
+    if (dueAt.present) {
+      map['due_at'] = Variable<DateTime>(dueAt.value);
+    }
+    if (startedAt.present) {
+      map['started_at'] = Variable<DateTime>(startedAt.value);
+    }
+    if (doneAt.present) {
+      map['done_at'] = Variable<DateTime>(doneAt.value);
+    }
+    if (reason.present) {
+      map['reason'] = Variable<String>(reason.value);
+    }
+    if (reworkCount.present) {
+      map['rework_count'] = Variable<int>(reworkCount.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (createdBy.present) {
+      map['created_by'] = Variable<String>(createdBy.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TasksCompanion(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('branchId: $branchId, ')
+          ..write('orderId: $orderId, ')
+          ..write('orderItemId: $orderItemId, ')
+          ..write('stageKey: $stageKey, ')
+          ..write('stageName: $stageName, ')
+          ..write('sequence: $sequence, ')
+          ..write('title: $title, ')
+          ..write('status: $status, ')
+          ..write('assignedTo: $assignedTo, ')
+          ..write('requiredRole: $requiredRole, ')
+          ..write('qty: $qty, ')
+          ..write('priority: $priority, ')
+          ..write('dueAt: $dueAt, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('doneAt: $doneAt, ')
+          ..write('reason: $reason, ')
+          ..write('reworkCount: $reworkCount, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('createdBy: $createdBy, ')
+          ..write('version: $version, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -1726,6 +3629,18 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
         requiredDuringInsert: false,
         defaultValue: const Constant('[]'),
       );
+  static const VerificationMeta _workflowKeyMeta = const VerificationMeta(
+    'workflowKey',
+  );
+  @override
+  late final GeneratedColumn<String> workflowKey = GeneratedColumn<String>(
+    'workflow_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('print_std'),
+  );
   static const VerificationMeta _sortMeta = const VerificationMeta('sort');
   @override
   late final GeneratedColumn<int> sort = GeneratedColumn<int>(
@@ -1785,6 +3700,7 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
     sizesJson,
     finishesJson,
     quantityPresetsJson,
+    workflowKey,
     sort,
     active,
     updatedAt,
@@ -1984,6 +3900,15 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
         ),
       );
     }
+    if (data.containsKey('workflow_key')) {
+      context.handle(
+        _workflowKeyMeta,
+        workflowKey.isAcceptableOrUnknown(
+          data['workflow_key']!,
+          _workflowKeyMeta,
+        ),
+      );
+    }
     if (data.containsKey('sort')) {
       context.handle(
         _sortMeta,
@@ -2103,6 +4028,10 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
         DriftSqlType.string,
         data['${effectivePrefix}quantity_presets_json'],
       )!,
+      workflowKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workflow_key'],
+      )!,
       sort: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}sort'],
@@ -2150,6 +4079,9 @@ class Product extends DataClass implements Insertable<Product> {
   final String sizesJson;
   final String finishesJson;
   final String quantityPresetsJson;
+
+  /// Which production workflow this product creates (see WorkflowStages).
+  final String workflowKey;
   final int sort;
   final bool active;
   final DateTime? updatedAt;
@@ -2177,6 +4109,7 @@ class Product extends DataClass implements Insertable<Product> {
     required this.sizesJson,
     required this.finishesJson,
     required this.quantityPresetsJson,
+    required this.workflowKey,
     required this.sort,
     required this.active,
     this.updatedAt,
@@ -2221,6 +4154,7 @@ class Product extends DataClass implements Insertable<Product> {
     map['sizes_json'] = Variable<String>(sizesJson);
     map['finishes_json'] = Variable<String>(finishesJson);
     map['quantity_presets_json'] = Variable<String>(quantityPresetsJson);
+    map['workflow_key'] = Variable<String>(workflowKey);
     map['sort'] = Variable<int>(sort);
     map['active'] = Variable<bool>(active);
     if (!nullToAbsent || updatedAt != null) {
@@ -2268,6 +4202,7 @@ class Product extends DataClass implements Insertable<Product> {
       sizesJson: Value(sizesJson),
       finishesJson: Value(finishesJson),
       quantityPresetsJson: Value(quantityPresetsJson),
+      workflowKey: Value(workflowKey),
       sort: Value(sort),
       active: Value(active),
       updatedAt: updatedAt == null && nullToAbsent
@@ -2307,6 +4242,7 @@ class Product extends DataClass implements Insertable<Product> {
       quantityPresetsJson: serializer.fromJson<String>(
         json['quantityPresetsJson'],
       ),
+      workflowKey: serializer.fromJson<String>(json['workflowKey']),
       sort: serializer.fromJson<int>(json['sort']),
       active: serializer.fromJson<bool>(json['active']),
       updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
@@ -2339,6 +4275,7 @@ class Product extends DataClass implements Insertable<Product> {
       'sizesJson': serializer.toJson<String>(sizesJson),
       'finishesJson': serializer.toJson<String>(finishesJson),
       'quantityPresetsJson': serializer.toJson<String>(quantityPresetsJson),
+      'workflowKey': serializer.toJson<String>(workflowKey),
       'sort': serializer.toJson<int>(sort),
       'active': serializer.toJson<bool>(active),
       'updatedAt': serializer.toJson<DateTime?>(updatedAt),
@@ -2369,6 +4306,7 @@ class Product extends DataClass implements Insertable<Product> {
     String? sizesJson,
     String? finishesJson,
     String? quantityPresetsJson,
+    String? workflowKey,
     int? sort,
     bool? active,
     Value<DateTime?> updatedAt = const Value.absent(),
@@ -2402,6 +4340,7 @@ class Product extends DataClass implements Insertable<Product> {
     sizesJson: sizesJson ?? this.sizesJson,
     finishesJson: finishesJson ?? this.finishesJson,
     quantityPresetsJson: quantityPresetsJson ?? this.quantityPresetsJson,
+    workflowKey: workflowKey ?? this.workflowKey,
     sort: sort ?? this.sort,
     active: active ?? this.active,
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
@@ -2455,6 +4394,9 @@ class Product extends DataClass implements Insertable<Product> {
       quantityPresetsJson: data.quantityPresetsJson.present
           ? data.quantityPresetsJson.value
           : this.quantityPresetsJson,
+      workflowKey: data.workflowKey.present
+          ? data.workflowKey.value
+          : this.workflowKey,
       sort: data.sort.present ? data.sort.value : this.sort,
       active: data.active.present ? data.active.value : this.active,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -2487,6 +4429,7 @@ class Product extends DataClass implements Insertable<Product> {
           ..write('sizesJson: $sizesJson, ')
           ..write('finishesJson: $finishesJson, ')
           ..write('quantityPresetsJson: $quantityPresetsJson, ')
+          ..write('workflowKey: $workflowKey, ')
           ..write('sort: $sort, ')
           ..write('active: $active, ')
           ..write('updatedAt: $updatedAt')
@@ -2519,6 +4462,7 @@ class Product extends DataClass implements Insertable<Product> {
     sizesJson,
     finishesJson,
     quantityPresetsJson,
+    workflowKey,
     sort,
     active,
     updatedAt,
@@ -2550,6 +4494,7 @@ class Product extends DataClass implements Insertable<Product> {
           other.sizesJson == this.sizesJson &&
           other.finishesJson == this.finishesJson &&
           other.quantityPresetsJson == this.quantityPresetsJson &&
+          other.workflowKey == this.workflowKey &&
           other.sort == this.sort &&
           other.active == this.active &&
           other.updatedAt == this.updatedAt);
@@ -2579,6 +4524,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
   final Value<String> sizesJson;
   final Value<String> finishesJson;
   final Value<String> quantityPresetsJson;
+  final Value<String> workflowKey;
   final Value<int> sort;
   final Value<bool> active;
   final Value<DateTime?> updatedAt;
@@ -2607,6 +4553,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     this.sizesJson = const Value.absent(),
     this.finishesJson = const Value.absent(),
     this.quantityPresetsJson = const Value.absent(),
+    this.workflowKey = const Value.absent(),
     this.sort = const Value.absent(),
     this.active = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -2636,6 +4583,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     this.sizesJson = const Value.absent(),
     this.finishesJson = const Value.absent(),
     this.quantityPresetsJson = const Value.absent(),
+    this.workflowKey = const Value.absent(),
     this.sort = const Value.absent(),
     this.active = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -2670,6 +4618,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     Expression<String>? sizesJson,
     Expression<String>? finishesJson,
     Expression<String>? quantityPresetsJson,
+    Expression<String>? workflowKey,
     Expression<int>? sort,
     Expression<bool>? active,
     Expression<DateTime>? updatedAt,
@@ -2701,6 +4650,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       if (finishesJson != null) 'finishes_json': finishesJson,
       if (quantityPresetsJson != null)
         'quantity_presets_json': quantityPresetsJson,
+      if (workflowKey != null) 'workflow_key': workflowKey,
       if (sort != null) 'sort': sort,
       if (active != null) 'active': active,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -2732,6 +4682,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     Value<String>? sizesJson,
     Value<String>? finishesJson,
     Value<String>? quantityPresetsJson,
+    Value<String>? workflowKey,
     Value<int>? sort,
     Value<bool>? active,
     Value<DateTime?>? updatedAt,
@@ -2761,6 +4712,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       sizesJson: sizesJson ?? this.sizesJson,
       finishesJson: finishesJson ?? this.finishesJson,
       quantityPresetsJson: quantityPresetsJson ?? this.quantityPresetsJson,
+      workflowKey: workflowKey ?? this.workflowKey,
       sort: sort ?? this.sort,
       active: active ?? this.active,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -2842,6 +4794,9 @@ class ProductsCompanion extends UpdateCompanion<Product> {
         quantityPresetsJson.value,
       );
     }
+    if (workflowKey.present) {
+      map['workflow_key'] = Variable<String>(workflowKey.value);
+    }
     if (sort.present) {
       map['sort'] = Variable<int>(sort.value);
     }
@@ -2883,6 +4838,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
           ..write('sizesJson: $sizesJson, ')
           ..write('finishesJson: $finishesJson, ')
           ..write('quantityPresetsJson: $quantityPresetsJson, ')
+          ..write('workflowKey: $workflowKey, ')
           ..write('sort: $sort, ')
           ..write('active: $active, ')
           ..write('updatedAt: $updatedAt, ')
@@ -7126,6 +9082,8 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
   $LocalDatabaseManager get managers => $LocalDatabaseManager(this);
   late final $CustomersTable customers = $CustomersTable(this);
   late final $CustomerPhonesTable customerPhones = $CustomerPhonesTable(this);
+  late final $WorkflowStagesTable workflowStages = $WorkflowStagesTable(this);
+  late final $TasksTable tasks = $TasksTable(this);
   late final $ProductsTable products = $ProductsTable(this);
   late final $MaterialsTable materials = $MaterialsTable(this);
   late final $PriceRulesTable priceRules = $PriceRulesTable(this);
@@ -7142,6 +9100,8 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     customers,
     customerPhones,
+    workflowStages,
+    tasks,
     products,
     materials,
     priceRules,
@@ -7866,6 +9826,892 @@ typedef $$CustomerPhonesTableProcessedTableManager =
       CustomerPhone,
       PrefetchHooks Function()
     >;
+typedef $$WorkflowStagesTableCreateCompanionBuilder =
+    WorkflowStagesCompanion Function({
+      required String id,
+      required String tenantId,
+      Value<String> workflowKey,
+      required String stageKey,
+      required String nameEn,
+      Value<String?> nameAr,
+      required int sequence,
+      required String requiredRole,
+      Value<bool> waitsForPrevious,
+      Value<int> rowid,
+    });
+typedef $$WorkflowStagesTableUpdateCompanionBuilder =
+    WorkflowStagesCompanion Function({
+      Value<String> id,
+      Value<String> tenantId,
+      Value<String> workflowKey,
+      Value<String> stageKey,
+      Value<String> nameEn,
+      Value<String?> nameAr,
+      Value<int> sequence,
+      Value<String> requiredRole,
+      Value<bool> waitsForPrevious,
+      Value<int> rowid,
+    });
+
+class $$WorkflowStagesTableFilterComposer
+    extends Composer<_$LocalDatabase, $WorkflowStagesTable> {
+  $$WorkflowStagesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tenantId => $composableBuilder(
+    column: $table.tenantId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get workflowKey => $composableBuilder(
+    column: $table.workflowKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get stageKey => $composableBuilder(
+    column: $table.stageKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nameEn => $composableBuilder(
+    column: $table.nameEn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nameAr => $composableBuilder(
+    column: $table.nameAr,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sequence => $composableBuilder(
+    column: $table.sequence,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get requiredRole => $composableBuilder(
+    column: $table.requiredRole,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get waitsForPrevious => $composableBuilder(
+    column: $table.waitsForPrevious,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$WorkflowStagesTableOrderingComposer
+    extends Composer<_$LocalDatabase, $WorkflowStagesTable> {
+  $$WorkflowStagesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tenantId => $composableBuilder(
+    column: $table.tenantId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get workflowKey => $composableBuilder(
+    column: $table.workflowKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get stageKey => $composableBuilder(
+    column: $table.stageKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nameEn => $composableBuilder(
+    column: $table.nameEn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nameAr => $composableBuilder(
+    column: $table.nameAr,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sequence => $composableBuilder(
+    column: $table.sequence,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get requiredRole => $composableBuilder(
+    column: $table.requiredRole,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get waitsForPrevious => $composableBuilder(
+    column: $table.waitsForPrevious,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$WorkflowStagesTableAnnotationComposer
+    extends Composer<_$LocalDatabase, $WorkflowStagesTable> {
+  $$WorkflowStagesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get tenantId =>
+      $composableBuilder(column: $table.tenantId, builder: (column) => column);
+
+  GeneratedColumn<String> get workflowKey => $composableBuilder(
+    column: $table.workflowKey,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get stageKey =>
+      $composableBuilder(column: $table.stageKey, builder: (column) => column);
+
+  GeneratedColumn<String> get nameEn =>
+      $composableBuilder(column: $table.nameEn, builder: (column) => column);
+
+  GeneratedColumn<String> get nameAr =>
+      $composableBuilder(column: $table.nameAr, builder: (column) => column);
+
+  GeneratedColumn<int> get sequence =>
+      $composableBuilder(column: $table.sequence, builder: (column) => column);
+
+  GeneratedColumn<String> get requiredRole => $composableBuilder(
+    column: $table.requiredRole,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get waitsForPrevious => $composableBuilder(
+    column: $table.waitsForPrevious,
+    builder: (column) => column,
+  );
+}
+
+class $$WorkflowStagesTableTableManager
+    extends
+        RootTableManager<
+          _$LocalDatabase,
+          $WorkflowStagesTable,
+          WorkflowStage,
+          $$WorkflowStagesTableFilterComposer,
+          $$WorkflowStagesTableOrderingComposer,
+          $$WorkflowStagesTableAnnotationComposer,
+          $$WorkflowStagesTableCreateCompanionBuilder,
+          $$WorkflowStagesTableUpdateCompanionBuilder,
+          (
+            WorkflowStage,
+            BaseReferences<
+              _$LocalDatabase,
+              $WorkflowStagesTable,
+              WorkflowStage
+            >,
+          ),
+          WorkflowStage,
+          PrefetchHooks Function()
+        > {
+  $$WorkflowStagesTableTableManager(
+    _$LocalDatabase db,
+    $WorkflowStagesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WorkflowStagesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$WorkflowStagesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$WorkflowStagesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> tenantId = const Value.absent(),
+                Value<String> workflowKey = const Value.absent(),
+                Value<String> stageKey = const Value.absent(),
+                Value<String> nameEn = const Value.absent(),
+                Value<String?> nameAr = const Value.absent(),
+                Value<int> sequence = const Value.absent(),
+                Value<String> requiredRole = const Value.absent(),
+                Value<bool> waitsForPrevious = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkflowStagesCompanion(
+                id: id,
+                tenantId: tenantId,
+                workflowKey: workflowKey,
+                stageKey: stageKey,
+                nameEn: nameEn,
+                nameAr: nameAr,
+                sequence: sequence,
+                requiredRole: requiredRole,
+                waitsForPrevious: waitsForPrevious,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String tenantId,
+                Value<String> workflowKey = const Value.absent(),
+                required String stageKey,
+                required String nameEn,
+                Value<String?> nameAr = const Value.absent(),
+                required int sequence,
+                required String requiredRole,
+                Value<bool> waitsForPrevious = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkflowStagesCompanion.insert(
+                id: id,
+                tenantId: tenantId,
+                workflowKey: workflowKey,
+                stageKey: stageKey,
+                nameEn: nameEn,
+                nameAr: nameAr,
+                sequence: sequence,
+                requiredRole: requiredRole,
+                waitsForPrevious: waitsForPrevious,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$WorkflowStagesTable, WorkflowStage>(table),
+                  BaseReferences<
+                    _$LocalDatabase,
+                    $WorkflowStagesTable,
+                    WorkflowStage
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$WorkflowStagesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$LocalDatabase,
+      $WorkflowStagesTable,
+      WorkflowStage,
+      $$WorkflowStagesTableFilterComposer,
+      $$WorkflowStagesTableOrderingComposer,
+      $$WorkflowStagesTableAnnotationComposer,
+      $$WorkflowStagesTableCreateCompanionBuilder,
+      $$WorkflowStagesTableUpdateCompanionBuilder,
+      (
+        WorkflowStage,
+        BaseReferences<_$LocalDatabase, $WorkflowStagesTable, WorkflowStage>,
+      ),
+      WorkflowStage,
+      PrefetchHooks Function()
+    >;
+typedef $$TasksTableCreateCompanionBuilder = TasksCompanion Function({
+  required String id,
+  required String tenantId,
+  Value<String?> branchId,
+  required String orderId,
+  Value<String?> orderItemId,
+  required String stageKey,
+  required String stageName,
+  required int sequence,
+  required String title,
+  Value<String> status,
+  Value<String?> assignedTo,
+  required String requiredRole,
+  Value<int> qty,
+  Value<String> priority,
+  Value<DateTime?> dueAt,
+  Value<DateTime?> startedAt,
+  Value<DateTime?> doneAt,
+  Value<String?> reason,
+  Value<int> reworkCount,
+  Value<String?> notes,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  Value<String?> createdBy,
+  Value<int> version,
+  Value<DateTime?> deletedAt,
+  Value<int> rowid,
+});
+typedef $$TasksTableUpdateCompanionBuilder = TasksCompanion Function({
+  Value<String> id,
+  Value<String> tenantId,
+  Value<String?> branchId,
+  Value<String> orderId,
+  Value<String?> orderItemId,
+  Value<String> stageKey,
+  Value<String> stageName,
+  Value<int> sequence,
+  Value<String> title,
+  Value<String> status,
+  Value<String?> assignedTo,
+  Value<String> requiredRole,
+  Value<int> qty,
+  Value<String> priority,
+  Value<DateTime?> dueAt,
+  Value<DateTime?> startedAt,
+  Value<DateTime?> doneAt,
+  Value<String?> reason,
+  Value<int> reworkCount,
+  Value<String?> notes,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<String?> createdBy,
+  Value<int> version,
+  Value<DateTime?> deletedAt,
+  Value<int> rowid,
+});
+
+class $$TasksTableFilterComposer
+    extends Composer<_$LocalDatabase, $TasksTable> {
+  $$TasksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tenantId => $composableBuilder(
+    column: $table.tenantId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get branchId => $composableBuilder(
+    column: $table.branchId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get orderId => $composableBuilder(
+    column: $table.orderId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get orderItemId => $composableBuilder(
+    column: $table.orderItemId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get stageKey => $composableBuilder(
+    column: $table.stageKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get stageName => $composableBuilder(
+    column: $table.stageName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sequence => $composableBuilder(
+    column: $table.sequence,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get assignedTo => $composableBuilder(
+    column: $table.assignedTo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get requiredRole => $composableBuilder(
+    column: $table.requiredRole,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get qty => $composableBuilder(
+    column: $table.qty,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get priority => $composableBuilder(
+    column: $table.priority,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dueAt => $composableBuilder(
+    column: $table.dueAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get doneAt => $composableBuilder(
+    column: $table.doneAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get reworkCount => $composableBuilder(
+    column: $table.reworkCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get createdBy => $composableBuilder(
+    column: $table.createdBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$TasksTableOrderingComposer
+    extends Composer<_$LocalDatabase, $TasksTable> {
+  $$TasksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tenantId => $composableBuilder(
+    column: $table.tenantId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get branchId => $composableBuilder(
+    column: $table.branchId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get orderId => $composableBuilder(
+    column: $table.orderId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get orderItemId => $composableBuilder(
+    column: $table.orderItemId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get stageKey => $composableBuilder(
+    column: $table.stageKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get stageName => $composableBuilder(
+    column: $table.stageName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sequence => $composableBuilder(
+    column: $table.sequence,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get assignedTo => $composableBuilder(
+    column: $table.assignedTo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get requiredRole => $composableBuilder(
+    column: $table.requiredRole,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get qty => $composableBuilder(
+    column: $table.qty,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get priority => $composableBuilder(
+    column: $table.priority,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dueAt => $composableBuilder(
+    column: $table.dueAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get doneAt => $composableBuilder(
+    column: $table.doneAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get reworkCount => $composableBuilder(
+    column: $table.reworkCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get createdBy => $composableBuilder(
+    column: $table.createdBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TasksTableAnnotationComposer
+    extends Composer<_$LocalDatabase, $TasksTable> {
+  $$TasksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get tenantId =>
+      $composableBuilder(column: $table.tenantId, builder: (column) => column);
+
+  GeneratedColumn<String> get branchId =>
+      $composableBuilder(column: $table.branchId, builder: (column) => column);
+
+  GeneratedColumn<String> get orderId =>
+      $composableBuilder(column: $table.orderId, builder: (column) => column);
+
+  GeneratedColumn<String> get orderItemId => $composableBuilder(
+    column: $table.orderItemId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get stageKey =>
+      $composableBuilder(column: $table.stageKey, builder: (column) => column);
+
+  GeneratedColumn<String> get stageName =>
+      $composableBuilder(column: $table.stageName, builder: (column) => column);
+
+  GeneratedColumn<int> get sequence =>
+      $composableBuilder(column: $table.sequence, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get assignedTo => $composableBuilder(
+    column: $table.assignedTo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get requiredRole => $composableBuilder(
+    column: $table.requiredRole,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get qty =>
+      $composableBuilder(column: $table.qty, builder: (column) => column);
+
+  GeneratedColumn<String> get priority =>
+      $composableBuilder(column: $table.priority, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get dueAt =>
+      $composableBuilder(column: $table.dueAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get startedAt =>
+      $composableBuilder(column: $table.startedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get doneAt =>
+      $composableBuilder(column: $table.doneAt, builder: (column) => column);
+
+  GeneratedColumn<String> get reason =>
+      $composableBuilder(column: $table.reason, builder: (column) => column);
+
+  GeneratedColumn<int> get reworkCount => $composableBuilder(
+    column: $table.reworkCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get createdBy =>
+      $composableBuilder(column: $table.createdBy, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+}
+
+class $$TasksTableTableManager
+    extends
+        RootTableManager<
+          _$LocalDatabase,
+          $TasksTable,
+          Task,
+          $$TasksTableFilterComposer,
+          $$TasksTableOrderingComposer,
+          $$TasksTableAnnotationComposer,
+          $$TasksTableCreateCompanionBuilder,
+          $$TasksTableUpdateCompanionBuilder,
+          (Task, BaseReferences<_$LocalDatabase, $TasksTable, Task>),
+          Task,
+          PrefetchHooks Function()
+        > {
+  $$TasksTableTableManager(_$LocalDatabase db, $TasksTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TasksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TasksTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TasksTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> tenantId = const Value.absent(),
+                Value<String?> branchId = const Value.absent(),
+                Value<String> orderId = const Value.absent(),
+                Value<String?> orderItemId = const Value.absent(),
+                Value<String> stageKey = const Value.absent(),
+                Value<String> stageName = const Value.absent(),
+                Value<int> sequence = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String?> assignedTo = const Value.absent(),
+                Value<String> requiredRole = const Value.absent(),
+                Value<int> qty = const Value.absent(),
+                Value<String> priority = const Value.absent(),
+                Value<DateTime?> dueAt = const Value.absent(),
+                Value<DateTime?> startedAt = const Value.absent(),
+                Value<DateTime?> doneAt = const Value.absent(),
+                Value<String?> reason = const Value.absent(),
+                Value<int> reworkCount = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String?> createdBy = const Value.absent(),
+                Value<int> version = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TasksCompanion(
+                id: id,
+                tenantId: tenantId,
+                branchId: branchId,
+                orderId: orderId,
+                orderItemId: orderItemId,
+                stageKey: stageKey,
+                stageName: stageName,
+                sequence: sequence,
+                title: title,
+                status: status,
+                assignedTo: assignedTo,
+                requiredRole: requiredRole,
+                qty: qty,
+                priority: priority,
+                dueAt: dueAt,
+                startedAt: startedAt,
+                doneAt: doneAt,
+                reason: reason,
+                reworkCount: reworkCount,
+                notes: notes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                createdBy: createdBy,
+                version: version,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String tenantId,
+                Value<String?> branchId = const Value.absent(),
+                required String orderId,
+                Value<String?> orderItemId = const Value.absent(),
+                required String stageKey,
+                required String stageName,
+                required int sequence,
+                required String title,
+                Value<String> status = const Value.absent(),
+                Value<String?> assignedTo = const Value.absent(),
+                required String requiredRole,
+                Value<int> qty = const Value.absent(),
+                Value<String> priority = const Value.absent(),
+                Value<DateTime?> dueAt = const Value.absent(),
+                Value<DateTime?> startedAt = const Value.absent(),
+                Value<DateTime?> doneAt = const Value.absent(),
+                Value<String?> reason = const Value.absent(),
+                Value<int> reworkCount = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<String?> createdBy = const Value.absent(),
+                Value<int> version = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TasksCompanion.insert(
+                id: id,
+                tenantId: tenantId,
+                branchId: branchId,
+                orderId: orderId,
+                orderItemId: orderItemId,
+                stageKey: stageKey,
+                stageName: stageName,
+                sequence: sequence,
+                title: title,
+                status: status,
+                assignedTo: assignedTo,
+                requiredRole: requiredRole,
+                qty: qty,
+                priority: priority,
+                dueAt: dueAt,
+                startedAt: startedAt,
+                doneAt: doneAt,
+                reason: reason,
+                reworkCount: reworkCount,
+                notes: notes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                createdBy: createdBy,
+                version: version,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$TasksTable, Task>(table),
+                  BaseReferences<_$LocalDatabase, $TasksTable, Task>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$TasksTableProcessedTableManager =
+    ProcessedTableManager<
+      _$LocalDatabase,
+      $TasksTable,
+      Task,
+      $$TasksTableFilterComposer,
+      $$TasksTableOrderingComposer,
+      $$TasksTableAnnotationComposer,
+      $$TasksTableCreateCompanionBuilder,
+      $$TasksTableUpdateCompanionBuilder,
+      (Task, BaseReferences<_$LocalDatabase, $TasksTable, Task>),
+      Task,
+      PrefetchHooks Function()
+    >;
 typedef $$ProductsTableCreateCompanionBuilder = ProductsCompanion Function({
   required String id,
   required String tenantId,
@@ -7890,6 +10736,7 @@ typedef $$ProductsTableCreateCompanionBuilder = ProductsCompanion Function({
   Value<String> sizesJson,
   Value<String> finishesJson,
   Value<String> quantityPresetsJson,
+  Value<String> workflowKey,
   Value<int> sort,
   Value<bool> active,
   Value<DateTime?> updatedAt,
@@ -7919,6 +10766,7 @@ typedef $$ProductsTableUpdateCompanionBuilder = ProductsCompanion Function({
   Value<String> sizesJson,
   Value<String> finishesJson,
   Value<String> quantityPresetsJson,
+  Value<String> workflowKey,
   Value<int> sort,
   Value<bool> active,
   Value<DateTime?> updatedAt,
@@ -8046,6 +10894,11 @@ class $$ProductsTableFilterComposer
 
   ColumnFilters<String> get quantityPresetsJson => $composableBuilder(
     column: $table.quantityPresetsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get workflowKey => $composableBuilder(
+    column: $table.workflowKey,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8189,6 +11042,11 @@ class $$ProductsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get workflowKey => $composableBuilder(
+    column: $table.workflowKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get sort => $composableBuilder(
     column: $table.sort,
     builder: (column) => ColumnOrderings(column),
@@ -8307,6 +11165,11 @@ class $$ProductsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get workflowKey => $composableBuilder(
+    column: $table.workflowKey,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get sort =>
       $composableBuilder(column: $table.sort, builder: (column) => column);
 
@@ -8368,6 +11231,7 @@ class $$ProductsTableTableManager
                 Value<String> sizesJson = const Value.absent(),
                 Value<String> finishesJson = const Value.absent(),
                 Value<String> quantityPresetsJson = const Value.absent(),
+                Value<String> workflowKey = const Value.absent(),
                 Value<int> sort = const Value.absent(),
                 Value<bool> active = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
@@ -8396,6 +11260,7 @@ class $$ProductsTableTableManager
                 sizesJson: sizesJson,
                 finishesJson: finishesJson,
                 quantityPresetsJson: quantityPresetsJson,
+                workflowKey: workflowKey,
                 sort: sort,
                 active: active,
                 updatedAt: updatedAt,
@@ -8426,6 +11291,7 @@ class $$ProductsTableTableManager
                 Value<String> sizesJson = const Value.absent(),
                 Value<String> finishesJson = const Value.absent(),
                 Value<String> quantityPresetsJson = const Value.absent(),
+                Value<String> workflowKey = const Value.absent(),
                 Value<int> sort = const Value.absent(),
                 Value<bool> active = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
@@ -8454,6 +11320,7 @@ class $$ProductsTableTableManager
                 sizesJson: sizesJson,
                 finishesJson: finishesJson,
                 quantityPresetsJson: quantityPresetsJson,
+                workflowKey: workflowKey,
                 sort: sort,
                 active: active,
                 updatedAt: updatedAt,
@@ -10559,6 +13426,10 @@ class $LocalDatabaseManager {
       $$CustomersTableTableManager(_db, _db.customers);
   $$CustomerPhonesTableTableManager get customerPhones =>
       $$CustomerPhonesTableTableManager(_db, _db.customerPhones);
+  $$WorkflowStagesTableTableManager get workflowStages =>
+      $$WorkflowStagesTableTableManager(_db, _db.workflowStages);
+  $$TasksTableTableManager get tasks =>
+      $$TasksTableTableManager(_db, _db.tasks);
   $$ProductsTableTableManager get products =>
       $$ProductsTableTableManager(_db, _db.products);
   $$MaterialsTableTableManager get materials =>

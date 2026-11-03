@@ -109,6 +109,9 @@ class Products extends Table {
   TextColumn get quantityPresetsJson =>
       text().withDefault(const Constant('[]'))();
 
+  /// Which production workflow this product creates (see WorkflowStages).
+  TextColumn get workflowKey => text().withDefault(const Constant('print_std'))();
+
   IntColumn get sort => integer().withDefault(const Constant(100))();
   BoolColumn get active => boolean().withDefault(const Constant(true))();
   DateTimeColumn get updatedAt => dateTime().nullable()();
@@ -214,6 +217,58 @@ class OrderItems extends Table {
   Set<Column<Object>> get primaryKey => <Column<Object>>{id};
 }
 
+/// Production stages per workflow key. Reference data from `/v1/catalogue`;
+/// the device needs it offline because tasks are generated on the device.
+class WorkflowStages extends Table {
+  TextColumn get id => text()();
+  TextColumn get tenantId => text()();
+  TextColumn get workflowKey => text().withDefault(const Constant('print_std'))();
+  TextColumn get stageKey => text()();
+  TextColumn get nameEn => text()();
+  TextColumn get nameAr => text().nullable()();
+  IntColumn get sequence => integer()();
+  TextColumn get requiredRole => text()();
+  BoolColumn get waitsForPrevious => boolean().withDefault(const Constant(true))();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
+/// One piece of work in the shop: one stage of one order.
+class Tasks extends Table {
+  TextColumn get id => text()();
+  TextColumn get tenantId => text()();
+  TextColumn get branchId => text().nullable()();
+  TextColumn get orderId => text()();
+  TextColumn get orderItemId => text().nullable()();
+  TextColumn get stageKey => text()();
+  TextColumn get stageName => text()();
+  IntColumn get sequence => integer()();
+  TextColumn get title => text()();
+
+  /// waiting, available, assigned, in_progress, paused, done, rework, cancelled
+  TextColumn get status => text().withDefault(const Constant('waiting'))();
+  TextColumn get assignedTo => text().nullable()();
+  TextColumn get requiredRole => text()();
+  IntColumn get qty => integer().withDefault(const Constant(0))();
+  TextColumn get priority => text().withDefault(const Constant('normal'))();
+  DateTimeColumn get dueAt => dateTime().nullable()();
+  DateTimeColumn get startedAt => dateTime().nullable()();
+  DateTimeColumn get doneAt => dateTime().nullable()();
+  TextColumn get reason => text().nullable()();
+  IntColumn get reworkCount => integer().withDefault(const Constant(0))();
+  TextColumn get notes => text().nullable()();
+
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  TextColumn get createdBy => text().nullable()();
+  IntColumn get version => integer().withDefault(const Constant(0))();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
 /// Sync bookkeeping: cursor, last sync, last head.
 class SyncMeta extends Table {
   TextColumn get key => text()();
@@ -227,6 +282,8 @@ class SyncMeta extends Table {
   tables: <Type>[
     Customers,
     CustomerPhones,
+    WorkflowStages,
+    Tasks,
     Products,
     Materials,
     PriceRules,
@@ -240,7 +297,7 @@ class LocalDatabase extends _$LocalDatabase {
   LocalDatabase(super.executor);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -254,6 +311,15 @@ class LocalDatabase extends _$LocalDatabase {
         await m.createTable(priceRules);
         await m.createTable(orders);
         await m.createTable(orderItems);
+      }
+      if (from < 3) {
+        // Products gained a workflow pointer; a database created at version 2
+        // has the table but not the column.
+        if (from >= 2) {
+          await m.addColumn(products, products.workflowKey);
+        }
+        await m.createTable(workflowStages);
+        await m.createTable(tasks);
       }
     },
   );
@@ -460,9 +526,45 @@ class LocalDatabase extends _$LocalDatabase {
         await _upsertOrder(data);
       case 'order_items':
         await _upsertOrderItem(data);
+      case 'tasks':
+        await _upsertTask(data);
       default:
         break;
     }
+  }
+
+  Future<void> _upsertTask(Map<String, Object?> data) async {
+    final id = data['id'] as String?;
+    if (id == null) return;
+    await into(tasks).insertOnConflictUpdate(
+      TasksCompanion(
+        id: Value(id),
+        tenantId: Value(data['tenant_id'] as String? ?? ''),
+        branchId: Value(data['branch_id'] as String?),
+        orderId: Value(data['order_id'] as String? ?? ''),
+        orderItemId: Value(data['order_item_id'] as String?),
+        stageKey: Value(data['stage_key'] as String? ?? ''),
+        stageName: Value(data['stage_name'] as String? ?? ''),
+        sequence: Value((data['sequence'] as num?)?.toInt() ?? 0),
+        title: Value(data['title'] as String? ?? ''),
+        status: Value(data['status'] as String? ?? 'waiting'),
+        assignedTo: Value(data['assigned_to'] as String?),
+        requiredRole: Value(data['required_role'] as String? ?? 'operator'),
+        qty: Value((data['qty'] as num?)?.toInt() ?? 0),
+        priority: Value(data['priority'] as String? ?? 'normal'),
+        dueAt: Value(_asDate(data['due_at'])),
+        startedAt: Value(_asDate(data['started_at'])),
+        doneAt: Value(_asDate(data['done_at'])),
+        reason: Value(data['reason'] as String?),
+        reworkCount: Value((data['rework_count'] as num?)?.toInt() ?? 0),
+        notes: Value(data['notes'] as String?),
+        createdAt: Value(_asDate(data['created_at']) ?? DateTime.now().toUtc()),
+        updatedAt: Value(_asDate(data['updated_at']) ?? DateTime.now().toUtc()),
+        createdBy: Value(data['created_by'] as String?),
+        version: Value((data['version'] as num?)?.toInt() ?? 0),
+        deletedAt: Value(_asDate(data['deleted_at'])),
+      ),
+    );
   }
 
   Future<void> _upsertCustomer(Map<String, Object?> data) async {
@@ -547,6 +649,7 @@ class LocalDatabase extends _$LocalDatabase {
     quantityPresetsJson: Value(row['quantity_presets_json'] as String? ?? '[]'),
     sort: Value((row['sort'] as num?)?.toInt() ?? 100),
     active: Value((row['active'] as num?)?.toInt() != 0),
+    workflowKey: Value(row['workflow_key'] as String? ?? 'print_std'),
     updatedAt: Value(_asDate(row['updated_at'])),
   );
 
@@ -771,11 +874,15 @@ class LocalDatabase extends _$LocalDatabase {
     required List<Map<String, Object?>> ruleRows,
     required int priceBookVersion,
     required int vatBps,
+    List<Map<String, Object?>> stageRows = const <Map<String, Object?>>[],
   }) async {
     await transaction(() async {
       await delete(products).go();
       await delete(materials).go();
       await delete(priceRules).go();
+      if (stageRows.isNotEmpty) {
+        await delete(workflowStages).go();
+      }
 
       for (final row in productRows) {
         await into(products).insert(_productFromServer(row));
@@ -785,6 +892,23 @@ class LocalDatabase extends _$LocalDatabase {
       }
       for (final row in ruleRows) {
         await into(priceRules).insert(_ruleFromServer(row));
+      }
+      for (final row in stageRows) {
+        await into(workflowStages).insert(
+          WorkflowStagesCompanion.insert(
+            id: (row['id'] as String?) ?? '${row['workflow_key']}_${row['stage_key']}',
+            tenantId: (row['tenant_id'] as String?) ?? '',
+            workflowKey: Value(row['workflow_key'] as String? ?? 'print_std'),
+            stageKey: row['stage_key'] as String? ?? '',
+            nameEn: row['name_en'] as String? ?? '',
+            nameAr: Value(row['name_ar'] as String?),
+            sequence: (row['sequence'] as num?)?.toInt() ?? 0,
+            requiredRole: row['required_role'] as String? ?? 'operator',
+            waitsForPrevious: Value(
+              (row['waits_for_previous'] as num?)?.toInt() != 0,
+            ),
+          ),
+        );
       }
       await setMeta('price_book_version', '$priceBookVersion');
       await setMeta('vat_bps', '$vatBps');
@@ -863,6 +987,8 @@ class LocalDatabase extends _$LocalDatabase {
     String deliveryMethod = 'collect',
     String notes = '',
     bool isQuote = false,
+    String workflowKey = 'print_std',
+    String jobTitle = '',
   }) async {
     if (lines.isEmpty) {
       throw ArgumentError('An order needs at least one line');
@@ -971,9 +1097,296 @@ class LocalDatabase extends _$LocalDatabase {
           },
         );
       }
+
+      // Quotes do not go into production; an order does, immediately, so the
+      // board has work the second the counter confirms.
+      if (!isQuote) {
+        await createTasksForOrder(
+          orderId: orderId,
+          tenantId: tenantId,
+          branchId: branchId,
+          userId: userId,
+          workflowKey: workflowKey,
+          jobTitle: jobTitle.trim().isEmpty ? numberDisplay : jobTitle.trim(),
+          qty: lines.fold<int>(0, (sum, line) => sum + line.quantity),
+          dueAt: dueAt,
+          priority: priority,
+          notes: notes.trim().isEmpty ? null : notes.trim(),
+        );
+      }
     });
 
     return orderId;
+  }
+
+  // -------------------------------------------------------------------------
+  // Production
+  // -------------------------------------------------------------------------
+
+  /// Stages for one workflow. Falls back to the built-in list so a device that
+  /// has never synced still produces a sane job rather than no tasks at all.
+  Future<List<StageTemplate>> stagesFor(String workflowKey) async {
+    final rows =
+        await (select(workflowStages)
+              ..where((t) => t.workflowKey.equals(workflowKey))
+              ..orderBy(<OrderClauseGenerator<$WorkflowStagesTable>>[
+                (t) => OrderingTerm(expression: t.sequence),
+              ]))
+            .get();
+    if (rows.isEmpty) return defaultStages;
+    return <StageTemplate>[
+      for (final row in rows)
+        StageTemplate(
+          key: row.stageKey,
+          name: row.nameEn,
+          sequence: row.sequence,
+          role: row.requiredRole,
+          waitsForPrevious: row.waitsForPrevious,
+        ),
+    ];
+  }
+
+  /// Generates one task per stage of the workflow. Stage one is offered to the
+  /// pool; the rest wait, so the board shows the future of a job without
+  /// pretending it is work somebody can start now.
+  Future<void> createTasksForOrder({
+    required String orderId,
+    required String tenantId,
+    required String? branchId,
+    required String userId,
+    required String workflowKey,
+    required String jobTitle,
+    required int qty,
+    DateTime? dueAt,
+    String priority = 'normal',
+    String? notes,
+  }) async {
+    final stages = await stagesFor(workflowKey);
+    final now = DateTime.now().toUtc();
+
+    for (var index = 0; index < stages.length; index++) {
+      final stage = stages[index];
+      final isFirst = index == 0;
+      final id = Uuid7.generate();
+
+      await into(tasks).insert(
+        TasksCompanion.insert(
+          id: id,
+          tenantId: tenantId,
+          branchId: Value(branchId),
+          orderId: orderId,
+          stageKey: stage.key,
+          stageName: stage.name,
+          sequence: stage.sequence,
+          title: '$jobTitle - ${stage.name}',
+          status: Value(isFirst ? 'available' : 'waiting'),
+          requiredRole: stage.role,
+          qty: Value(qty),
+          priority: Value(priority),
+          dueAt: Value(dueAt),
+          notes: Value(notes),
+          createdAt: now,
+          updatedAt: now,
+          createdBy: Value(userId),
+        ),
+      );
+
+      await _enqueue(
+        entity: 'tasks',
+        rowId: id,
+        op: 'insert',
+        baseVersion: 0,
+        fields: <String, Object?>{
+          'order_id': orderId,
+          'stage_key': stage.key,
+          'stage_name': stage.name,
+          'sequence': stage.sequence,
+          'title': '$jobTitle - ${stage.name}',
+          'status': isFirst ? 'available' : 'waiting',
+          'required_role': stage.role,
+          'qty': qty,
+          'priority': priority,
+          'due_at': dueAt?.toIso8601String(),
+          'notes': notes,
+        },
+      );
+    }
+  }
+
+  /// Live tasks for the board: everything still occupying a slot.
+  Stream<List<Task>> watchActiveTasks({String? branchId, int limit = 300}) {
+    final query = select(tasks)
+      ..where(
+        (t) =>
+            t.deletedAt.isNull() &
+            t.status.isNotIn(const <String>['done', 'cancelled']),
+      )
+      ..orderBy(<OrderClauseGenerator<$TasksTable>>[
+        (t) => OrderingTerm(expression: t.sequence),
+        (t) => OrderingTerm(expression: t.dueAt),
+      ])
+      ..limit(limit);
+    if (branchId != null) {
+      query.where((t) => t.branchId.equals(branchId));
+    }
+    return query.watch();
+  }
+
+  /// "My work": assigned to me, plus whatever my role may pick up from the pool.
+  Stream<List<Task>> watchMyTasks({
+    required String userId,
+    required String role,
+  }) {
+    return (select(tasks)
+          ..where(
+            (t) =>
+                t.deletedAt.isNull() &
+                t.status.isNotIn(const <String>['done', 'cancelled']) &
+                (t.assignedTo.equals(userId) |
+                    (t.assignedTo.isNull() & t.requiredRole.equals(role))),
+          )
+          ..orderBy(<OrderClauseGenerator<$TasksTable>>[
+            (t) => OrderingTerm(expression: t.status),
+            (t) => OrderingTerm(expression: t.priority),
+            (t) => OrderingTerm(expression: t.dueAt),
+          ]))
+        .watch();
+  }
+
+  Future<List<Task>> tasksForOrder(String orderId) =>
+      (select(tasks)..where((t) => t.orderId.equals(orderId))).get();
+
+  /// Applies a legal transition locally and queues it.
+  ///
+  /// The same state machine the Worker enforces runs here, so a button that
+  /// cannot work is never offered. Timestamps are set locally for an instant
+  /// board and overwritten by the server's copy on the next pull, which is the
+  /// only clock both devices agree on.
+  Future<void> transitionTask({
+    required Task task,
+    required TaskStatus to,
+    required String userId,
+    String? reason,
+  }) async {
+    final from = TaskStatus.fromWire(task.status);
+    final transition = TaskStateMachine.transition(from, to);
+    if (transition == null) {
+      throw StateError('A task cannot move from ${from.wire} to ${to.wire}');
+    }
+    final cleanReason = reason?.trim();
+    if (transition.requiresReason &&
+        (cleanReason == null || cleanReason.length < 3)) {
+      throw StateError('Explain why before moving this task to ${to.wire}');
+    }
+
+    final now = DateTime.now().toUtc();
+    final fields = <String, Object?>{'status': to.wire};
+    if (cleanReason != null && cleanReason.isNotEmpty) {
+      fields['reason'] = cleanReason;
+    }
+
+    DateTime? startedAt = task.startedAt;
+    DateTime? doneAt = task.doneAt;
+    var reworkCount = task.reworkCount;
+    String? assignedTo = task.assignedTo;
+
+    switch (to) {
+      case TaskStatus.inProgress:
+        startedAt ??= now;
+        fields['started_at'] = startedAt.toIso8601String();
+        assignedTo ??= userId;
+      case TaskStatus.done:
+        startedAt ??= now;
+        doneAt = now;
+        fields['started_at'] = startedAt.toIso8601String();
+        fields['done_at'] = doneAt.toIso8601String();
+      case TaskStatus.rework:
+        doneAt = null;
+        reworkCount += 1;
+        fields['done_at'] = null;
+        fields['rework_count'] = reworkCount;
+      case TaskStatus.available:
+        assignedTo = null;
+        fields['assigned_to'] = null;
+      default:
+        break;
+    }
+    if (assignedTo != null && fields['assigned_to'] == null) {
+      fields['assigned_to'] = assignedTo;
+    }
+
+    await transaction(() async {
+      await (update(tasks)..where((t) => t.id.equals(task.id))).write(
+        TasksCompanion(
+          status: Value(to.wire),
+          assignedTo: Value(assignedTo),
+          startedAt: Value(startedAt),
+          doneAt: Value(doneAt),
+          reworkCount: Value(reworkCount),
+          reason: Value(fields['reason'] as String? ?? task.reason),
+          updatedAt: Value(now),
+          version: Value(task.version + 1),
+        ),
+      );
+
+      await _enqueue(
+        entity: 'tasks',
+        rowId: task.id,
+        op: 'patch',
+        baseVersion: task.version,
+        fields: fields,
+      );
+
+      await _cascadeStage(
+        orderId: task.orderId,
+        sequence: task.sequence,
+        toStatus: to.wire,
+        userId: userId,
+      );
+    });
+  }
+
+  /// Mirrors `cascadeStage` on the Worker: finishing a stage opens the next.
+  Future<void> _cascadeStage({
+    required String orderId,
+    required int sequence,
+    required String toStatus,
+    required String userId,
+  }) async {
+    if (toStatus != 'done' && toStatus != 'rework') return;
+    final wanted = toStatus == 'done' ? 'available' : 'waiting';
+
+    final next =
+        await (select(tasks)
+              ..where(
+                (t) =>
+                    t.orderId.equals(orderId) &
+                    t.sequence.isBiggerThanValue(sequence) &
+                    t.deletedAt.isNull() &
+                    t.status.isIn(const <String>['waiting', 'available']),
+              )
+              ..orderBy(<OrderClauseGenerator<$TasksTable>>[
+                (t) => OrderingTerm(expression: t.sequence),
+              ])
+              ..limit(1))
+            .getSingleOrNull();
+    if (next == null || next.status == wanted) return;
+
+    final now = DateTime.now().toUtc();
+    await (update(tasks)..where((t) => t.id.equals(next.id))).write(
+      TasksCompanion(
+        status: Value(wanted),
+        updatedAt: Value(now),
+        version: Value(next.version + 1),
+      ),
+    );
+    await _enqueue(
+      entity: 'tasks',
+      rowId: next.id,
+      op: 'patch',
+      baseVersion: next.version,
+      fields: <String, Object?>{'status': wanted},
+    );
   }
 
   Stream<List<Order>> watchOrders({int limit = 200}) {
@@ -1136,6 +1549,26 @@ class LocalDatabase extends _$LocalDatabase {
         baseVersion: quote.version,
         fields: <String, Object?>{'status': 'converted'},
       );
+
+      // A converted quote becomes real work, with the same stages an order
+      // placed at the counter would get.
+      final firstProduct = items.isEmpty
+          ? null
+          : await (select(products)
+                ..where((p) => p.id.equals(items.first.productId)))
+              .getSingleOrNull();
+      await createTasksForOrder(
+        orderId: orderId,
+        tenantId: quote.tenantId,
+        branchId: quote.branchId,
+        userId: userId,
+        workflowKey: firstProduct?.workflowKey ?? 'print_std',
+        jobTitle: '${quote.customerName ?? 'Job'} $numberDisplay',
+        qty: items.fold<int>(0, (sum, item) => sum + item.quantity),
+        dueAt: quote.dueAt,
+        priority: quote.priority,
+        notes: quote.notes,
+      );
     });
 
     return orderId;
@@ -1200,3 +1633,32 @@ class OrderLineDraft {
   final int vatFils;
   final int totalFils;
 }
+
+/// A stage definition as the app uses it: from the catalogue when it has one,
+/// from [defaultStages] when the device has never synced a workflow.
+class StageTemplate {
+  const StageTemplate({
+    required this.key,
+    required this.name,
+    required this.sequence,
+    required this.role,
+    this.waitsForPrevious = true,
+  });
+
+  final String key;
+  final String name;
+  final int sequence;
+  final String role;
+  final bool waitsForPrevious;
+}
+
+/// Mirrors DEFAULT_WORKFLOW in backend/worker/src/catalogue.ts and the rows in
+/// seeds/catalogue.sql. Server and device must agree, because the device
+/// generates tasks while offline and the server validates their transitions.
+const List<StageTemplate> defaultStages = <StageTemplate>[
+  StageTemplate(key: 'design', name: 'Design', sequence: 10, role: 'designer'),
+  StageTemplate(key: 'print', name: 'Print', sequence: 20, role: 'operator'),
+  StageTemplate(key: 'finish', name: 'Finishing', sequence: 30, role: 'operator'),
+  StageTemplate(key: 'qc', name: 'Quality check', sequence: 40, role: 'manager'),
+  StageTemplate(key: 'delivery', name: 'Delivery', sequence: 50, role: 'driver'),
+];

@@ -6,6 +6,7 @@ import 'package:starparis_design/starparis_design.dart';
 import 'package:starparis_sync/starparis_sync.dart';
 
 import '../providers.dart';
+import 'board_screen.dart';
 import 'customers_screen.dart';
 import 'diagnostics_sheet.dart';
 import 'home_screen.dart';
@@ -32,6 +33,7 @@ class AppShell extends ConsumerWidget {
       const HomeScreen(),
       const CustomersScreen(),
       const OrdersScreen(),
+      const ProductionScreen(),
       if (ref.watch(canEditPricesProvider)) const PriceBookScreen(),
     ];
 
@@ -50,6 +52,11 @@ class AppShell extends ConsumerWidget {
         icon: Icon(Icons.receipt_long_outlined),
         selectedIcon: Icon(Icons.receipt_long),
         label: 'Orders',
+      ),
+      const NavigationDestination(
+        icon: Icon(Icons.view_kanban_outlined),
+        selectedIcon: Icon(Icons.view_kanban),
+        label: 'Production',
       ),
       if (ref.watch(canEditPricesProvider))
         const NavigationDestination(

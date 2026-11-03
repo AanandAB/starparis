@@ -53,6 +53,7 @@ class CatalogueService {
       productRows: _rows(body['products']),
       materialRows: _rows(body['materials']),
       ruleRows: _rows(body['rules']),
+      stageRows: _rows(body['workflow_stages']),
       priceBookVersion: (body['price_book_version'] as num?)?.toInt() ?? 0,
       vatBps: (tax?['vat_bps'] as num?)?.toInt() ?? 500,
     );
