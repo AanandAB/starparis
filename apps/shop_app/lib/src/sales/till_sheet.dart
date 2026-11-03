@@ -7,6 +7,7 @@ import 'package:starparis_domain/starparis_domain.dart';
 import 'package:starparis_sync/starparis_sync.dart';
 
 import '../providers.dart';
+import 'expense_sheet.dart';
 
 /// The cash drawer: start a shift with a float, close it with a count.
 ///
@@ -158,6 +159,12 @@ class _TillSheetState extends ConsumerState<_TillSheet> {
                   icon: const Icon(Icons.play_arrow, size: 18),
                   label: const Text('Open the till'),
                 ),
+                const SizedBox(height: StarSpace.sm),
+                TextButton.icon(
+                  onPressed: _busy ? null : () => showExpenseSheet(context),
+                  icon: const Icon(Icons.receipt_long_outlined, size: 18),
+                  label: const Text('Record an expense'),
+                ),
               ],
             ),
           );
@@ -213,6 +220,30 @@ class _TillSheetState extends ConsumerState<_TillSheet> {
                     ],
                   ),
                   const SizedBox(height: StarSpace.lg),
+                  const SizedBox(height: StarSpace.sm),
+                  StreamBuilder<List<Expense>>(
+                    stream: db.watchExpensesSince(till.openedAt),
+                    builder: (context, expenses) {
+                      final rows = expenses.data ?? const <Expense>[];
+                      if (rows.isEmpty) return const SizedBox.shrink();
+                      final total = rows.fold<int>(
+                        0,
+                        (sum, row) => sum + row.amountFils,
+                      );
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: StarSpace.sm),
+                        child: Text(
+                          'Paid out since the shift began: '
+                          '${Fils(total).aedLabel} in ${rows.length} '
+                          '${rows.length == 1 ? 'expense' : 'expenses'}. '
+                          'Only the cash ones leave the drawer.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                   FilledButton.icon(
                     onPressed: _busy ? null : () => _close(till, expected),
                     icon: const Icon(Icons.lock_outline, size: 18),
@@ -225,6 +256,11 @@ class _TillSheetState extends ConsumerState<_TillSheet> {
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
+                  ),
+                  TextButton.icon(
+                    onPressed: _busy ? null : () => showExpenseSheet(context),
+                    icon: const Icon(Icons.receipt_long_outlined, size: 18),
+                    label: const Text('Record an expense'),
                   ),
                 ],
               ),

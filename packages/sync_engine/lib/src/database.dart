@@ -469,6 +469,34 @@ class TillSessions extends Table {
   Set<Column<Object>> get primaryKey => <Column<Object>>{id};
 }
 
+/// Money out of the shop: a courier, a taxi, paper from next door.
+class Expenses extends Table {
+  TextColumn get id => text()();
+  TextColumn get tenantId => text()();
+  TextColumn get branchId => text().nullable()();
+  DateTimeColumn get spentAt => dateTime()();
+  TextColumn get category => text()();
+  TextColumn get supplier => text().nullable()();
+  TextColumn get description => text()();
+  IntColumn get amountFils => integer()();
+  IntColumn get vatFils => integer().withDefault(const Constant(0))();
+  TextColumn get method => text().withDefault(const Constant('cash'))();
+  TextColumn get receiptUrl => text().nullable()();
+  TextColumn get paidBy => text().nullable()();
+
+  /// Set by the server: the shift that paid this, when it was cash.
+  TextColumn get tillSessionId => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  TextColumn get createdBy => text().nullable()();
+  TextColumn get updatedBy => text().nullable()();
+  IntColumn get version => integer().withDefault(const Constant(0))();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
 /// Sync bookkeeping: cursor, last sync, last head.
 class SyncMeta extends Table {
   TextColumn get key => text()();
@@ -492,6 +520,7 @@ class SyncMeta extends Table {
     CreditNotes,
     Refunds,
     TillSessions,
+    Expenses,
     Products,
     Materials,
     PriceRules,
@@ -505,7 +534,7 @@ class LocalDatabase extends _$LocalDatabase {
   LocalDatabase(super.executor);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -544,6 +573,9 @@ class LocalDatabase extends _$LocalDatabase {
         if (from >= 5) {
           await m.addColumn(invoices, invoices.creditedFils);
         }
+      }
+      if (from < 8) {
+        await m.createTable(expenses);
       }
       if (from < 7) {
         await m.createTable(tillSessions);
@@ -774,9 +806,40 @@ class LocalDatabase extends _$LocalDatabase {
         await _upsertRefund(data);
       case 'till_sessions':
         await _upsertTill(data);
+      case 'expenses':
+        await _upsertExpense(data);
       default:
         break;
     }
+  }
+
+  Future<void> _upsertExpense(Map<String, Object?> data) async {
+    final id = data['id'] as String?;
+    if (id == null) return;
+    final now = DateTime.now().toUtc();
+    await into(expenses).insertOnConflictUpdate(
+      ExpensesCompanion(
+        id: Value(id),
+        tenantId: Value(data['tenant_id'] as String? ?? ''),
+        branchId: Value(data['branch_id'] as String?),
+        spentAt: Value(_asDate(data['spent_at']) ?? now),
+        category: Value(data['category'] as String? ?? 'Other'),
+        supplier: Value(data['supplier'] as String?),
+        description: Value(data['description'] as String? ?? ''),
+        amountFils: Value((data['amount_fils'] as num?)?.toInt() ?? 0),
+        vatFils: Value((data['vat_fils'] as num?)?.toInt() ?? 0),
+        method: Value(data['method'] as String? ?? 'cash'),
+        receiptUrl: Value(data['receipt_url'] as String?),
+        paidBy: Value(data['paid_by'] as String?),
+        tillSessionId: Value(data['till_session_id'] as String?),
+        createdAt: Value(_asDate(data['created_at']) ?? now),
+        updatedAt: Value(_asDate(data['updated_at']) ?? now),
+        createdBy: Value(data['created_by'] as String?),
+        updatedBy: Value(data['updated_by'] as String?),
+        version: Value((data['version'] as num?)?.toInt() ?? 0),
+        deletedAt: Value(_asDate(data['deleted_at'])),
+      ),
+    );
   }
 
   Future<void> _upsertTill(Map<String, Object?> data) async {
@@ -2559,6 +2622,89 @@ class LocalDatabase extends _$LocalDatabase {
         },
       );
     });
+  }
+
+  /// Records money paid out. Cash is attached to the open shift by the server,
+  /// so the cash-up subtracts it without the device having to claim it.
+  Future<String> addExpenseLocal({
+    required String tenantId,
+    required String? branchId,
+    required String userId,
+    required String category,
+    required String description,
+    required int amountFils,
+    int vatFils = 0,
+    String method = 'cash',
+    String? supplier,
+    String? receiptUrl,
+  }) async {
+    if (amountFils <= 0) {
+      throw StateError('An expense must be more than zero.');
+    }
+    if (description.trim().isEmpty) {
+      throw StateError('Say what the money was spent on.');
+    }
+
+    final id = Uuid7.generate();
+    final now = DateTime.now().toUtc();
+    final trimmedSupplier = (supplier ?? '').trim().isEmpty
+        ? null
+        : supplier!.trim();
+
+    await transaction(() async {
+      await into(expenses).insert(
+        ExpensesCompanion.insert(
+          id: id,
+          tenantId: tenantId,
+          branchId: Value(branchId),
+          spentAt: now,
+          category: category.trim(),
+          supplier: Value(trimmedSupplier),
+          description: description.trim(),
+          amountFils: amountFils,
+          vatFils: Value(vatFils),
+          method: Value(method),
+          receiptUrl: Value(receiptUrl),
+          paidBy: Value(userId),
+          createdAt: now,
+          updatedAt: now,
+          createdBy: Value(userId),
+          version: const Value(1),
+        ),
+      );
+      await _enqueue(
+        entity: 'expenses',
+        rowId: id,
+        op: 'insert',
+        baseVersion: 0,
+        fields: <String, Object?>{
+          'spent_at': now.toIso8601String(),
+          'category': category.trim(),
+          'supplier': trimmedSupplier,
+          'description': description.trim(),
+          'amount_fils': amountFils,
+          'vat_fils': vatFils,
+          'method': method,
+          'receipt_url': receiptUrl,
+          'branch_id': branchId,
+        },
+      );
+    });
+
+    return id;
+  }
+
+  /// Money paid out since a moment — shown beside the drawer, never added to it:
+  /// the server decides which of these the shift actually paid.
+  Stream<List<Expense>> watchExpensesSince(DateTime since) {
+    return (select(expenses)
+          ..where(
+            (t) => t.deletedAt.isNull() & t.spentAt.isBiggerOrEqualValue(since),
+          )
+          ..orderBy(<OrderClauseGenerator<$ExpensesTable>>[
+            (t) => OrderingTerm.desc(t.spentAt),
+          ]))
+        .watch();
   }
 
   Stream<List<Order>> watchOrders({int limit = 200}) {

@@ -952,6 +952,43 @@ void main() {
       );
     });
 
+    test('an expense is queued as a whole insert with its method', () async {
+      final id = await db.addExpenseLocal(
+        tenantId: 't1',
+        branchId: 'b1',
+        userId: 'u1',
+        category: 'Courier',
+        description: 'Proof delivery to Dubai',
+        amountFils: 4500,
+        method: 'cash',
+      );
+
+      final row = await (db.select(
+        db.expenses,
+      )..where((t) => t.id.equals(id))).getSingle();
+      expect(row.amountFils, 4500);
+      expect(row.method, 'cash');
+      expect(row.category, 'Courier');
+
+      final batch = await db.nextBatch();
+      expect(batch, hasLength(1));
+      expect(batch.single.entity, 'expenses');
+      expect(batch.single.op, 'insert');
+
+      await expectLater(
+        db.addExpenseLocal(
+          tenantId: 't1',
+          branchId: 'b1',
+          userId: 'u1',
+          category: 'Courier',
+          description: 'Nothing',
+          amountFils: 0,
+        ),
+        throwsA(isA<StateError>()),
+        reason: 'money that was not paid is not an expense',
+      );
+    });
+
     test(
       'a payment moves the balance but only the payment is queued',
       () async {

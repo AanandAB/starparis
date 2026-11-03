@@ -391,6 +391,24 @@ Live on the deployed Worker, real D1:
 Still to do: the **expense entry sheet in the app** (the backend path is live, the counter has no
 button yet), till history/month-end, and the Arabic UI pass.
 
+### Phase 4F — the expense sheet
+
+From the Cash drawer, open or closed: **Record an expense**. Amount, what it was for, a category
+(Courier / Taxi / Materials / Refreshments / Rent / Other), who it was paid to, the VAT inside the
+amount if the receipt carries it, cash / card / transfer, and an optional receipt link. Cash is the
+default because it is what most of these are.
+
+The sheet says it plainly: *cash comes out of the open drawer; card and transfer do not*. While a
+shift is open, the drawer also shows **paid out since the shift began** so the cashier is never
+surprised by the expected figure at close.
+
+State: drift `schemaVersion 8` (`expenses` plus `_upsertExpense`), 27 sync tests (1 new — the expense
+is queued as one insert and an amount of zero is refused before it reaches the outbox), 6 app tests,
+analyzer clean, Windows release build green.
+
+Remaining: till history and the month-end list, expenses list/export by category, and the Arabic UI
+pass.
+
 ## Commands
 ```bash
 # Dart workspace
