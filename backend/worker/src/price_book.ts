@@ -292,3 +292,122 @@ function auditStatement(
     new Date().toISOString(),
   );
 }
+
+export const createProductSchema = z.object({
+  code: z.string().trim().min(2).max(40),
+  name_en: z.string().trim().min(2).max(120),
+  name_ar: z.string().trim().max(120).optional(),
+  category: z.string().trim().max(60).optional(),
+  kind: z.enum(['sheet', 'area', 'per_unit', 'service', 'outsourced']),
+  pricing_mode: z.enum(['cost_plus', 'price_table', 'vendor_markup']).default('cost_plus'),
+  sheet_width_mm: z.number().int().positive().max(2000).nullable().optional(),
+  sheet_height_mm: z.number().int().positive().max(2000).nullable().optional(),
+  bleed_mm: z.number().int().min(0).max(20).default(3),
+  gutter_mm: z.number().int().min(0).max(20).default(3),
+  setup_sheets: z.number().int().min(0).max(200).default(2),
+  spoilage_bps: z.number().int().min(0).max(5_000).default(500),
+  material_code: z.string().trim().max(40).nullable().optional(),
+  print_rate_fils: z.number().int().min(0).max(10_000_000).nullable().optional(),
+  area_rate_fils_per_sqm: z.number().int().min(0).max(10_000_000).nullable().optional(),
+  markup_bps: z.number().int().min(0).max(100_000).default(0),
+  min_order_fils: z.number().int().min(0).max(100_000_000).default(0),
+  rounding_step_fils: z.number().int().min(1).max(10_000).default(100),
+  sizes_json: z.array(z.record(z.string(), z.unknown())).max(60).optional(),
+  finishes_json: z.array(z.record(z.string(), z.unknown())).max(60).optional(),
+  quantity_presets_json: z.array(z.number().int().positive()).max(20).optional(),
+  workflow_key: z.string().trim().min(2).max(40).default('print_std'),
+  machine_id: z.string().uuid().nullable().optional(),
+  operation_codes_json: z.array(z.string().min(1)).max(40).optional(),
+  sort: z.number().int().min(0).max(10_000).default(100),
+});
+
+/**
+ * Adds a product or a service to the rate card.
+ *
+ * The owner creates things far more often than they change them — a new banner
+ * size, a new service like "design hour" — so this exists before the editor does.
+ * A duplicate code in the same shop is refused rather than silently shadowing an
+ * existing product, because the old price would keep winning at the counter.
+ */
+export async function createProduct(
+  env: Env,
+  ctx: AuthContext,
+  input: z.infer<typeof createProductSchema>,
+): Promise<PriceBookResult> {
+  if (!can(ctx.role as RoleKey, 'price.edit')) return forbidden();
+
+  const existing = await env.DB.prepare(
+    'SELECT id FROM products WHERE tenant_id = ? AND code = ? AND deleted_at IS NULL',
+  )
+    .bind(ctx.tenantId, input.code)
+    .first<{ id: string }>();
+  if (existing) {
+    return {
+      status: 409,
+      body: {
+        error: {
+          code: 'DUPLICATE_CODE',
+          message: `A product with the code ${input.code} already exists.`,
+        },
+      },
+    };
+  }
+
+  const id = crypto.randomUUID();
+  const now = new Date().toISOString();
+
+  await env.DB.batch([
+    env.DB.prepare(
+      `INSERT INTO products (
+         id, tenant_id, code, name_en, name_ar, category, kind, pricing_mode,
+         sheet_width_mm, sheet_height_mm, bleed_mm, gutter_mm, setup_sheets,
+         spoilage_bps, material_code, print_rate_fils, area_rate_fils_per_sqm,
+         markup_bps, min_order_fils, rounding_step_fils, sizes_json,
+         finishes_json, quantity_presets_json, workflow_key, machine_id,
+         operation_codes_json, sort, active, created_at, updated_at, created_by, version
+       ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?,?,1)`,
+    ).bind(
+      id,
+      ctx.tenantId,
+      input.code,
+      input.name_en,
+      input.name_ar ?? null,
+      input.category ?? null,
+      input.kind,
+      input.pricing_mode,
+      input.sheet_width_mm ?? null,
+      input.sheet_height_mm ?? null,
+      input.bleed_mm,
+      input.gutter_mm,
+      input.setup_sheets,
+      input.spoilage_bps,
+      input.material_code ?? null,
+      input.print_rate_fils ?? null,
+      input.area_rate_fils_per_sqm ?? null,
+      input.markup_bps,
+      input.min_order_fils,
+      input.rounding_step_fils,
+      JSON.stringify(input.sizes_json ?? []),
+      JSON.stringify(input.finishes_json ?? []),
+      JSON.stringify(input.quantity_presets_json ?? []),
+      input.workflow_key,
+      input.machine_id ?? null,
+      JSON.stringify(input.operation_codes_json ?? []),
+      input.sort,
+      now,
+      now,
+      ctx.userId,
+    ),
+    auditStatement(env, ctx, 'price.product.create', 'products', id, {}, {
+      ...input,
+      id,
+      created_at: now,
+    }),
+  ]);
+
+  const product = await env.DB.prepare('SELECT * FROM products WHERE id = ?')
+    .bind(id)
+    .first<Record<string, unknown>>();
+
+  return { status: 201, body: { product } };
+}

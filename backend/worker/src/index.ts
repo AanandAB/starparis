@@ -15,6 +15,8 @@ import { loadCatalogue } from './catalogue';
 import {
   bulkAdjust,
   bulkAdjustSchema,
+  createProduct,
+  createProductSchema,
   productPatchSchema,
   rulePatchSchema,
   updateProduct,
@@ -209,6 +211,23 @@ app.patch('/v1/price-book/rules/:id', async (c) => {
 
   const result = await updateRule(c.env, ctx, c.req.param('id'), parsed.data);
   return c.json(result.body, result.status as 200);
+});
+
+app.post('/v1/catalogue/products', async (c) => {
+  const ctx = c.get('auth');
+  const session = await loadSession(c.env, ctx);
+  if (!session.ok) return c.json(error(session.code, session.message), 401);
+
+  const parsed = createProductSchema.safeParse(await safeJson(c));
+  if (!parsed.success) {
+    return c.json(
+      error('BAD_REQUEST', parsed.error.issues[0]?.message ?? 'Check the product.'),
+      400,
+    );
+  }
+
+  const result = await createProduct(c.env, ctx, parsed.data);
+  return c.json(result.body, result.status as 201);
 });
 
 app.patch('/v1/price-book/products/:id', async (c) => {

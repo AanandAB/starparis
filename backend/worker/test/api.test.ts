@@ -1966,6 +1966,51 @@ describe('catalogue additions', () => {
   });
 });
 
+describe('creating products', () => {
+  it('lets the owner add a service and refuses a duplicate code', async () => {
+    const created = await api(
+      '/v1/catalogue/products',
+      authed(
+        owner.access_token,
+        {
+          code: 'design_hour',
+          name_en: 'Design — per hour',
+          name_ar: 'تصميم بالساعة',
+          kind: 'service',
+          pricing_mode: 'price_table',
+          markup_bps: 0,
+          rounding_step_fils: 100,
+          operation_codes_json: [],
+        },
+        'POST',
+      ),
+    );
+    expect(created.status).toBe(201);
+
+    const body = (await created.json()) as { product: Record<string, unknown> };
+    expect(body.product['code']).toBe('design_hour');
+    expect(body.product['kind']).toBe('service');
+
+    // The new product is served to devices immediately.
+    const catalogue = (await (
+      await api('/v1/catalogue', authed(counter.access_token))
+    ).json()) as { products: Array<Record<string, unknown>> };
+    expect(catalogue.products.map((row) => row['code'])).toContain('design_hour');
+
+    const duplicate = await api(
+      '/v1/catalogue/products',
+      authed(owner.access_token, { code: 'design_hour', name_en: 'Again', kind: 'service' }, 'POST'),
+    );
+    expect(duplicate.status).toBe(409);
+
+    const clerk = await api(
+      '/v1/catalogue/products',
+      authed(counter.access_token, { code: 'sneaky', name_en: 'Sneaky', kind: 'service' }, 'POST'),
+    );
+    expect(clerk.status).toBe(403);
+  });
+});
+
 describe('product press and finishing steps', () => {
   it('lets the owner put a product on a press and give it finishing steps', async () => {
     const product = (await env.DB.prepare(
