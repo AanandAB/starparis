@@ -28,6 +28,9 @@ class InvoiceDocument {
     this.customerTrn,
     this.customerAddress,
     this.notes = '',
+    this.documentTitle = 'TAX INVOICE',
+    this.reference,
+    this.showPayments = true,
   });
 
   final String number;
@@ -44,6 +47,17 @@ class InvoiceDocument {
   final int totalFils;
   final int paidFils;
   final String notes;
+
+  /// 'TAX INVOICE' or 'CREDIT NOTE'. The layout is identical on purpose: the
+  /// customer files them side by side, and a credit note that looks different is
+  /// a credit note that gets queried.
+  final String documentTitle;
+
+  /// What a credit note is issued against, e.g. 'Against invoice INV-SHJ1-…'.
+  final String? reference;
+
+  /// Invoices show paid and balance; a credit note has neither.
+  final bool showPayments;
 }
 
 Future<Uint8List> buildInvoicePdf(
@@ -109,7 +123,10 @@ Future<Uint8List> buildInvoicePdf(
           pw.SizedBox(height: 14),
           pw.Text('Notes', style: _labelStyle),
           pw.SizedBox(height: 4),
-          pw.Text(asciiText(invoice.notes.trim()), style: const pw.TextStyle(fontSize: 9)),
+          pw.Text(
+            asciiText(invoice.notes.trim()),
+            style: const pw.TextStyle(fontSize: 9),
+          ),
         ],
         pw.SizedBox(height: 18),
         _declaration(company, invoice),
@@ -148,11 +165,17 @@ pw.Widget _header(InvoiceDocument invoice, CompanyProfile company) {
               pw.SizedBox(height: 3),
               pw.Text(
                 asciiText(company.address),
-                style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey300),
+                style: const pw.TextStyle(
+                  fontSize: 8,
+                  color: PdfColors.grey300,
+                ),
               ),
               pw.Text(
                 asciiText('Tel ${company.phone}  |  TRN ${company.trn}'),
-                style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey300),
+                style: const pw.TextStyle(
+                  fontSize: 8,
+                  color: PdfColors.grey300,
+                ),
               ),
             ],
           ),
@@ -161,7 +184,7 @@ pw.Widget _header(InvoiceDocument invoice, CompanyProfile company) {
           crossAxisAlignment: pw.CrossAxisAlignment.end,
           children: <pw.Widget>[
             pw.Text(
-              'TAX INVOICE',
+              asciiText(invoice.documentTitle),
               style: const pw.TextStyle(
                 fontSize: 18,
                 fontWeight: pw.FontWeight.bold,
@@ -193,7 +216,10 @@ pw.Widget _parties(InvoiceDocument invoice) {
             pw.SizedBox(height: 4),
             pw.Text(
               asciiText(invoice.customerName),
-              style: const pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold),
+              style: const pw.TextStyle(
+                fontSize: 11,
+                fontWeight: pw.FontWeight.bold,
+              ),
             ),
             if (invoice.customerAddress != null)
               pw.Text(
@@ -215,7 +241,9 @@ pw.Widget _parties(InvoiceDocument invoice) {
           crossAxisAlignment: pw.CrossAxisAlignment.end,
           children: <pw.Widget>[
             _meta('Issued', _date(invoice.issuedAt)),
-            if (invoice.dueAt != null) _meta('Due', _date(invoice.dueAt!)),
+            if (invoice.dueAt != null && invoice.showPayments)
+              _meta('Due', _date(invoice.dueAt!)),
+            if (invoice.reference != null) _meta('Against', invoice.reference!),
             _meta('Currency', 'AED'),
           ],
         ),
@@ -230,7 +258,10 @@ pw.Widget _meta(String label, String value) {
     child: pw.Row(
       mainAxisAlignment: pw.MainAxisAlignment.end,
       children: <pw.Widget>[
-        pw.Text('$label  ', style: const pw.TextStyle(fontSize: 8, color: muted)),
+        pw.Text(
+          '$label  ',
+          style: const pw.TextStyle(fontSize: 8, color: muted),
+        ),
         pw.Text(value, style: const pw.TextStyle(fontSize: 9)),
       ],
     ),
@@ -243,8 +274,13 @@ pw.Widget _table(InvoiceDocument invoice) {
       inside: const pw.BorderSide(color: ruleLine, width: 0.5),
       outside: const pw.BorderSide(color: ruleLine, width: 0.5),
     ),
-    headerDecoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFFF1EDE4)),
-    headerStyle: const pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+    headerDecoration: const pw.BoxDecoration(
+      color: PdfColor.fromInt(0xFFF1EDE4),
+    ),
+    headerStyle: const pw.TextStyle(
+      fontSize: 8,
+      fontWeight: pw.FontWeight.bold,
+    ),
     cellStyle: const pw.TextStyle(fontSize: 9),
     cellPadding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 5),
     headers: <String>['Description', 'Qty', 'Unit AED', 'Amount AED'],
@@ -276,7 +312,12 @@ pw.Widget _totals(InvoiceDocument invoice) {
   final balance = invoice.totalFils - invoice.paidFils;
   final vatPercent = (invoice.vatBps / 100).toStringAsFixed(0);
 
-  pw.Widget row(String label, String value, {bool bold = false, PdfColor? colour}) {
+  pw.Widget row(
+    String label,
+    String value, {
+    bool bold = false,
+    PdfColor? colour,
+  }) {
     final style = pw.TextStyle(
       fontSize: bold ? 11 : 9,
       fontWeight: bold ? pw.FontWeight.bold : pw.FontWeight.normal,
@@ -307,13 +348,15 @@ pw.Widget _totals(InvoiceDocument invoice) {
             row('VAT $vatPercent%', Fils(invoice.vatFils).aedText),
             pw.Divider(color: ruleLine, height: 8),
             row('Total', Fils(invoice.totalFils).aedText, bold: true),
-            if (invoice.paidFils > 0) ...<pw.Widget>[
+            if (invoice.showPayments && invoice.paidFils > 0) ...<pw.Widget>[
               row('Paid', Fils(invoice.paidFils).aedText),
               row(
                 'Balance due',
                 Fils(balance).aedText,
                 bold: true,
-                colour: balance > 0 ? const PdfColor.fromInt(0xFFC4552D) : brandPetrol,
+                colour: balance > 0
+                    ? const PdfColor.fromInt(0xFFC4552D)
+                    : brandPetrol,
               ),
             ],
           ],
@@ -354,8 +397,18 @@ pw.Widget _declaration(CompanyProfile company, InvoiceDocument invoice) {
 
 String _date(DateTime value) {
   const months = <String>[
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
   return '${value.day} ${months[value.month - 1]} ${value.year}';
 }

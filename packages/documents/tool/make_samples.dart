@@ -96,6 +96,33 @@ Future<void> main() async {
   );
   await File('${directory.path}/sample-invoice.pdf').writeAsBytes(invoiceBytes);
 
+  final creditBytes = await buildInvoicePdf(
+    InvoiceDocument(
+      number: 'CN-SHJ1-PC1-00001',
+      issuedAt: DateTime(2026, 11, 4, 9),
+      customerName: 'Ahmed Traders LLC',
+      customerTrn: '100123456700003',
+      customerAddress: 'Al Nahda, Sharjah',
+      lines: const <DocumentLine>[
+        DocumentLine(
+          description: 'Credit - 100 cards damaged in finishing',
+          quantity: 1,
+          unitFils: 4762,
+          amountFils: 4762,
+        ),
+      ],
+      subtotalFils: 4762,
+      vatFils: 238,
+      totalFils: 5000,
+      documentTitle: 'CREDIT NOTE',
+      reference: 'INV-SHJ1-PC1-00001',
+      showPayments: false,
+      notes: 'Refunded in cash at the counter.',
+    ),
+    company,
+  );
+  await File('${directory.path}/sample-credit-note.pdf').writeAsBytes(creditBytes);
+
   stdout.writeln('quote      ${quote.length} bytes');
   stdout.writeln('job ticket ${ticket.length} bytes');
   stdout.writeln('written to ${directory.absolute.path}');

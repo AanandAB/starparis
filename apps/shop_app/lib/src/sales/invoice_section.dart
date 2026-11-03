@@ -262,6 +262,46 @@ class _InvoiceSectionState extends ConsumerState<InvoiceSection> {
     }
   }
 
+  Future<void> _printCreditNote(CreditNote note, Invoice invoice) async {
+    setState(() => _busy = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final service = DocumentsService(db: ref.read(bootstrapProvider).db);
+      final file = await service.creditNoteFor(note, invoice);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Saved ${file.path.split(Platform.pathSeparator).last}',
+          ),
+          action: SnackBarAction(
+            label: 'Open',
+            onPressed: () async {
+              if (Platform.isWindows) {
+                await Process.run('cmd', <String>[
+                  '/c',
+                  'start',
+                  '',
+                  file.path,
+                ]);
+              } else {
+                await launchUrl(
+                  Uri.file(file.path),
+                  mode: LaunchMode.externalApplication,
+                );
+              }
+            },
+          ),
+        ),
+      );
+    } catch (error) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Could not build the PDF: $error')),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _send(Invoice invoice) async {
     final messenger = ScaffoldMessenger.of(context);
     final db = ref.read(bootstrapProvider).db;
@@ -418,6 +458,12 @@ class _InvoiceSectionState extends ConsumerState<InvoiceSection> {
                                 'refunded ${Fils(note.refundedFils).aedLabel}',
                                 style: theme.textTheme.bodySmall,
                               ),
+                            TextButton(
+                              onPressed: _busy
+                                  ? null
+                                  : () => _printCreditNote(note, invoice),
+                              child: const Text('PDF'),
+                            ),
                           ],
                         ),
                     ],

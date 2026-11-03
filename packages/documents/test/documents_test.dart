@@ -102,6 +102,36 @@ void main() {
       expect(text.contains('50.00'), isTrue, reason: 'paid');
       expect(text.contains('78.10'), isTrue, reason: '128.10 - 50.00');
     });
+    test('a credit note prints as its own document against the invoice', () async {
+      final bytes = await buildInvoicePdf(
+        InvoiceDocument(
+          number: 'CN-SHJ1-PC1-00001',
+          issuedAt: DateTime(2026, 11, 4, 9),
+          customerName: 'Ahmed Traders LLC',
+          lines: const <DocumentLine>[
+            DocumentLine(
+              description: 'Credit - 100 cards damaged in finishing',
+              quantity: 1,
+              unitFils: 4762,
+              amountFils: 4762,
+            ),
+          ],
+          subtotalFils: 4762,
+          vatFils: 238,
+          totalFils: 5000,
+          documentTitle: 'CREDIT NOTE',
+          reference: 'INV-SHJ1-PC1-00001',
+          showPayments: false,
+        ),
+        _company,
+        compress: false,
+      );
+      final text = String.fromCharCodes(bytes);
+
+      expect(text.contains('50.00'), isTrue, reason: 'credit total');
+      expect(text.contains('2.38'), isTrue, reason: 'VAT credited');
+      expect(text.contains('47.62'), isTrue, reason: 'net credited');
+    });
   });
 
   group('job ticket PDF', () {

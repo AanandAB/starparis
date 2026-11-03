@@ -125,4 +125,34 @@ class DocumentsService {
     );
     return _write('${invoice.number}.pdf', bytes);
   }
+
+  /// The credit note, printed as its own document against the invoice.
+  Future<File> creditNoteFor(CreditNote note, Invoice invoice) async {
+    final bytes = await buildInvoicePdf(
+      InvoiceDocument(
+        number: note.number,
+        issuedAt: note.issuedAt,
+        customerName: invoice.customerName,
+        customerTrn: invoice.customerTrn,
+        customerAddress: invoice.customerAddress,
+        lines: <DocumentLine>[
+          DocumentLine(
+            description: 'Credit - ${note.reason}',
+            quantity: 1,
+            unitFils: note.subtotalFils,
+            amountFils: note.subtotalFils,
+          ),
+        ],
+        subtotalFils: note.subtotalFils,
+        vatBps: note.vatBps,
+        vatFils: note.vatFils,
+        totalFils: note.totalFils,
+        documentTitle: 'CREDIT NOTE',
+        reference: invoice.number,
+        showPayments: false,
+      ),
+      AppConfig.company,
+    );
+    return _write('${note.number}.pdf', bytes);
+  }
 }

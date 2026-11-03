@@ -272,6 +272,24 @@ cd backend/worker && bunx wrangler d1 migrations apply starparis-dev --remote &&
 
 `starparis-staging` still has no tables — it gets its own migrate before a staging deploy.
 
+### Phase 4C — credit note document
+
+The printing gap from 4B is closed: a credit note is now its own A4 document, laid out like the
+invoice on purpose so the customer files them together — title `CREDIT NOTE`, the number, an
+`Against INV-SHJ1-PC1-00001` reference, net + VAT + total credited, and no paid/balance block. The
+invoice card lists each credit note with a `PDF` action.
+
+    CN-SHJ1-PC1-00001   Against INV-SHJ1-PC1-00001
+    Credit - 100 cards damaged in finishing   1   47.620   47.62
+    Subtotal 47.62   VAT 5% 2.38   Total 50.00
+
+Sample: `docs/samples/sample-credit-note.pdf` (rendered proof: `credit-note-render.png`). The same
+builder prints both documents — one `documentTitle` field and a `showPayments` flag — because two
+layouts for two halves of the same transaction is how they drift apart.
+
+Still to come in money: ageing by customer, till sessions and cash-up, expenses, and the VAT summary
+export for the accountant.
+
 ## Commands
 ```bash
 # Dart workspace
