@@ -1966,6 +1966,35 @@ describe('catalogue additions', () => {
   });
 });
 
+describe('product press and finishing steps', () => {
+  it('lets the owner put a product on a press and give it finishing steps', async () => {
+    const product = (await env.DB.prepare(
+      'SELECT id FROM products WHERE tenant_id = ? ORDER BY sort LIMIT 1',
+    )
+      .bind(TENANT)
+      .first()) as { id: string };
+
+    const response = await api(
+      `/v1/price-book/products/${product.id}`,
+      patchRequest(owner.access_token, {
+        machine_id: '0193f0b1-0000-7000-8000-0000000000a2',
+        operation_codes_json: ['lam_matt', 'crease'],
+        markup_bps: 4500,
+      }),
+    );
+    expect(response.status).toBe(200);
+
+    const row = (await env.DB.prepare(
+      'SELECT machine_id, operation_codes_json, markup_bps FROM products WHERE id = ?',
+    )
+      .bind(product.id)
+      .first()) as Record<string, unknown>;
+    expect(row['machine_id']).toBe('0193f0b1-0000-7000-8000-0000000000a2');
+    expect(JSON.parse(String(row['operation_codes_json']))).toEqual(['lam_matt', 'crease']);
+    expect(row['markup_bps']).toBe(4500);
+  });
+});
+
 describe('price book editing', () => {
   it('lets the owner change a rate and the catalogue reflects it', async () => {
     const response = await api(

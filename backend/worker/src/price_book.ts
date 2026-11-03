@@ -38,6 +38,9 @@ export const productPatchSchema = z
     print_rate_fils: z.number().int().min(0).max(10_000_000).optional(),
     area_rate_fils_per_sqm: z.number().int().min(0).max(10_000_000).optional(),
     spoilage_bps: z.number().int().min(0).max(5_000).optional(),
+    // Which press this product runs on, and the finishing steps it includes.
+    machine_id: z.string().min(1).nullable().optional(),
+    operation_codes_json: z.array(z.string().min(1)).max(40).optional(),
   })
   .refine((value) => Object.keys(value).length > 0, {
     message: 'Nothing to change',
@@ -154,12 +157,19 @@ export async function updateProduct(
     'print_rate_fils',
     'area_rate_fils_per_sqm',
     'spoilage_bps',
+    'machine_id',
   ] as const) {
     const value = patch[field];
     if (value !== undefined) {
       assignments.push(`${field} = ?`);
       values.push(value);
     }
+  }
+  // The finishing steps travel as a JSON array, but are stored as JSON text so a
+  // product row stays a single read on the device.
+  if (patch.operation_codes_json !== undefined) {
+    assignments.push('operation_codes_json = ?');
+    values.push(JSON.stringify(patch.operation_codes_json));
   }
   assignments.push('updated_at = ?', 'version = version + 1');
   const now = new Date().toISOString();
