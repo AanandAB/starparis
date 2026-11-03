@@ -13,7 +13,16 @@ import { SignJWT, jwtVerify } from 'jose';
 
 const encoder = new TextEncoder();
 
-export const DEFAULT_ITERATIONS = 600_000;
+/**
+ * PBKDF2 iteration count for new passwords.
+ *
+ * 100,000 is not a preference, it is the ceiling: workerd refuses anything
+ * higher ("iteration counts above 100000 are not supported"), so a larger
+ * constant would only fail at the first password change. The count is stored
+ * inside every hash, so raising this later still verifies old passwords — they
+ * simply keep the count they were made with.
+ */
+export const DEFAULT_ITERATIONS = 100_000;
 
 export function toBase64(bytes: Uint8Array): string {
   let binary = '';

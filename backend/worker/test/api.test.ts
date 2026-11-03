@@ -37,9 +37,9 @@ async function api(path: string, init: RequestInit = {}): Promise<Response> {
   return SELF.fetch(`https://api.test${path}`, init);
 }
 
-function authed(token: string, body?: unknown): RequestInit {
+function authed(token: string, body?: unknown, method?: string): RequestInit {
   return {
-    method: body === undefined ? 'GET' : 'POST',
+    method: method ?? (body === undefined ? 'GET' : 'POST'),
     headers: {
       authorization: `Bearer ${token}`,
       'content-type': 'application/json',
@@ -56,6 +56,19 @@ function patchRequest(token: string, body: unknown): RequestInit {
       'content-type': 'application/json',
     },
     body: JSON.stringify(body),
+  };
+}
+
+/** A plain sign-in, for the tests that check a person created here can log in. */
+function loginRequest(phone: string, password: string): RequestInit {
+  return {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      phone,
+      password,
+      device: { name: 'test bench', platform: 'windows', app_version: '0.1.0' },
+    }),
   };
 }
 
@@ -1635,6 +1648,106 @@ describe('expenses and the VAT export', () => {
   it('keeps the counter out of the export', async () => {
     const response = await api('/v1/reports/vat.csv', authed(counter.access_token));
     expect(response.status).toBe(403);
+  });
+});
+
+describe('staff', () => {
+  it('lists the people in the shop', async () => {
+    const response = await api('/v1/staff', authed(owner.access_token));
+    expect(response.status).toBe(200);
+
+    const body = (await response.json()) as {
+      staff: Array<Record<string, unknown>>;
+    };
+    expect(body.staff.length).toBeGreaterThanOrEqual(2);
+    expect(body.staff.map((row) => row['role_key'])).toEqual(
+      expect.arrayContaining(['owner', 'counter']),
+    );
+    // A hash must never leave the server.
+    expect(JSON.stringify(body)).not.toContain('password');
+  });
+
+  it('creates a designer who can then sign in', async () => {
+    const phone = '+971500000042';
+    const created = await api(
+      '/v1/staff',
+      authed(owner.access_token, {
+        name: 'Rana Designer',
+        phone,
+        role: 'designer',
+        password: 'designer-pass-1',
+        pin: '4321',
+      }),
+    );
+    expect(created.status).toBe(201);
+
+    const body = (await created.json()) as { staff: Record<string, unknown> };
+    expect(body.staff['role_key']).toBe('designer');
+    expect(body.staff['has_pin']).toBe(1);
+
+    // The person just created signs in with the password they were given.
+    const login = await api('/v1/auth/login', loginRequest(phone, 'designer-pass-1'));
+    expect(login.status).toBe(200);
+    const session = (await login.json()) as { user: Record<string, unknown> };
+    expect(session.user['role']).toBe('designer');
+  });
+
+  it('refuses a duplicate phone and a counter clerk', async () => {
+    const duplicate = await api(
+      '/v1/staff',
+      authed(owner.access_token, {
+        name: 'Rana Again',
+        phone: '+971500000042',
+        role: 'designer',
+        password: 'designer-pass-2',
+      }),
+    );
+    expect(duplicate.status).toBe(409);
+
+    const forbidden = await api(
+      '/v1/staff',
+      authed(counter.access_token, {
+        name: 'Sneaky',
+        phone: '+971500000043',
+        role: 'owner',
+        password: 'anything-123',
+      }),
+    );
+    expect(forbidden.status).toBe(403);
+  });
+
+  it('will not let an owner switch themselves off', async () => {
+    const staff = (await (
+      await api('/v1/staff', authed(owner.access_token))
+    ).json()) as { staff: Array<Record<string, unknown>> };
+    const me = staff.staff.find((row) => row['role_key'] === 'owner')!;
+
+    const response = await api(
+      `/v1/staff/${me['id']}`,
+      patchRequest(owner.access_token, { active: false }),
+    );
+    expect(response.status).toBe(409);
+    const body = (await response.json()) as { error: { code: string } };
+    expect(body.error.code).toBe('NOT_YOURSELF');
+  });
+
+  it('changes a role and resets a password', async () => {
+    const staff = (await (
+      await api('/v1/staff', authed(owner.access_token))
+    ).json()) as { staff: Array<Record<string, unknown>> };
+    const designer = staff.staff.find((row) => row['role_key'] === 'designer')!;
+
+    const updated = await api(
+      `/v1/staff/${designer['id']}`,
+      patchRequest(owner.access_token, { role: 'operator', password: 'new-pass-1234' }),
+    );
+    expect(updated.status).toBe(200);
+    const body = (await updated.json()) as { staff: Record<string, unknown> };
+    expect(body.staff['role_key']).toBe('operator');
+
+    const phone = (designer['phone_e164'] as string) ?? '';
+    const login = await api('/v1/auth/login', loginRequest(phone, 'new-pass-1234'));
+    expect(login.status).toBe(200);
   });
 });
 

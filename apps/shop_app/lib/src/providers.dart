@@ -101,6 +101,12 @@ final Provider<bool> canViewReportsProvider = Provider<bool>((ref) {
   return role == 'owner' || role == 'manager' || role == 'accountant';
 });
 
+/// Staff management is the owner's alone: `user.manage` in the permission
+/// matrix, enforced by the Worker on every write.
+final Provider<bool> canManageStaffProvider = Provider<bool>((ref) {
+  return ref.watch(sessionProvider)?.role == 'owner';
+});
+
 /// Which shell tab is open. A provider rather than local state so a card on the
 /// home screen can send the user to the customers tab with one tap.
 class ShellTab extends Notifier<int> {

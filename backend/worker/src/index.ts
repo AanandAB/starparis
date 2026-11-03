@@ -30,6 +30,13 @@ import {
   vatExportCsv,
   vatSummary,
 } from './reports';
+import {
+  createStaff,
+  createStaffSchema,
+  listStaff,
+  updateStaff,
+  updateStaffSchema,
+} from './staff';
 import { currentHead, pullChanges, pushMutations } from './sync';
 import type { AuthContext, Env, Mutation } from './types';
 
@@ -231,6 +238,66 @@ app.post('/v1/price-book/bulk-adjust', async (c) => {
 });
 
 // --- reports (read-only) ---------------------------------------------------
+
+app.get('/v1/staff', async (c) => {
+  const ctx = c.get('auth');
+  const session = await loadSession(c.env, ctx);
+  if (!session.ok) return c.json(error(session.code, session.message), 401);
+  if (!can(ctx.role as never, 'user.manage')) {
+    return c.json(error('PERMISSION_DENIED', 'Only an owner manages staff.'), 403);
+  }
+
+  return c.json({ staff: await listStaff(c.env, ctx.tenantId) });
+});
+
+app.post('/v1/staff', async (c) => {
+  const ctx = c.get('auth');
+  const session = await loadSession(c.env, ctx);
+  if (!session.ok) return c.json(error(session.code, session.message), 401);
+  if (!can(ctx.role as never, 'user.manage')) {
+    return c.json(error('PERMISSION_DENIED', 'Only an owner manages staff.'), 403);
+  }
+
+  const parsed = createStaffSchema.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) {
+    return c.json(
+      error('BAD_REQUEST', parsed.error.issues[0]?.message ?? 'Check the details.'),
+      400,
+    );
+  }
+
+  const result = await createStaff(c.env, ctx.tenantId, parsed.data);
+  if (!result.ok) return c.json(error(result.code!, result.message!), 409);
+  return c.json({ staff: result.staff }, 201);
+});
+
+app.patch('/v1/staff/:id', async (c) => {
+  const ctx = c.get('auth');
+  const session = await loadSession(c.env, ctx);
+  if (!session.ok) return c.json(error(session.code, session.message), 401);
+  if (!can(ctx.role as never, 'user.manage')) {
+    return c.json(error('PERMISSION_DENIED', 'Only an owner manages staff.'), 403);
+  }
+
+  const parsed = updateStaffSchema.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) {
+    return c.json(
+      error('BAD_REQUEST', parsed.error.issues[0]?.message ?? 'Check the details.'),
+      400,
+    );
+  }
+
+  const result = await updateStaff(
+    c.env,
+    ctx.tenantId,
+    ctx.userId,
+    ctx.role as never,
+    c.req.param('id'),
+    parsed.data,
+  );
+  if (!result.ok) return c.json(error(result.code!, result.message!), 409);
+  return c.json({ staff: result.staff });
+});
 
 app.get('/v1/reports/vat', async (c) => {
   const ctx = c.get('auth');

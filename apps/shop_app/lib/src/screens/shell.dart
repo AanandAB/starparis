@@ -15,6 +15,7 @@ import 'home_screen.dart';
 import 'orders_screen.dart';
 import 'price_book_screen.dart';
 import 'reports_screen.dart';
+import 'staff_screen.dart';
 import 'track_sheet.dart';
 
 /// One place to go, and which page it shows.
@@ -77,13 +78,15 @@ class _AppShellState extends ConsumerState<AppShell> {
         HomeTabs.production,
       ),
     ];
-    const people = <_Dest>[
-      _Dest(
+    final people = <_Dest>[
+      const _Dest(
         'Customers',
         Icons.people_outline,
         Icons.people,
         HomeTabs.customers,
       ),
+      if (ref.watch(canManageStaffProvider))
+        const _Dest('Staff', Icons.badge_outlined, Icons.badge, 6),
     ];
     final business = <_Dest>[
       if (ref.watch(canEditPricesProvider))
@@ -104,6 +107,7 @@ class _AppShellState extends ConsumerState<AppShell> {
       const ProductionScreen(),
       if (ref.watch(canEditPricesProvider)) const PriceBookScreen(),
       if (ref.watch(canViewReportsProvider)) const ReportsScreen(),
+      if (ref.watch(canManageStaffProvider)) const StaffScreen(),
     ];
 
     final all = <_Dest>[...work, ...people, ...business];

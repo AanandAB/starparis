@@ -166,8 +166,15 @@ that did not happen.
 ### 4.13 Diagnostics — BUILT
 Outbox depth, last sync, pending conflicts. For support, not for customers.
 
-### 4.14 Staff — **TO BUILD**
-Create a user, choose role and branch, set a PIN, reset a password, deactivate. Today: no screen.
+### 4.14 Staff — BUILT
+Owner only, and it needs a connection on purpose: rights are a shop-wide fact, so a tablet that has
+been offline for a week must not be able to hand out an owner role. Add a person with a name, phone
+(this is their login), role, first password and optional counter PIN. Tap a person to change their
+role, switch them off, reset the password or set a new PIN.
+
+Two rules the server enforces: nobody can change their own role or deactivate themselves, and the last
+active owner cannot be demoted or switched off — a shop with no owner cannot be recovered from inside
+the app. Roles are created on first use, so a designer can be added before anyone thinks about seeding.
 
 ### 4.15 Vendors — **TO BUILD**
 A vendor record (name, trade, phone, terms). A vendor job against an order: what is outsourced, the
@@ -192,7 +199,7 @@ Company profile for documents (name, TRN, address), VAT rate, number series, bac
 | Process an order end to end | BUILT | Orders → builder → board → invoice |
 | Design parameters (size, paper, GSM, quality) | BUILT | Builder, price rules |
 | Owner sets every price, no developer | BUILT | Prices |
-| Role-based logins and access | PARTIAL | Server enforced; no Staff screen |
+| Role-based logins and access | BUILT | Staff screen, server-enforced |
 | Staff pick up work, status visible | BUILT | Board → My work |
 | Everything centralised by job id | BUILT | Orders, board, money |
 | Track by job id or phone | BUILT | Track (`Ctrl K`) |
