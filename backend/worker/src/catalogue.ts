@@ -16,6 +16,12 @@ export interface CatalogueResponse {
   products: Record<string, unknown>[];
   materials: Record<string, unknown>[];
   rules: Record<string, unknown>[];
+  /** Machines with their hourly rate, setup time and run speed. */
+  machines: Record<string, unknown>[];
+  /** Finishing and prepress operations, each with its own basis and setup. */
+  operations: Record<string, unknown>[];
+  /** Sell prices at quantity, per product. */
+  price_breaks: Record<string, unknown>[];
   /** Production stages per workflow key; the app generates tasks from these. */
   workflow_stages: Record<string, unknown>[];
   tax: { vat_bps: number };
@@ -43,7 +49,8 @@ export const DEFAULT_WORKFLOW: ReadonlyArray<{
 ];
 
 export async function loadCatalogue(env: Env, tenantId: string): Promise<CatalogueResponse> {
-  const [products, materials, rules, versionRow, taxRow, stages] = await Promise.all([
+  const [products, materials, rules, machines, operations, priceBreaks, versionRow, taxRow, stages] =
+    await Promise.all([
     env.DB.prepare(
       `SELECT * FROM products
         WHERE tenant_id = ? AND active = 1 AND deleted_at IS NULL
@@ -64,6 +71,30 @@ export async function loadCatalogue(env: Env, tenantId: string): Promise<Catalog
       `SELECT * FROM price_rules
         WHERE tenant_id = ? AND active = 1 AND deleted_at IS NULL
         ORDER BY priority, label`,
+    )
+      .bind(tenantId)
+      .all<Record<string, unknown>>(),
+
+    env.DB.prepare(
+      `SELECT * FROM machines
+        WHERE tenant_id = ? AND active = 1 AND deleted_at IS NULL
+        ORDER BY name`,
+    )
+      .bind(tenantId)
+      .all<Record<string, unknown>>(),
+
+    env.DB.prepare(
+      `SELECT * FROM operations
+        WHERE tenant_id = ? AND active = 1 AND deleted_at IS NULL
+        ORDER BY sort, name_en`,
+    )
+      .bind(tenantId)
+      .all<Record<string, unknown>>(),
+
+    env.DB.prepare(
+      `SELECT * FROM product_price_breaks
+        WHERE tenant_id = ? AND deleted_at IS NULL
+        ORDER BY product_id, quantity`,
     )
       .bind(tenantId)
       .all<Record<string, unknown>>(),
@@ -97,7 +128,14 @@ export async function loadCatalogue(env: Env, tenantId: string): Promise<Catalog
     }
   }
 
-  const newestUpdate = [...(products.results ?? []), ...(materials.results ?? []), ...(rules.results ?? [])]
+  const newestUpdate = [
+    ...(products.results ?? []),
+    ...(materials.results ?? []),
+    ...(rules.results ?? []),
+    ...(machines.results ?? []),
+    ...(operations.results ?? []),
+    ...(priceBreaks.results ?? []),
+  ]
     .map((row) => String(row['updated_at'] ?? ''))
     .sort()
     .at(-1);
@@ -116,6 +154,9 @@ export async function loadCatalogue(env: Env, tenantId: string): Promise<Catalog
     products: products.results ?? [],
     materials: materials.results ?? [],
     rules: rules.results ?? [],
+    machines: machines.results ?? [],
+    operations: operations.results ?? [],
+    price_breaks: priceBreaks.results ?? [],
     workflow_stages: stageRows,
     tax: { vat_bps: vatBps },
   };

@@ -1954,6 +1954,18 @@ describe('shop settings', () => {
   });
 });
 
+describe('catalogue additions', () => {
+  it('serves machines, operations and quantity breaks with the catalogue', async () => {
+    const response = await api('/v1/catalogue', authed(counter.access_token));
+    expect(response.status).toBe(200);
+
+    const body = (await response.json()) as Record<string, unknown>;
+    expect(Array.isArray(body['machines'])).toBe(true);
+    expect(Array.isArray(body['operations'])).toBe(true);
+    expect(Array.isArray(body['price_breaks'])).toBe(true);
+  });
+});
+
 describe('price book editing', () => {
   it('lets the owner change a rate and the catalogue reflects it', async () => {
     const response = await api(
