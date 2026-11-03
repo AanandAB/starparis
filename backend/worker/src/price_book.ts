@@ -411,3 +411,73 @@ export async function createProduct(
 
   return { status: 201, body: { product } };
 }
+
+export const priceBreakSchema = z.object({
+  product_id: z.string().min(1),
+  quantity: z.number().int().positive().max(1_000_000),
+  amount_fils: z.number().int().min(0).max(1_000_000_000),
+});
+
+/**
+ * Sets the sell price at one quantity for one product — "500 cards, AED 122".
+ *
+ * Upsert rather than insert: the owner edits a break far more often than adds a
+ * new rung, and two rows for the same quantity would make the price ambiguous.
+ * The price is the sell price before VAT, so a break is a decision the owner made
+ * rather than something derived from a unit rate.
+ */
+export async function setPriceBreak(
+  env: Env,
+  ctx: AuthContext,
+  input: z.infer<typeof priceBreakSchema>,
+): Promise<PriceBookResult> {
+  if (!can(ctx.role as RoleKey, 'price.edit')) return forbidden();
+
+  const product = await env.DB.prepare(
+    'SELECT id FROM products WHERE id = ? AND tenant_id = ? AND deleted_at IS NULL',
+  )
+    .bind(input.product_id, ctx.tenantId)
+    .first<{ id: string }>();
+  if (!product) return notFound('Product');
+
+  const existing = await env.DB.prepare(
+    'SELECT * FROM product_price_breaks WHERE product_id = ? AND quantity = ?',
+  )
+    .bind(input.product_id, input.quantity)
+    .first<Record<string, unknown>>();
+
+  const now = new Date().toISOString();
+  const id = (existing?.['id'] as string | undefined) ?? crypto.randomUUID();
+
+  await env.DB.batch([
+    env.DB.prepare(
+      `INSERT INTO product_price_breaks
+         (id, tenant_id, product_id, quantity, amount_fils, created_at, updated_at, created_by, version)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+       ON CONFLICT(id) DO UPDATE SET
+         amount_fils = excluded.amount_fils,
+         updated_at = excluded.updated_at,
+         version = product_price_breaks.version + 1`,
+    ).bind(
+      id,
+      ctx.tenantId,
+      input.product_id,
+      input.quantity,
+      input.amount_fils,
+      now,
+      now,
+      ctx.userId,
+    ),
+    auditStatement(env, ctx, 'price.break.set', 'product_price_breaks', id, existing ?? {}, {
+      ...input,
+      id,
+      updated_at: now,
+    }),
+  ]);
+
+  const row = await env.DB.prepare('SELECT * FROM product_price_breaks WHERE id = ?')
+    .bind(id)
+    .first<Record<string, unknown>>();
+
+  return { status: 200, body: { price_break: row } };
+}

@@ -17,7 +17,9 @@ import {
   bulkAdjustSchema,
   createProduct,
   createProductSchema,
+  priceBreakSchema,
   productPatchSchema,
+  setPriceBreak,
   rulePatchSchema,
   updateProduct,
   updateRule,
@@ -228,6 +230,23 @@ app.post('/v1/catalogue/products', async (c) => {
 
   const result = await createProduct(c.env, ctx, parsed.data);
   return c.json(result.body, result.status as 201);
+});
+
+app.post('/v1/catalogue/price-breaks', async (c) => {
+  const ctx = c.get('auth');
+  const session = await loadSession(c.env, ctx);
+  if (!session.ok) return c.json(error(session.code, session.message), 401);
+
+  const parsed = priceBreakSchema.safeParse(await safeJson(c));
+  if (!parsed.success) {
+    return c.json(
+      error('BAD_REQUEST', parsed.error.issues[0]?.message ?? 'Check the price.'),
+      400,
+    );
+  }
+
+  const result = await setPriceBreak(c.env, ctx, parsed.data);
+  return c.json(result.body, result.status as 200);
 });
 
 app.patch('/v1/price-book/products/:id', async (c) => {

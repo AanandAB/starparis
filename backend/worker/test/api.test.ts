@@ -2011,6 +2011,50 @@ describe('creating products', () => {
   });
 });
 
+describe('price breaks', () => {
+  it('sets the price at a quantity, then updates the same rung', async () => {
+    const product = (await env.DB.prepare(
+      'SELECT id FROM products WHERE tenant_id = ? ORDER BY sort LIMIT 1',
+    )
+      .bind(TENANT)
+      .first()) as { id: string };
+
+    const first = await api(
+      '/v1/catalogue/price-breaks',
+      authed(
+        owner.access_token,
+        { product_id: product.id, quantity: 500, amount_fils: 12200 },
+        'POST',
+      ),
+    );
+    expect(first.status).toBe(200);
+
+    // Same quantity again is an edit, not a second row.
+    const second = await api(
+      '/v1/catalogue/price-breaks',
+      authed(
+        owner.access_token,
+        { product_id: product.id, quantity: 500, amount_fils: 13100 },
+        'POST',
+      ),
+    );
+    expect(second.status).toBe(200);
+
+    const rows = await env.DB.prepare(
+      'SELECT quantity, amount_fils FROM product_price_breaks WHERE product_id = ?',
+    )
+      .bind(product.id)
+      .all<{ quantity: number; amount_fils: number }>();
+    expect(rows.results).toHaveLength(1);
+    expect(rows.results[0]!.amount_fils).toBe(13100);
+
+    const catalogue = (await (
+      await api('/v1/catalogue', authed(counter.access_token))
+    ).json()) as { price_breaks: Array<Record<string, unknown>> };
+    expect(catalogue.price_breaks.length).toBeGreaterThan(0);
+  });
+});
+
 describe('product press and finishing steps', () => {
   it('lets the owner put a product on a press and give it finishing steps', async () => {
     const product = (await env.DB.prepare(
