@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:starparis_design/starparis_design.dart';
 
 import '../providers.dart';
+import '../sales/customer_sheet.dart';
 import 'new_customer_sheet.dart';
 
 /// The directory the counter actually uses: search by phone number first,
@@ -84,6 +85,7 @@ class CustomersScreen extends ConsumerWidget {
                 itemBuilder: (context, index) {
                   final customer = customers[index];
                   return ListTile(
+                    onTap: () => showCustomerSheet(context, customer),
                     leading: CircleAvatar(
                       backgroundColor: theme.colorScheme.primary.withValues(
                         alpha: 0.10,

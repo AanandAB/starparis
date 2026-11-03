@@ -60,6 +60,17 @@ class $CustomersTable extends Customers
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _addressMeta = const VerificationMeta(
+    'address',
+  );
+  @override
+  late final GeneratedColumn<String> address = GeneratedColumn<String>(
+    'address',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _trnMeta = const VerificationMeta('trn');
   @override
   late final GeneratedColumn<String> trn = GeneratedColumn<String>(
@@ -190,6 +201,7 @@ class $CustomersTable extends Customers
     branchId,
     name,
     company,
+    address,
     trn,
     tier,
     creditLimitFils,
@@ -245,6 +257,12 @@ class $CustomersTable extends Customers
       context.handle(
         _companyMeta,
         company.isAcceptableOrUnknown(data['company']!, _companyMeta),
+      );
+    }
+    if (data.containsKey('address')) {
+      context.handle(
+        _addressMeta,
+        address.isAcceptableOrUnknown(data['address']!, _addressMeta),
       );
     }
     if (data.containsKey('trn')) {
@@ -355,6 +373,10 @@ class $CustomersTable extends Customers
         DriftSqlType.string,
         data['${effectivePrefix}company'],
       ),
+      address: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}address'],
+      ),
       trn: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}trn'],
@@ -414,6 +436,9 @@ class Customer extends DataClass implements Insertable<Customer> {
   final String? branchId;
   final String name;
   final String? company;
+
+  /// Where the customer is, as it should appear on a document.
+  final String? address;
   final String? trn;
   final String tier;
   final int creditLimitFils;
@@ -433,6 +458,7 @@ class Customer extends DataClass implements Insertable<Customer> {
     this.branchId,
     required this.name,
     this.company,
+    this.address,
     this.trn,
     required this.tier,
     required this.creditLimitFils,
@@ -456,6 +482,9 @@ class Customer extends DataClass implements Insertable<Customer> {
     map['name'] = Variable<String>(name);
     if (!nullToAbsent || company != null) {
       map['company'] = Variable<String>(company);
+    }
+    if (!nullToAbsent || address != null) {
+      map['address'] = Variable<String>(address);
     }
     if (!nullToAbsent || trn != null) {
       map['trn'] = Variable<String>(trn);
@@ -490,6 +519,9 @@ class Customer extends DataClass implements Insertable<Customer> {
       company: company == null && nullToAbsent
           ? const Value.absent()
           : Value(company),
+      address: address == null && nullToAbsent
+          ? const Value.absent()
+          : Value(address),
       trn: trn == null && nullToAbsent ? const Value.absent() : Value(trn),
       tier: Value(tier),
       creditLimitFils: Value(creditLimitFils),
@@ -521,6 +553,7 @@ class Customer extends DataClass implements Insertable<Customer> {
       branchId: serializer.fromJson<String?>(json['branchId']),
       name: serializer.fromJson<String>(json['name']),
       company: serializer.fromJson<String?>(json['company']),
+      address: serializer.fromJson<String?>(json['address']),
       trn: serializer.fromJson<String?>(json['trn']),
       tier: serializer.fromJson<String>(json['tier']),
       creditLimitFils: serializer.fromJson<int>(json['creditLimitFils']),
@@ -543,6 +576,7 @@ class Customer extends DataClass implements Insertable<Customer> {
       'branchId': serializer.toJson<String?>(branchId),
       'name': serializer.toJson<String>(name),
       'company': serializer.toJson<String?>(company),
+      'address': serializer.toJson<String?>(address),
       'trn': serializer.toJson<String?>(trn),
       'tier': serializer.toJson<String>(tier),
       'creditLimitFils': serializer.toJson<int>(creditLimitFils),
@@ -563,6 +597,7 @@ class Customer extends DataClass implements Insertable<Customer> {
     Value<String?> branchId = const Value.absent(),
     String? name,
     Value<String?> company = const Value.absent(),
+    Value<String?> address = const Value.absent(),
     Value<String?> trn = const Value.absent(),
     String? tier,
     int? creditLimitFils,
@@ -580,6 +615,7 @@ class Customer extends DataClass implements Insertable<Customer> {
     branchId: branchId.present ? branchId.value : this.branchId,
     name: name ?? this.name,
     company: company.present ? company.value : this.company,
+    address: address.present ? address.value : this.address,
     trn: trn.present ? trn.value : this.trn,
     tier: tier ?? this.tier,
     creditLimitFils: creditLimitFils ?? this.creditLimitFils,
@@ -599,6 +635,7 @@ class Customer extends DataClass implements Insertable<Customer> {
       branchId: data.branchId.present ? data.branchId.value : this.branchId,
       name: data.name.present ? data.name.value : this.name,
       company: data.company.present ? data.company.value : this.company,
+      address: data.address.present ? data.address.value : this.address,
       trn: data.trn.present ? data.trn.value : this.trn,
       tier: data.tier.present ? data.tier.value : this.tier,
       creditLimitFils: data.creditLimitFils.present
@@ -627,6 +664,7 @@ class Customer extends DataClass implements Insertable<Customer> {
           ..write('branchId: $branchId, ')
           ..write('name: $name, ')
           ..write('company: $company, ')
+          ..write('address: $address, ')
           ..write('trn: $trn, ')
           ..write('tier: $tier, ')
           ..write('creditLimitFils: $creditLimitFils, ')
@@ -649,6 +687,7 @@ class Customer extends DataClass implements Insertable<Customer> {
     branchId,
     name,
     company,
+    address,
     trn,
     tier,
     creditLimitFils,
@@ -670,6 +709,7 @@ class Customer extends DataClass implements Insertable<Customer> {
           other.branchId == this.branchId &&
           other.name == this.name &&
           other.company == this.company &&
+          other.address == this.address &&
           other.trn == this.trn &&
           other.tier == this.tier &&
           other.creditLimitFils == this.creditLimitFils &&
@@ -689,6 +729,7 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
   final Value<String?> branchId;
   final Value<String> name;
   final Value<String?> company;
+  final Value<String?> address;
   final Value<String?> trn;
   final Value<String> tier;
   final Value<int> creditLimitFils;
@@ -707,6 +748,7 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     this.branchId = const Value.absent(),
     this.name = const Value.absent(),
     this.company = const Value.absent(),
+    this.address = const Value.absent(),
     this.trn = const Value.absent(),
     this.tier = const Value.absent(),
     this.creditLimitFils = const Value.absent(),
@@ -726,6 +768,7 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     this.branchId = const Value.absent(),
     required String name,
     this.company = const Value.absent(),
+    this.address = const Value.absent(),
     this.trn = const Value.absent(),
     this.tier = const Value.absent(),
     this.creditLimitFils = const Value.absent(),
@@ -749,6 +792,7 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     Expression<String>? branchId,
     Expression<String>? name,
     Expression<String>? company,
+    Expression<String>? address,
     Expression<String>? trn,
     Expression<String>? tier,
     Expression<int>? creditLimitFils,
@@ -768,6 +812,7 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
       if (branchId != null) 'branch_id': branchId,
       if (name != null) 'name': name,
       if (company != null) 'company': company,
+      if (address != null) 'address': address,
       if (trn != null) 'trn': trn,
       if (tier != null) 'tier': tier,
       if (creditLimitFils != null) 'credit_limit_fils': creditLimitFils,
@@ -789,6 +834,7 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     Value<String?>? branchId,
     Value<String>? name,
     Value<String?>? company,
+    Value<String?>? address,
     Value<String?>? trn,
     Value<String>? tier,
     Value<int>? creditLimitFils,
@@ -808,6 +854,7 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
       branchId: branchId ?? this.branchId,
       name: name ?? this.name,
       company: company ?? this.company,
+      address: address ?? this.address,
       trn: trn ?? this.trn,
       tier: tier ?? this.tier,
       creditLimitFils: creditLimitFils ?? this.creditLimitFils,
@@ -840,6 +887,9 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     }
     if (company.present) {
       map['company'] = Variable<String>(company.value);
+    }
+    if (address.present) {
+      map['address'] = Variable<String>(address.value);
     }
     if (trn.present) {
       map['trn'] = Variable<String>(trn.value);
@@ -888,6 +938,7 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
           ..write('branchId: $branchId, ')
           ..write('name: $name, ')
           ..write('company: $company, ')
+          ..write('address: $address, ')
           ..write('trn: $trn, ')
           ..write('tier: $tier, ')
           ..write('creditLimitFils: $creditLimitFils, ')
@@ -19544,6 +19595,7 @@ typedef $$CustomersTableCreateCompanionBuilder = CustomersCompanion Function({
   Value<String?> branchId,
   required String name,
   Value<String?> company,
+  Value<String?> address,
   Value<String?> trn,
   Value<String> tier,
   Value<int> creditLimitFils,
@@ -19563,6 +19615,7 @@ typedef $$CustomersTableUpdateCompanionBuilder = CustomersCompanion Function({
   Value<String?> branchId,
   Value<String> name,
   Value<String?> company,
+  Value<String?> address,
   Value<String?> trn,
   Value<String> tier,
   Value<int> creditLimitFils,
@@ -19608,6 +19661,11 @@ class $$CustomersTableFilterComposer
 
   ColumnFilters<String> get company => $composableBuilder(
     column: $table.company,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get address => $composableBuilder(
+    column: $table.address,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -19701,6 +19759,11 @@ class $$CustomersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get address => $composableBuilder(
+    column: $table.address,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get trn => $composableBuilder(
     column: $table.trn,
     builder: (column) => ColumnOrderings(column),
@@ -19781,6 +19844,9 @@ class $$CustomersTableAnnotationComposer
   GeneratedColumn<String> get company =>
       $composableBuilder(column: $table.company, builder: (column) => column);
 
+  GeneratedColumn<String> get address =>
+      $composableBuilder(column: $table.address, builder: (column) => column);
+
   GeneratedColumn<String> get trn =>
       $composableBuilder(column: $table.trn, builder: (column) => column);
 
@@ -19857,6 +19923,7 @@ class $$CustomersTableTableManager
                 Value<String?> branchId = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<String?> company = const Value.absent(),
+                Value<String?> address = const Value.absent(),
                 Value<String?> trn = const Value.absent(),
                 Value<String> tier = const Value.absent(),
                 Value<int> creditLimitFils = const Value.absent(),
@@ -19875,6 +19942,7 @@ class $$CustomersTableTableManager
                 branchId: branchId,
                 name: name,
                 company: company,
+                address: address,
                 trn: trn,
                 tier: tier,
                 creditLimitFils: creditLimitFils,
@@ -19895,6 +19963,7 @@ class $$CustomersTableTableManager
                 Value<String?> branchId = const Value.absent(),
                 required String name,
                 Value<String?> company = const Value.absent(),
+                Value<String?> address = const Value.absent(),
                 Value<String?> trn = const Value.absent(),
                 Value<String> tier = const Value.absent(),
                 Value<int> creditLimitFils = const Value.absent(),
@@ -19913,6 +19982,7 @@ class $$CustomersTableTableManager
                 branchId: branchId,
                 name: name,
                 company: company,
+                address: address,
                 trn: trn,
                 tier: tier,
                 creditLimitFils: creditLimitFils,

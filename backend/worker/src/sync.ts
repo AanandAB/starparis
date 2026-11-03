@@ -58,6 +58,7 @@ export const ENTITIES: Record<string, EntityDef> = {
     columns: new Set([
       'name',
       'company',
+      'address',
       'trn',
       'tier',
       'credit_limit_fils',

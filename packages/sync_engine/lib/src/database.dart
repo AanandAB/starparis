@@ -20,6 +20,9 @@ class Customers extends Table {
   TextColumn get branchId => text().nullable()();
   TextColumn get name => text()();
   TextColumn get company => text().nullable()();
+
+  /// Where the customer is, as it should appear on a document.
+  TextColumn get address => text().nullable()();
   TextColumn get trn => text().nullable()();
   TextColumn get tier => text().withDefault(const Constant('retail'))();
   IntColumn get creditLimitFils => integer().withDefault(const Constant(0))();
@@ -586,7 +589,7 @@ class LocalDatabase extends _$LocalDatabase {
   LocalDatabase(super.executor);
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -632,6 +635,11 @@ class LocalDatabase extends _$LocalDatabase {
       if (from < 9) {
         await m.createTable(vendors);
         await m.createTable(vendorJobs);
+      }
+      if (from < 10) {
+        if (from >= 1) {
+          await m.addColumn(customers, customers.address);
+        }
       }
       if (from < 7) {
         await m.createTable(tillSessions);
@@ -1253,6 +1261,7 @@ class LocalDatabase extends _$LocalDatabase {
         branchId: Value(data['branch_id'] as String?),
         name: Value(data['name'] as String? ?? ''),
         company: Value(data['company'] as String?),
+        address: Value(data['address'] as String?),
         trn: Value(data['trn'] as String?),
         tier: Value(data['tier'] as String? ?? 'retail'),
         creditLimitFils: Value(
@@ -3033,6 +3042,30 @@ class LocalDatabase extends _$LocalDatabase {
         fields: <String, Object?>{'status': to},
       );
     });
+  }
+
+  /// Everything this customer has, newest first: the statement of account is
+  /// built from these two lists plus what each invoice still owes.
+  Stream<List<Invoice>> watchInvoicesForCustomer(String customerId) {
+    return (select(invoices)
+          ..where(
+            (t) => t.customerId.equals(customerId) & t.deletedAt.isNull(),
+          )
+          ..orderBy(<OrderClauseGenerator<$InvoicesTable>>[
+            (t) => OrderingTerm.desc(t.issuedAt),
+          ]))
+        .watch();
+  }
+
+  Stream<List<Order>> watchOrdersForCustomer(String customerId) {
+    return (select(orders)
+          ..where(
+            (t) => t.customerId.equals(customerId) & t.deletedAt.isNull(),
+          )
+          ..orderBy(<OrderClauseGenerator<$OrdersTable>>[
+            (t) => OrderingTerm.desc(t.createdAt),
+          ]))
+        .watch();
   }
 
   Stream<List<Order>> watchOrders({int limit = 200}) {
