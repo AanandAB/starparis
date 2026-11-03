@@ -94,6 +94,8 @@ class _OrderBuilderScreenState extends ConsumerState<OrderBuilderScreen> {
 
     try {
       final price = ProductPricer.price(
+        machines: ref.watch(machinesProvider).value ?? const <Machine>[],
+        operations: ref.watch(operationsProvider).value ?? const <Operation>[],
         product: product,
         rules: rules,
         material: material,

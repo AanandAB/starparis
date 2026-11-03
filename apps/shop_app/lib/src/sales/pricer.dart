@@ -12,6 +12,68 @@ import 'package:starparis_sync/starparis_sync.dart';
 class ProductPricer {
   const ProductPricer._();
 
+  /// The press this product names, if the catalogue has it. A product with no
+  /// machine is priced on its per-sheet print rate, exactly as before.
+  static MachineSpec? _machineFor(Product product, List<Machine> machines) {
+    final id = product.machineId;
+    if (id == null) return null;
+    for (final machine in machines) {
+      if (machine.id == id) {
+        return MachineSpec(
+          name: machine.name,
+          hourlyRateFils: machine.hourlyRateFils,
+          setupMinutes: machine.setupMinutes,
+          sheetsPerHour: machine.sheetsPerHour,
+          clickFils: machine.clickFils,
+        );
+      }
+    }
+    return null;
+  }
+
+  /// The finishing steps this product includes, in the order the shop lists them.
+  static List<FinishingOperation> _operationsFor(
+    Product product,
+    List<Operation> operations,
+  ) {
+    List<String> codes;
+    try {
+      codes = <String>[
+        for (final value
+            in jsonDecode(product.operationCodesJson) as List<Object?>)
+          value! as String,
+      ];
+    } catch (_) {
+      return const <FinishingOperation>[];
+    }
+    if (codes.isEmpty) return const <FinishingOperation>[];
+
+    final byCode = <String, Operation>{
+      for (final op in operations) op.code: op,
+    };
+    return <FinishingOperation>[
+      for (final code in codes)
+        if (byCode[code] != null)
+          FinishingOperation(
+            code: code,
+            name: byCode[code]!.nameEn,
+            basis: _basis(byCode[code]!.basis),
+            rateFils: byCode[code]!.rateFils,
+            setupFils: byCode[code]!.setupFils,
+            minChargeFils: byCode[code]!.minChargeFils,
+          ),
+    ];
+  }
+
+  static OperationBasis _basis(String wire) => switch (wire) {
+    'per_1000' => OperationBasis.per1000,
+    'per_side' => OperationBasis.perSide,
+    'per_sqm' => OperationBasis.perSqm,
+    'per_copy' => OperationBasis.perCopy,
+    'per_hour' => OperationBasis.perHour,
+    _ => OperationBasis.perPiece,
+  };
+
   static List<PriceOption> sizes(Product product) =>
       _options(product.sizesJson);
 
@@ -33,6 +95,8 @@ class ProductPricer {
     MaterialRow? material,
     required int priceBookVersion,
     required int vatBps,
+    MachineSpec? machine,
+    List<FinishingOperation> operations = const <FinishingOperation>[],
   }) {
     return PricingContext(
       priceBookVersion: priceBookVersion,
@@ -51,6 +115,8 @@ class ProductPricer {
       spoilageBps: product.spoilageBps,
       materialCostPerSheetFils: material?.costPerSheetFils,
       printRatePerSheetSideFils: product.printRateFils,
+      machine: machine,
+      operations: operations,
       areaRateFilsPerSqm: product.areaRateFilsPerSqm,
       markupBps: product.markupBps,
       minOrderFils: product.minOrderFils,
@@ -66,11 +132,19 @@ class ProductPricer {
     required int priceBookVersion,
     required int vatBps,
     required int quantity,
+
+    /// The shop's machines and finishing catalogue, so the engine prices the
+    /// press the product actually runs on and the steps it actually includes.
+    List<Machine> machines = const <Machine>[],
+    List<Operation> operations = const <Operation>[],
     PriceOption? size,
     int sides = 1,
     List<String> finishes = const <String>[],
     Priority priority = Priority.normal,
   }) {
+    final machine = _machineFor(product, machines);
+    final chosenOperations = _operationsFor(product, operations);
+
     final request = PriceRequest(
       productId: product.id,
       kind: ProductKind.fromWire(product.kind),
@@ -91,6 +165,8 @@ class ProductPricer {
         material: material,
         priceBookVersion: priceBookVersion,
         vatBps: vatBps,
+        machine: machine,
+        operations: chosenOperations,
       ),
     );
   }

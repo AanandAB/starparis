@@ -80,6 +80,17 @@ final StreamProvider<List<Order>> ordersProvider = StreamProvider<List<Order>>(
   (ref) => ref.watch(bootstrapProvider).db.watchOrders(),
 );
 
+/// The shop's machines and finishing catalogue, mirrored from /v1/catalogue.
+final StreamProvider<List<Machine>> machinesProvider =
+    StreamProvider<List<Machine>>(
+      (ref) => ref.watch(bootstrapProvider).db.watchMachines(),
+    );
+
+final StreamProvider<List<Operation>> operationsProvider =
+    StreamProvider<List<Operation>>(
+      (ref) => ref.watch(bootstrapProvider).db.watchOperations(),
+    );
+
 final StreamProvider<List<PriceRuleRow>> allRulesProvider =
     StreamProvider<List<PriceRuleRow>>(
       (ref) => ref.watch(bootstrapProvider).db.watchAllRules(),

@@ -13827,6 +13827,1256 @@ class VendorJobsCompanion extends UpdateCompanion<VendorJob> {
   }
 }
 
+class $MachinesTable extends Machines with TableInfo<$MachinesTable, Machine> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MachinesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tenantIdMeta = const VerificationMeta(
+    'tenantId',
+  );
+  @override
+  late final GeneratedColumn<String> tenantId = GeneratedColumn<String>(
+    'tenant_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+    'type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('digital'),
+  );
+  static const VerificationMeta _hourlyRateFilsMeta = const VerificationMeta(
+    'hourlyRateFils',
+  );
+  @override
+  late final GeneratedColumn<int> hourlyRateFils = GeneratedColumn<int>(
+    'hourly_rate_fils',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _setupMinutesMeta = const VerificationMeta(
+    'setupMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> setupMinutes = GeneratedColumn<int>(
+    'setup_minutes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _sheetsPerHourMeta = const VerificationMeta(
+    'sheetsPerHour',
+  );
+  @override
+  late final GeneratedColumn<int> sheetsPerHour = GeneratedColumn<int>(
+    'sheets_per_hour',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _plateCostFilsMeta = const VerificationMeta(
+    'plateCostFils',
+  );
+  @override
+  late final GeneratedColumn<int> plateCostFils = GeneratedColumn<int>(
+    'plate_cost_fils',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _clickFilsMeta = const VerificationMeta(
+    'clickFils',
+  );
+  @override
+  late final GeneratedColumn<int> clickFils = GeneratedColumn<int>(
+    'click_fils',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _activeMeta = const VerificationMeta('active');
+  @override
+  late final GeneratedColumn<bool> active = GeneratedColumn<bool>(
+    'active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    tenantId,
+    name,
+    type,
+    hourlyRateFils,
+    setupMinutes,
+    sheetsPerHour,
+    plateCostFils,
+    clickFils,
+    active,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'machines';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Machine> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('tenant_id')) {
+      context.handle(
+        _tenantIdMeta,
+        tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tenantIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+        _typeMeta,
+        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+      );
+    }
+    if (data.containsKey('hourly_rate_fils')) {
+      context.handle(
+        _hourlyRateFilsMeta,
+        hourlyRateFils.isAcceptableOrUnknown(
+          data['hourly_rate_fils']!,
+          _hourlyRateFilsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('setup_minutes')) {
+      context.handle(
+        _setupMinutesMeta,
+        setupMinutes.isAcceptableOrUnknown(
+          data['setup_minutes']!,
+          _setupMinutesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sheets_per_hour')) {
+      context.handle(
+        _sheetsPerHourMeta,
+        sheetsPerHour.isAcceptableOrUnknown(
+          data['sheets_per_hour']!,
+          _sheetsPerHourMeta,
+        ),
+      );
+    }
+    if (data.containsKey('plate_cost_fils')) {
+      context.handle(
+        _plateCostFilsMeta,
+        plateCostFils.isAcceptableOrUnknown(
+          data['plate_cost_fils']!,
+          _plateCostFilsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('click_fils')) {
+      context.handle(
+        _clickFilsMeta,
+        clickFils.isAcceptableOrUnknown(data['click_fils']!, _clickFilsMeta),
+      );
+    }
+    if (data.containsKey('active')) {
+      context.handle(
+        _activeMeta,
+        active.isAcceptableOrUnknown(data['active']!, _activeMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Machine map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Machine(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      tenantId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tenant_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type'],
+      )!,
+      hourlyRateFils: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}hourly_rate_fils'],
+      )!,
+      setupMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}setup_minutes'],
+      )!,
+      sheetsPerHour: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sheets_per_hour'],
+      )!,
+      plateCostFils: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}plate_cost_fils'],
+      )!,
+      clickFils: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}click_fils'],
+      )!,
+      active: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}active'],
+      )!,
+    );
+  }
+
+  @override
+  $MachinesTable createAlias(String alias) {
+    return $MachinesTable(attachedDatabase, alias);
+  }
+}
+
+class Machine extends DataClass implements Insertable<Machine> {
+  final String id;
+  final String tenantId;
+  final String name;
+  final String type;
+  final int hourlyRateFils;
+  final int setupMinutes;
+  final int sheetsPerHour;
+  final int plateCostFils;
+  final int clickFils;
+  final bool active;
+  const Machine({
+    required this.id,
+    required this.tenantId,
+    required this.name,
+    required this.type,
+    required this.hourlyRateFils,
+    required this.setupMinutes,
+    required this.sheetsPerHour,
+    required this.plateCostFils,
+    required this.clickFils,
+    required this.active,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['tenant_id'] = Variable<String>(tenantId);
+    map['name'] = Variable<String>(name);
+    map['type'] = Variable<String>(type);
+    map['hourly_rate_fils'] = Variable<int>(hourlyRateFils);
+    map['setup_minutes'] = Variable<int>(setupMinutes);
+    map['sheets_per_hour'] = Variable<int>(sheetsPerHour);
+    map['plate_cost_fils'] = Variable<int>(plateCostFils);
+    map['click_fils'] = Variable<int>(clickFils);
+    map['active'] = Variable<bool>(active);
+    return map;
+  }
+
+  MachinesCompanion toCompanion(bool nullToAbsent) {
+    return MachinesCompanion(
+      id: Value(id),
+      tenantId: Value(tenantId),
+      name: Value(name),
+      type: Value(type),
+      hourlyRateFils: Value(hourlyRateFils),
+      setupMinutes: Value(setupMinutes),
+      sheetsPerHour: Value(sheetsPerHour),
+      plateCostFils: Value(plateCostFils),
+      clickFils: Value(clickFils),
+      active: Value(active),
+    );
+  }
+
+  factory Machine.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Machine(
+      id: serializer.fromJson<String>(json['id']),
+      tenantId: serializer.fromJson<String>(json['tenantId']),
+      name: serializer.fromJson<String>(json['name']),
+      type: serializer.fromJson<String>(json['type']),
+      hourlyRateFils: serializer.fromJson<int>(json['hourlyRateFils']),
+      setupMinutes: serializer.fromJson<int>(json['setupMinutes']),
+      sheetsPerHour: serializer.fromJson<int>(json['sheetsPerHour']),
+      plateCostFils: serializer.fromJson<int>(json['plateCostFils']),
+      clickFils: serializer.fromJson<int>(json['clickFils']),
+      active: serializer.fromJson<bool>(json['active']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'tenantId': serializer.toJson<String>(tenantId),
+      'name': serializer.toJson<String>(name),
+      'type': serializer.toJson<String>(type),
+      'hourlyRateFils': serializer.toJson<int>(hourlyRateFils),
+      'setupMinutes': serializer.toJson<int>(setupMinutes),
+      'sheetsPerHour': serializer.toJson<int>(sheetsPerHour),
+      'plateCostFils': serializer.toJson<int>(plateCostFils),
+      'clickFils': serializer.toJson<int>(clickFils),
+      'active': serializer.toJson<bool>(active),
+    };
+  }
+
+  Machine copyWith({
+    String? id,
+    String? tenantId,
+    String? name,
+    String? type,
+    int? hourlyRateFils,
+    int? setupMinutes,
+    int? sheetsPerHour,
+    int? plateCostFils,
+    int? clickFils,
+    bool? active,
+  }) => Machine(
+    id: id ?? this.id,
+    tenantId: tenantId ?? this.tenantId,
+    name: name ?? this.name,
+    type: type ?? this.type,
+    hourlyRateFils: hourlyRateFils ?? this.hourlyRateFils,
+    setupMinutes: setupMinutes ?? this.setupMinutes,
+    sheetsPerHour: sheetsPerHour ?? this.sheetsPerHour,
+    plateCostFils: plateCostFils ?? this.plateCostFils,
+    clickFils: clickFils ?? this.clickFils,
+    active: active ?? this.active,
+  );
+  Machine copyWithCompanion(MachinesCompanion data) {
+    return Machine(
+      id: data.id.present ? data.id.value : this.id,
+      tenantId: data.tenantId.present ? data.tenantId.value : this.tenantId,
+      name: data.name.present ? data.name.value : this.name,
+      type: data.type.present ? data.type.value : this.type,
+      hourlyRateFils: data.hourlyRateFils.present
+          ? data.hourlyRateFils.value
+          : this.hourlyRateFils,
+      setupMinutes: data.setupMinutes.present
+          ? data.setupMinutes.value
+          : this.setupMinutes,
+      sheetsPerHour: data.sheetsPerHour.present
+          ? data.sheetsPerHour.value
+          : this.sheetsPerHour,
+      plateCostFils: data.plateCostFils.present
+          ? data.plateCostFils.value
+          : this.plateCostFils,
+      clickFils: data.clickFils.present ? data.clickFils.value : this.clickFils,
+      active: data.active.present ? data.active.value : this.active,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Machine(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('name: $name, ')
+          ..write('type: $type, ')
+          ..write('hourlyRateFils: $hourlyRateFils, ')
+          ..write('setupMinutes: $setupMinutes, ')
+          ..write('sheetsPerHour: $sheetsPerHour, ')
+          ..write('plateCostFils: $plateCostFils, ')
+          ..write('clickFils: $clickFils, ')
+          ..write('active: $active')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    tenantId,
+    name,
+    type,
+    hourlyRateFils,
+    setupMinutes,
+    sheetsPerHour,
+    plateCostFils,
+    clickFils,
+    active,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Machine &&
+          other.id == this.id &&
+          other.tenantId == this.tenantId &&
+          other.name == this.name &&
+          other.type == this.type &&
+          other.hourlyRateFils == this.hourlyRateFils &&
+          other.setupMinutes == this.setupMinutes &&
+          other.sheetsPerHour == this.sheetsPerHour &&
+          other.plateCostFils == this.plateCostFils &&
+          other.clickFils == this.clickFils &&
+          other.active == this.active);
+}
+
+class MachinesCompanion extends UpdateCompanion<Machine> {
+  final Value<String> id;
+  final Value<String> tenantId;
+  final Value<String> name;
+  final Value<String> type;
+  final Value<int> hourlyRateFils;
+  final Value<int> setupMinutes;
+  final Value<int> sheetsPerHour;
+  final Value<int> plateCostFils;
+  final Value<int> clickFils;
+  final Value<bool> active;
+  final Value<int> rowid;
+  const MachinesCompanion({
+    this.id = const Value.absent(),
+    this.tenantId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.type = const Value.absent(),
+    this.hourlyRateFils = const Value.absent(),
+    this.setupMinutes = const Value.absent(),
+    this.sheetsPerHour = const Value.absent(),
+    this.plateCostFils = const Value.absent(),
+    this.clickFils = const Value.absent(),
+    this.active = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MachinesCompanion.insert({
+    required String id,
+    required String tenantId,
+    required String name,
+    this.type = const Value.absent(),
+    this.hourlyRateFils = const Value.absent(),
+    this.setupMinutes = const Value.absent(),
+    this.sheetsPerHour = const Value.absent(),
+    this.plateCostFils = const Value.absent(),
+    this.clickFils = const Value.absent(),
+    this.active = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       tenantId = Value(tenantId),
+       name = Value(name);
+  static Insertable<Machine> custom({
+    Expression<String>? id,
+    Expression<String>? tenantId,
+    Expression<String>? name,
+    Expression<String>? type,
+    Expression<int>? hourlyRateFils,
+    Expression<int>? setupMinutes,
+    Expression<int>? sheetsPerHour,
+    Expression<int>? plateCostFils,
+    Expression<int>? clickFils,
+    Expression<bool>? active,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (tenantId != null) 'tenant_id': tenantId,
+      if (name != null) 'name': name,
+      if (type != null) 'type': type,
+      if (hourlyRateFils != null) 'hourly_rate_fils': hourlyRateFils,
+      if (setupMinutes != null) 'setup_minutes': setupMinutes,
+      if (sheetsPerHour != null) 'sheets_per_hour': sheetsPerHour,
+      if (plateCostFils != null) 'plate_cost_fils': plateCostFils,
+      if (clickFils != null) 'click_fils': clickFils,
+      if (active != null) 'active': active,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MachinesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? tenantId,
+    Value<String>? name,
+    Value<String>? type,
+    Value<int>? hourlyRateFils,
+    Value<int>? setupMinutes,
+    Value<int>? sheetsPerHour,
+    Value<int>? plateCostFils,
+    Value<int>? clickFils,
+    Value<bool>? active,
+    Value<int>? rowid,
+  }) {
+    return MachinesCompanion(
+      id: id ?? this.id,
+      tenantId: tenantId ?? this.tenantId,
+      name: name ?? this.name,
+      type: type ?? this.type,
+      hourlyRateFils: hourlyRateFils ?? this.hourlyRateFils,
+      setupMinutes: setupMinutes ?? this.setupMinutes,
+      sheetsPerHour: sheetsPerHour ?? this.sheetsPerHour,
+      plateCostFils: plateCostFils ?? this.plateCostFils,
+      clickFils: clickFils ?? this.clickFils,
+      active: active ?? this.active,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (tenantId.present) {
+      map['tenant_id'] = Variable<String>(tenantId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (hourlyRateFils.present) {
+      map['hourly_rate_fils'] = Variable<int>(hourlyRateFils.value);
+    }
+    if (setupMinutes.present) {
+      map['setup_minutes'] = Variable<int>(setupMinutes.value);
+    }
+    if (sheetsPerHour.present) {
+      map['sheets_per_hour'] = Variable<int>(sheetsPerHour.value);
+    }
+    if (plateCostFils.present) {
+      map['plate_cost_fils'] = Variable<int>(plateCostFils.value);
+    }
+    if (clickFils.present) {
+      map['click_fils'] = Variable<int>(clickFils.value);
+    }
+    if (active.present) {
+      map['active'] = Variable<bool>(active.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MachinesCompanion(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('name: $name, ')
+          ..write('type: $type, ')
+          ..write('hourlyRateFils: $hourlyRateFils, ')
+          ..write('setupMinutes: $setupMinutes, ')
+          ..write('sheetsPerHour: $sheetsPerHour, ')
+          ..write('plateCostFils: $plateCostFils, ')
+          ..write('clickFils: $clickFils, ')
+          ..write('active: $active, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $OperationsTable extends Operations
+    with TableInfo<$OperationsTable, Operation> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $OperationsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tenantIdMeta = const VerificationMeta(
+    'tenantId',
+  );
+  @override
+  late final GeneratedColumn<String> tenantId = GeneratedColumn<String>(
+    'tenant_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _codeMeta = const VerificationMeta('code');
+  @override
+  late final GeneratedColumn<String> code = GeneratedColumn<String>(
+    'code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameEnMeta = const VerificationMeta('nameEn');
+  @override
+  late final GeneratedColumn<String> nameEn = GeneratedColumn<String>(
+    'name_en',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _phaseMeta = const VerificationMeta('phase');
+  @override
+  late final GeneratedColumn<String> phase = GeneratedColumn<String>(
+    'phase',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('finishing'),
+  );
+  static const VerificationMeta _basisMeta = const VerificationMeta('basis');
+  @override
+  late final GeneratedColumn<String> basis = GeneratedColumn<String>(
+    'basis',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('per_piece'),
+  );
+  static const VerificationMeta _rateFilsMeta = const VerificationMeta(
+    'rateFils',
+  );
+  @override
+  late final GeneratedColumn<int> rateFils = GeneratedColumn<int>(
+    'rate_fils',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _setupFilsMeta = const VerificationMeta(
+    'setupFils',
+  );
+  @override
+  late final GeneratedColumn<int> setupFils = GeneratedColumn<int>(
+    'setup_fils',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _minChargeFilsMeta = const VerificationMeta(
+    'minChargeFils',
+  );
+  @override
+  late final GeneratedColumn<int> minChargeFils = GeneratedColumn<int>(
+    'min_charge_fils',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _wasteBpsMeta = const VerificationMeta(
+    'wasteBps',
+  );
+  @override
+  late final GeneratedColumn<int> wasteBps = GeneratedColumn<int>(
+    'waste_bps',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _activeMeta = const VerificationMeta('active');
+  @override
+  late final GeneratedColumn<bool> active = GeneratedColumn<bool>(
+    'active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    tenantId,
+    code,
+    nameEn,
+    phase,
+    basis,
+    rateFils,
+    setupFils,
+    minChargeFils,
+    wasteBps,
+    active,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'operations';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Operation> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('tenant_id')) {
+      context.handle(
+        _tenantIdMeta,
+        tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tenantIdMeta);
+    }
+    if (data.containsKey('code')) {
+      context.handle(
+        _codeMeta,
+        code.isAcceptableOrUnknown(data['code']!, _codeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_codeMeta);
+    }
+    if (data.containsKey('name_en')) {
+      context.handle(
+        _nameEnMeta,
+        nameEn.isAcceptableOrUnknown(data['name_en']!, _nameEnMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameEnMeta);
+    }
+    if (data.containsKey('phase')) {
+      context.handle(
+        _phaseMeta,
+        phase.isAcceptableOrUnknown(data['phase']!, _phaseMeta),
+      );
+    }
+    if (data.containsKey('basis')) {
+      context.handle(
+        _basisMeta,
+        basis.isAcceptableOrUnknown(data['basis']!, _basisMeta),
+      );
+    }
+    if (data.containsKey('rate_fils')) {
+      context.handle(
+        _rateFilsMeta,
+        rateFils.isAcceptableOrUnknown(data['rate_fils']!, _rateFilsMeta),
+      );
+    }
+    if (data.containsKey('setup_fils')) {
+      context.handle(
+        _setupFilsMeta,
+        setupFils.isAcceptableOrUnknown(data['setup_fils']!, _setupFilsMeta),
+      );
+    }
+    if (data.containsKey('min_charge_fils')) {
+      context.handle(
+        _minChargeFilsMeta,
+        minChargeFils.isAcceptableOrUnknown(
+          data['min_charge_fils']!,
+          _minChargeFilsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('waste_bps')) {
+      context.handle(
+        _wasteBpsMeta,
+        wasteBps.isAcceptableOrUnknown(data['waste_bps']!, _wasteBpsMeta),
+      );
+    }
+    if (data.containsKey('active')) {
+      context.handle(
+        _activeMeta,
+        active.isAcceptableOrUnknown(data['active']!, _activeMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Operation map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Operation(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      tenantId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tenant_id'],
+      )!,
+      code: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}code'],
+      )!,
+      nameEn: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name_en'],
+      )!,
+      phase: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}phase'],
+      )!,
+      basis: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}basis'],
+      )!,
+      rateFils: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rate_fils'],
+      )!,
+      setupFils: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}setup_fils'],
+      )!,
+      minChargeFils: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}min_charge_fils'],
+      )!,
+      wasteBps: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}waste_bps'],
+      )!,
+      active: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}active'],
+      )!,
+    );
+  }
+
+  @override
+  $OperationsTable createAlias(String alias) {
+    return $OperationsTable(attachedDatabase, alias);
+  }
+}
+
+class Operation extends DataClass implements Insertable<Operation> {
+  final String id;
+  final String tenantId;
+  final String code;
+  final String nameEn;
+  final String phase;
+  final String basis;
+  final int rateFils;
+  final int setupFils;
+  final int minChargeFils;
+  final int wasteBps;
+  final bool active;
+  const Operation({
+    required this.id,
+    required this.tenantId,
+    required this.code,
+    required this.nameEn,
+    required this.phase,
+    required this.basis,
+    required this.rateFils,
+    required this.setupFils,
+    required this.minChargeFils,
+    required this.wasteBps,
+    required this.active,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['tenant_id'] = Variable<String>(tenantId);
+    map['code'] = Variable<String>(code);
+    map['name_en'] = Variable<String>(nameEn);
+    map['phase'] = Variable<String>(phase);
+    map['basis'] = Variable<String>(basis);
+    map['rate_fils'] = Variable<int>(rateFils);
+    map['setup_fils'] = Variable<int>(setupFils);
+    map['min_charge_fils'] = Variable<int>(minChargeFils);
+    map['waste_bps'] = Variable<int>(wasteBps);
+    map['active'] = Variable<bool>(active);
+    return map;
+  }
+
+  OperationsCompanion toCompanion(bool nullToAbsent) {
+    return OperationsCompanion(
+      id: Value(id),
+      tenantId: Value(tenantId),
+      code: Value(code),
+      nameEn: Value(nameEn),
+      phase: Value(phase),
+      basis: Value(basis),
+      rateFils: Value(rateFils),
+      setupFils: Value(setupFils),
+      minChargeFils: Value(minChargeFils),
+      wasteBps: Value(wasteBps),
+      active: Value(active),
+    );
+  }
+
+  factory Operation.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Operation(
+      id: serializer.fromJson<String>(json['id']),
+      tenantId: serializer.fromJson<String>(json['tenantId']),
+      code: serializer.fromJson<String>(json['code']),
+      nameEn: serializer.fromJson<String>(json['nameEn']),
+      phase: serializer.fromJson<String>(json['phase']),
+      basis: serializer.fromJson<String>(json['basis']),
+      rateFils: serializer.fromJson<int>(json['rateFils']),
+      setupFils: serializer.fromJson<int>(json['setupFils']),
+      minChargeFils: serializer.fromJson<int>(json['minChargeFils']),
+      wasteBps: serializer.fromJson<int>(json['wasteBps']),
+      active: serializer.fromJson<bool>(json['active']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'tenantId': serializer.toJson<String>(tenantId),
+      'code': serializer.toJson<String>(code),
+      'nameEn': serializer.toJson<String>(nameEn),
+      'phase': serializer.toJson<String>(phase),
+      'basis': serializer.toJson<String>(basis),
+      'rateFils': serializer.toJson<int>(rateFils),
+      'setupFils': serializer.toJson<int>(setupFils),
+      'minChargeFils': serializer.toJson<int>(minChargeFils),
+      'wasteBps': serializer.toJson<int>(wasteBps),
+      'active': serializer.toJson<bool>(active),
+    };
+  }
+
+  Operation copyWith({
+    String? id,
+    String? tenantId,
+    String? code,
+    String? nameEn,
+    String? phase,
+    String? basis,
+    int? rateFils,
+    int? setupFils,
+    int? minChargeFils,
+    int? wasteBps,
+    bool? active,
+  }) => Operation(
+    id: id ?? this.id,
+    tenantId: tenantId ?? this.tenantId,
+    code: code ?? this.code,
+    nameEn: nameEn ?? this.nameEn,
+    phase: phase ?? this.phase,
+    basis: basis ?? this.basis,
+    rateFils: rateFils ?? this.rateFils,
+    setupFils: setupFils ?? this.setupFils,
+    minChargeFils: minChargeFils ?? this.minChargeFils,
+    wasteBps: wasteBps ?? this.wasteBps,
+    active: active ?? this.active,
+  );
+  Operation copyWithCompanion(OperationsCompanion data) {
+    return Operation(
+      id: data.id.present ? data.id.value : this.id,
+      tenantId: data.tenantId.present ? data.tenantId.value : this.tenantId,
+      code: data.code.present ? data.code.value : this.code,
+      nameEn: data.nameEn.present ? data.nameEn.value : this.nameEn,
+      phase: data.phase.present ? data.phase.value : this.phase,
+      basis: data.basis.present ? data.basis.value : this.basis,
+      rateFils: data.rateFils.present ? data.rateFils.value : this.rateFils,
+      setupFils: data.setupFils.present ? data.setupFils.value : this.setupFils,
+      minChargeFils: data.minChargeFils.present
+          ? data.minChargeFils.value
+          : this.minChargeFils,
+      wasteBps: data.wasteBps.present ? data.wasteBps.value : this.wasteBps,
+      active: data.active.present ? data.active.value : this.active,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Operation(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('code: $code, ')
+          ..write('nameEn: $nameEn, ')
+          ..write('phase: $phase, ')
+          ..write('basis: $basis, ')
+          ..write('rateFils: $rateFils, ')
+          ..write('setupFils: $setupFils, ')
+          ..write('minChargeFils: $minChargeFils, ')
+          ..write('wasteBps: $wasteBps, ')
+          ..write('active: $active')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    tenantId,
+    code,
+    nameEn,
+    phase,
+    basis,
+    rateFils,
+    setupFils,
+    minChargeFils,
+    wasteBps,
+    active,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Operation &&
+          other.id == this.id &&
+          other.tenantId == this.tenantId &&
+          other.code == this.code &&
+          other.nameEn == this.nameEn &&
+          other.phase == this.phase &&
+          other.basis == this.basis &&
+          other.rateFils == this.rateFils &&
+          other.setupFils == this.setupFils &&
+          other.minChargeFils == this.minChargeFils &&
+          other.wasteBps == this.wasteBps &&
+          other.active == this.active);
+}
+
+class OperationsCompanion extends UpdateCompanion<Operation> {
+  final Value<String> id;
+  final Value<String> tenantId;
+  final Value<String> code;
+  final Value<String> nameEn;
+  final Value<String> phase;
+  final Value<String> basis;
+  final Value<int> rateFils;
+  final Value<int> setupFils;
+  final Value<int> minChargeFils;
+  final Value<int> wasteBps;
+  final Value<bool> active;
+  final Value<int> rowid;
+  const OperationsCompanion({
+    this.id = const Value.absent(),
+    this.tenantId = const Value.absent(),
+    this.code = const Value.absent(),
+    this.nameEn = const Value.absent(),
+    this.phase = const Value.absent(),
+    this.basis = const Value.absent(),
+    this.rateFils = const Value.absent(),
+    this.setupFils = const Value.absent(),
+    this.minChargeFils = const Value.absent(),
+    this.wasteBps = const Value.absent(),
+    this.active = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  OperationsCompanion.insert({
+    required String id,
+    required String tenantId,
+    required String code,
+    required String nameEn,
+    this.phase = const Value.absent(),
+    this.basis = const Value.absent(),
+    this.rateFils = const Value.absent(),
+    this.setupFils = const Value.absent(),
+    this.minChargeFils = const Value.absent(),
+    this.wasteBps = const Value.absent(),
+    this.active = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       tenantId = Value(tenantId),
+       code = Value(code),
+       nameEn = Value(nameEn);
+  static Insertable<Operation> custom({
+    Expression<String>? id,
+    Expression<String>? tenantId,
+    Expression<String>? code,
+    Expression<String>? nameEn,
+    Expression<String>? phase,
+    Expression<String>? basis,
+    Expression<int>? rateFils,
+    Expression<int>? setupFils,
+    Expression<int>? minChargeFils,
+    Expression<int>? wasteBps,
+    Expression<bool>? active,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (tenantId != null) 'tenant_id': tenantId,
+      if (code != null) 'code': code,
+      if (nameEn != null) 'name_en': nameEn,
+      if (phase != null) 'phase': phase,
+      if (basis != null) 'basis': basis,
+      if (rateFils != null) 'rate_fils': rateFils,
+      if (setupFils != null) 'setup_fils': setupFils,
+      if (minChargeFils != null) 'min_charge_fils': minChargeFils,
+      if (wasteBps != null) 'waste_bps': wasteBps,
+      if (active != null) 'active': active,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  OperationsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? tenantId,
+    Value<String>? code,
+    Value<String>? nameEn,
+    Value<String>? phase,
+    Value<String>? basis,
+    Value<int>? rateFils,
+    Value<int>? setupFils,
+    Value<int>? minChargeFils,
+    Value<int>? wasteBps,
+    Value<bool>? active,
+    Value<int>? rowid,
+  }) {
+    return OperationsCompanion(
+      id: id ?? this.id,
+      tenantId: tenantId ?? this.tenantId,
+      code: code ?? this.code,
+      nameEn: nameEn ?? this.nameEn,
+      phase: phase ?? this.phase,
+      basis: basis ?? this.basis,
+      rateFils: rateFils ?? this.rateFils,
+      setupFils: setupFils ?? this.setupFils,
+      minChargeFils: minChargeFils ?? this.minChargeFils,
+      wasteBps: wasteBps ?? this.wasteBps,
+      active: active ?? this.active,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (tenantId.present) {
+      map['tenant_id'] = Variable<String>(tenantId.value);
+    }
+    if (code.present) {
+      map['code'] = Variable<String>(code.value);
+    }
+    if (nameEn.present) {
+      map['name_en'] = Variable<String>(nameEn.value);
+    }
+    if (phase.present) {
+      map['phase'] = Variable<String>(phase.value);
+    }
+    if (basis.present) {
+      map['basis'] = Variable<String>(basis.value);
+    }
+    if (rateFils.present) {
+      map['rate_fils'] = Variable<int>(rateFils.value);
+    }
+    if (setupFils.present) {
+      map['setup_fils'] = Variable<int>(setupFils.value);
+    }
+    if (minChargeFils.present) {
+      map['min_charge_fils'] = Variable<int>(minChargeFils.value);
+    }
+    if (wasteBps.present) {
+      map['waste_bps'] = Variable<int>(wasteBps.value);
+    }
+    if (active.present) {
+      map['active'] = Variable<bool>(active.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OperationsCompanion(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('code: $code, ')
+          ..write('nameEn: $nameEn, ')
+          ..write('phase: $phase, ')
+          ..write('basis: $basis, ')
+          ..write('rateFils: $rateFils, ')
+          ..write('setupFils: $setupFils, ')
+          ..write('minChargeFils: $minChargeFils, ')
+          ..write('wasteBps: $wasteBps, ')
+          ..write('active: $active, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -19655,6 +20905,8 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
   late final $ExpensesTable expenses = $ExpensesTable(this);
   late final $VendorsTable vendors = $VendorsTable(this);
   late final $VendorJobsTable vendorJobs = $VendorJobsTable(this);
+  late final $MachinesTable machines = $MachinesTable(this);
+  late final $OperationsTable operations = $OperationsTable(this);
   late final $ProductsTable products = $ProductsTable(this);
   late final $MaterialsTable materials = $MaterialsTable(this);
   late final $PriceRulesTable priceRules = $PriceRulesTable(this);
@@ -19684,6 +20936,8 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
     expenses,
     vendors,
     vendorJobs,
+    machines,
+    operations,
     products,
     materials,
     priceRules,
@@ -26108,6 +27362,630 @@ typedef $$VendorJobsTableProcessedTableManager =
       VendorJob,
       PrefetchHooks Function()
     >;
+typedef $$MachinesTableCreateCompanionBuilder = MachinesCompanion Function({
+  required String id,
+  required String tenantId,
+  required String name,
+  Value<String> type,
+  Value<int> hourlyRateFils,
+  Value<int> setupMinutes,
+  Value<int> sheetsPerHour,
+  Value<int> plateCostFils,
+  Value<int> clickFils,
+  Value<bool> active,
+  Value<int> rowid,
+});
+typedef $$MachinesTableUpdateCompanionBuilder = MachinesCompanion Function({
+  Value<String> id,
+  Value<String> tenantId,
+  Value<String> name,
+  Value<String> type,
+  Value<int> hourlyRateFils,
+  Value<int> setupMinutes,
+  Value<int> sheetsPerHour,
+  Value<int> plateCostFils,
+  Value<int> clickFils,
+  Value<bool> active,
+  Value<int> rowid,
+});
+
+class $$MachinesTableFilterComposer
+    extends Composer<_$LocalDatabase, $MachinesTable> {
+  $$MachinesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tenantId => $composableBuilder(
+    column: $table.tenantId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get hourlyRateFils => $composableBuilder(
+    column: $table.hourlyRateFils,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get setupMinutes => $composableBuilder(
+    column: $table.setupMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sheetsPerHour => $composableBuilder(
+    column: $table.sheetsPerHour,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get plateCostFils => $composableBuilder(
+    column: $table.plateCostFils,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get clickFils => $composableBuilder(
+    column: $table.clickFils,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get active => $composableBuilder(
+    column: $table.active,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MachinesTableOrderingComposer
+    extends Composer<_$LocalDatabase, $MachinesTable> {
+  $$MachinesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tenantId => $composableBuilder(
+    column: $table.tenantId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get hourlyRateFils => $composableBuilder(
+    column: $table.hourlyRateFils,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get setupMinutes => $composableBuilder(
+    column: $table.setupMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sheetsPerHour => $composableBuilder(
+    column: $table.sheetsPerHour,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get plateCostFils => $composableBuilder(
+    column: $table.plateCostFils,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get clickFils => $composableBuilder(
+    column: $table.clickFils,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get active => $composableBuilder(
+    column: $table.active,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MachinesTableAnnotationComposer
+    extends Composer<_$LocalDatabase, $MachinesTable> {
+  $$MachinesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get tenantId =>
+      $composableBuilder(column: $table.tenantId, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<int> get hourlyRateFils => $composableBuilder(
+    column: $table.hourlyRateFils,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get setupMinutes => $composableBuilder(
+    column: $table.setupMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get sheetsPerHour => $composableBuilder(
+    column: $table.sheetsPerHour,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get plateCostFils => $composableBuilder(
+    column: $table.plateCostFils,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get clickFils =>
+      $composableBuilder(column: $table.clickFils, builder: (column) => column);
+
+  GeneratedColumn<bool> get active =>
+      $composableBuilder(column: $table.active, builder: (column) => column);
+}
+
+class $$MachinesTableTableManager
+    extends
+        RootTableManager<
+          _$LocalDatabase,
+          $MachinesTable,
+          Machine,
+          $$MachinesTableFilterComposer,
+          $$MachinesTableOrderingComposer,
+          $$MachinesTableAnnotationComposer,
+          $$MachinesTableCreateCompanionBuilder,
+          $$MachinesTableUpdateCompanionBuilder,
+          (Machine, BaseReferences<_$LocalDatabase, $MachinesTable, Machine>),
+          Machine,
+          PrefetchHooks Function()
+        > {
+  $$MachinesTableTableManager(_$LocalDatabase db, $MachinesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MachinesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MachinesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MachinesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> tenantId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> type = const Value.absent(),
+                Value<int> hourlyRateFils = const Value.absent(),
+                Value<int> setupMinutes = const Value.absent(),
+                Value<int> sheetsPerHour = const Value.absent(),
+                Value<int> plateCostFils = const Value.absent(),
+                Value<int> clickFils = const Value.absent(),
+                Value<bool> active = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MachinesCompanion(
+                id: id,
+                tenantId: tenantId,
+                name: name,
+                type: type,
+                hourlyRateFils: hourlyRateFils,
+                setupMinutes: setupMinutes,
+                sheetsPerHour: sheetsPerHour,
+                plateCostFils: plateCostFils,
+                clickFils: clickFils,
+                active: active,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String tenantId,
+                required String name,
+                Value<String> type = const Value.absent(),
+                Value<int> hourlyRateFils = const Value.absent(),
+                Value<int> setupMinutes = const Value.absent(),
+                Value<int> sheetsPerHour = const Value.absent(),
+                Value<int> plateCostFils = const Value.absent(),
+                Value<int> clickFils = const Value.absent(),
+                Value<bool> active = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MachinesCompanion.insert(
+                id: id,
+                tenantId: tenantId,
+                name: name,
+                type: type,
+                hourlyRateFils: hourlyRateFils,
+                setupMinutes: setupMinutes,
+                sheetsPerHour: sheetsPerHour,
+                plateCostFils: plateCostFils,
+                clickFils: clickFils,
+                active: active,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$MachinesTable, Machine>(table),
+                  BaseReferences<_$LocalDatabase, $MachinesTable, Machine>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MachinesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$LocalDatabase,
+      $MachinesTable,
+      Machine,
+      $$MachinesTableFilterComposer,
+      $$MachinesTableOrderingComposer,
+      $$MachinesTableAnnotationComposer,
+      $$MachinesTableCreateCompanionBuilder,
+      $$MachinesTableUpdateCompanionBuilder,
+      (Machine, BaseReferences<_$LocalDatabase, $MachinesTable, Machine>),
+      Machine,
+      PrefetchHooks Function()
+    >;
+typedef $$OperationsTableCreateCompanionBuilder = OperationsCompanion Function({
+  required String id,
+  required String tenantId,
+  required String code,
+  required String nameEn,
+  Value<String> phase,
+  Value<String> basis,
+  Value<int> rateFils,
+  Value<int> setupFils,
+  Value<int> minChargeFils,
+  Value<int> wasteBps,
+  Value<bool> active,
+  Value<int> rowid,
+});
+typedef $$OperationsTableUpdateCompanionBuilder = OperationsCompanion Function({
+  Value<String> id,
+  Value<String> tenantId,
+  Value<String> code,
+  Value<String> nameEn,
+  Value<String> phase,
+  Value<String> basis,
+  Value<int> rateFils,
+  Value<int> setupFils,
+  Value<int> minChargeFils,
+  Value<int> wasteBps,
+  Value<bool> active,
+  Value<int> rowid,
+});
+
+class $$OperationsTableFilterComposer
+    extends Composer<_$LocalDatabase, $OperationsTable> {
+  $$OperationsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tenantId => $composableBuilder(
+    column: $table.tenantId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nameEn => $composableBuilder(
+    column: $table.nameEn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get phase => $composableBuilder(
+    column: $table.phase,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get basis => $composableBuilder(
+    column: $table.basis,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rateFils => $composableBuilder(
+    column: $table.rateFils,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get setupFils => $composableBuilder(
+    column: $table.setupFils,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get minChargeFils => $composableBuilder(
+    column: $table.minChargeFils,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get wasteBps => $composableBuilder(
+    column: $table.wasteBps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get active => $composableBuilder(
+    column: $table.active,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$OperationsTableOrderingComposer
+    extends Composer<_$LocalDatabase, $OperationsTable> {
+  $$OperationsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tenantId => $composableBuilder(
+    column: $table.tenantId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nameEn => $composableBuilder(
+    column: $table.nameEn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get phase => $composableBuilder(
+    column: $table.phase,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get basis => $composableBuilder(
+    column: $table.basis,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rateFils => $composableBuilder(
+    column: $table.rateFils,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get setupFils => $composableBuilder(
+    column: $table.setupFils,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get minChargeFils => $composableBuilder(
+    column: $table.minChargeFils,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get wasteBps => $composableBuilder(
+    column: $table.wasteBps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get active => $composableBuilder(
+    column: $table.active,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$OperationsTableAnnotationComposer
+    extends Composer<_$LocalDatabase, $OperationsTable> {
+  $$OperationsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get tenantId =>
+      $composableBuilder(column: $table.tenantId, builder: (column) => column);
+
+  GeneratedColumn<String> get code =>
+      $composableBuilder(column: $table.code, builder: (column) => column);
+
+  GeneratedColumn<String> get nameEn =>
+      $composableBuilder(column: $table.nameEn, builder: (column) => column);
+
+  GeneratedColumn<String> get phase =>
+      $composableBuilder(column: $table.phase, builder: (column) => column);
+
+  GeneratedColumn<String> get basis =>
+      $composableBuilder(column: $table.basis, builder: (column) => column);
+
+  GeneratedColumn<int> get rateFils =>
+      $composableBuilder(column: $table.rateFils, builder: (column) => column);
+
+  GeneratedColumn<int> get setupFils =>
+      $composableBuilder(column: $table.setupFils, builder: (column) => column);
+
+  GeneratedColumn<int> get minChargeFils => $composableBuilder(
+    column: $table.minChargeFils,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get wasteBps =>
+      $composableBuilder(column: $table.wasteBps, builder: (column) => column);
+
+  GeneratedColumn<bool> get active =>
+      $composableBuilder(column: $table.active, builder: (column) => column);
+}
+
+class $$OperationsTableTableManager
+    extends
+        RootTableManager<
+          _$LocalDatabase,
+          $OperationsTable,
+          Operation,
+          $$OperationsTableFilterComposer,
+          $$OperationsTableOrderingComposer,
+          $$OperationsTableAnnotationComposer,
+          $$OperationsTableCreateCompanionBuilder,
+          $$OperationsTableUpdateCompanionBuilder,
+          (
+            Operation,
+            BaseReferences<_$LocalDatabase, $OperationsTable, Operation>,
+          ),
+          Operation,
+          PrefetchHooks Function()
+        > {
+  $$OperationsTableTableManager(_$LocalDatabase db, $OperationsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$OperationsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$OperationsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$OperationsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> tenantId = const Value.absent(),
+                Value<String> code = const Value.absent(),
+                Value<String> nameEn = const Value.absent(),
+                Value<String> phase = const Value.absent(),
+                Value<String> basis = const Value.absent(),
+                Value<int> rateFils = const Value.absent(),
+                Value<int> setupFils = const Value.absent(),
+                Value<int> minChargeFils = const Value.absent(),
+                Value<int> wasteBps = const Value.absent(),
+                Value<bool> active = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => OperationsCompanion(
+                id: id,
+                tenantId: tenantId,
+                code: code,
+                nameEn: nameEn,
+                phase: phase,
+                basis: basis,
+                rateFils: rateFils,
+                setupFils: setupFils,
+                minChargeFils: minChargeFils,
+                wasteBps: wasteBps,
+                active: active,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String tenantId,
+                required String code,
+                required String nameEn,
+                Value<String> phase = const Value.absent(),
+                Value<String> basis = const Value.absent(),
+                Value<int> rateFils = const Value.absent(),
+                Value<int> setupFils = const Value.absent(),
+                Value<int> minChargeFils = const Value.absent(),
+                Value<int> wasteBps = const Value.absent(),
+                Value<bool> active = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => OperationsCompanion.insert(
+                id: id,
+                tenantId: tenantId,
+                code: code,
+                nameEn: nameEn,
+                phase: phase,
+                basis: basis,
+                rateFils: rateFils,
+                setupFils: setupFils,
+                minChargeFils: minChargeFils,
+                wasteBps: wasteBps,
+                active: active,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$OperationsTable, Operation>(table),
+                  BaseReferences<_$LocalDatabase, $OperationsTable, Operation>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$OperationsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$LocalDatabase,
+      $OperationsTable,
+      Operation,
+      $$OperationsTableFilterComposer,
+      $$OperationsTableOrderingComposer,
+      $$OperationsTableAnnotationComposer,
+      $$OperationsTableCreateCompanionBuilder,
+      $$OperationsTableUpdateCompanionBuilder,
+      (Operation, BaseReferences<_$LocalDatabase, $OperationsTable, Operation>),
+      Operation,
+      PrefetchHooks Function()
+    >;
 typedef $$ProductsTableCreateCompanionBuilder = ProductsCompanion Function({
   required String id,
   required String tenantId,
@@ -28888,6 +30766,10 @@ class $LocalDatabaseManager {
       $$VendorsTableTableManager(_db, _db.vendors);
   $$VendorJobsTableTableManager get vendorJobs =>
       $$VendorJobsTableTableManager(_db, _db.vendorJobs);
+  $$MachinesTableTableManager get machines =>
+      $$MachinesTableTableManager(_db, _db.machines);
+  $$OperationsTableTableManager get operations =>
+      $$OperationsTableTableManager(_db, _db.operations);
   $$ProductsTableTableManager get products =>
       $$ProductsTableTableManager(_db, _db.products);
   $$MaterialsTableTableManager get materials =>

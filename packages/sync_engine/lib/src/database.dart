@@ -555,6 +555,41 @@ class VendorJobs extends Table {
   Set<Column<Object>> get primaryKey => <Column<Object>>{id};
 }
 
+/// A press or finishing machine, with the numbers its time is bought at.
+class Machines extends Table {
+  TextColumn get id => text()();
+  TextColumn get tenantId => text()();
+  TextColumn get name => text()();
+  TextColumn get type => text().withDefault(const Constant('digital'))();
+  IntColumn get hourlyRateFils => integer().withDefault(const Constant(0))();
+  IntColumn get setupMinutes => integer().withDefault(const Constant(0))();
+  IntColumn get sheetsPerHour => integer().withDefault(const Constant(0))();
+  IntColumn get plateCostFils => integer().withDefault(const Constant(0))();
+  IntColumn get clickFils => integer().withDefault(const Constant(0))();
+  BoolColumn get active => boolean().withDefault(const Constant(true))();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
+/// A finishing or prepress step with its own basis, setup and minimum.
+class Operations extends Table {
+  TextColumn get id => text()();
+  TextColumn get tenantId => text()();
+  TextColumn get code => text()();
+  TextColumn get nameEn => text()();
+  TextColumn get phase => text().withDefault(const Constant('finishing'))();
+  TextColumn get basis => text().withDefault(const Constant('per_piece'))();
+  IntColumn get rateFils => integer().withDefault(const Constant(0))();
+  IntColumn get setupFils => integer().withDefault(const Constant(0))();
+  IntColumn get minChargeFils => integer().withDefault(const Constant(0))();
+  IntColumn get wasteBps => integer().withDefault(const Constant(0))();
+  BoolColumn get active => boolean().withDefault(const Constant(true))();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
 /// Sync bookkeeping: cursor, last sync, last head.
 class SyncMeta extends Table {
   TextColumn get key => text()();
@@ -581,6 +616,8 @@ class SyncMeta extends Table {
     Expenses,
     Vendors,
     VendorJobs,
+    Machines,
+    Operations,
     Products,
     Materials,
     PriceRules,
@@ -594,7 +631,7 @@ class LocalDatabase extends _$LocalDatabase {
   LocalDatabase(super.executor);
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -640,6 +677,10 @@ class LocalDatabase extends _$LocalDatabase {
       if (from < 9) {
         await m.createTable(vendors);
         await m.createTable(vendorJobs);
+      }
+      if (from < 12) {
+        await m.createTable(machines);
+        await m.createTable(operations);
       }
       if (from < 11) {
         if (from >= 1) {
@@ -1315,6 +1356,38 @@ class LocalDatabase extends _$LocalDatabase {
 
   // --- catalogue rows ------------------------------------------------------
 
+
+  /// Machines and operations arrive with the catalogue and are replaced whole,
+  /// like prices: a machine the server stopped sending must stop being priced.
+  MachinesCompanion _machineFromServer(Map<String, Object?> row) =>
+      MachinesCompanion.insert(
+        id: row['id']! as String,
+        tenantId: row['tenant_id'] as String? ?? '',
+        name: row['name'] as String? ?? '',
+        type: Value(row['type'] as String? ?? 'digital'),
+        hourlyRateFils: Value((row['hourly_rate_fils'] as num?)?.toInt() ?? 0),
+        setupMinutes: Value((row['setup_minutes'] as num?)?.toInt() ?? 0),
+        sheetsPerHour: Value((row['sheets_per_hour'] as num?)?.toInt() ?? 0),
+        plateCostFils: Value((row['plate_cost_fils'] as num?)?.toInt() ?? 0),
+        clickFils: Value((row['click_fils'] as num?)?.toInt() ?? 0),
+        active: Value((row['active'] as num?)?.toInt() != 0),
+      );
+
+  OperationsCompanion _operationFromServer(Map<String, Object?> row) =>
+      OperationsCompanion.insert(
+        id: row['id']! as String,
+        tenantId: row['tenant_id'] as String? ?? '',
+        code: row['code'] as String? ?? '',
+        nameEn: row['name_en'] as String? ?? '',
+        phase: Value(row['phase'] as String? ?? 'finishing'),
+        basis: Value(row['basis'] as String? ?? 'per_piece'),
+        rateFils: Value((row['rate_fils'] as num?)?.toInt() ?? 0),
+        setupFils: Value((row['setup_fils'] as num?)?.toInt() ?? 0),
+        minChargeFils: Value((row['min_charge_fils'] as num?)?.toInt() ?? 0),
+        wasteBps: Value((row['waste_bps'] as num?)?.toInt() ?? 0),
+        active: Value((row['active'] as num?)?.toInt() != 0),
+      );
+
   ProductsCompanion _productFromServer(
     Map<String, Object?> row,
   ) => ProductsCompanion.insert(
@@ -1587,11 +1660,15 @@ class LocalDatabase extends _$LocalDatabase {
     required int priceBookVersion,
     required int vatBps,
     List<Map<String, Object?>> stageRows = const <Map<String, Object?>>[],
+    List<Map<String, Object?>> machineRows = const <Map<String, Object?>>[],
+    List<Map<String, Object?>> operationRows = const <Map<String, Object?>>[],
   }) async {
     await transaction(() async {
       await delete(products).go();
       await delete(materials).go();
       await delete(priceRules).go();
+      await delete(machines).go();
+      await delete(operations).go();
       if (stageRows.isNotEmpty) {
         await delete(workflowStages).go();
       }
@@ -1604,6 +1681,12 @@ class LocalDatabase extends _$LocalDatabase {
       }
       for (final row in ruleRows) {
         await into(priceRules).insert(_ruleFromServer(row));
+      }
+      for (final row in machineRows) {
+        await into(machines).insert(_machineFromServer(row));
+      }
+      for (final row in operationRows) {
+        await into(operations).insert(_operationFromServer(row));
       }
       for (final row in stageRows) {
         await into(workflowStages).insert(
@@ -2884,6 +2967,12 @@ class LocalDatabase extends _$LocalDatabase {
           ]))
         .watch();
   }
+
+  Stream<List<Machine>> watchMachines() =>
+      (select(machines)..where((t) => t.active.equals(true))).watch();
+
+  Stream<List<Operation>> watchOperations() =>
+      (select(operations)..where((t) => t.active.equals(true))).watch();
 
   Stream<List<Vendor>> watchVendors() {
     return (select(vendors)
