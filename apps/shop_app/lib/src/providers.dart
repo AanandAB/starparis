@@ -74,6 +74,26 @@ final StreamProvider<List<Order>> ordersProvider = StreamProvider<List<Order>>(
   (ref) => ref.watch(bootstrapProvider).db.watchOrders(),
 );
 
+final StreamProvider<List<PriceRuleRow>> allRulesProvider =
+    StreamProvider<List<PriceRuleRow>>(
+      (ref) => ref.watch(bootstrapProvider).db.watchAllRules(),
+    );
+
+final StreamProvider<int> priceBookVersionProvider = StreamProvider<int>((ref) {
+  return ref
+      .watch(bootstrapProvider)
+      .db
+      .watchMeta('price_book_version')
+      .map((value) => int.tryParse(value ?? '0') ?? 0);
+});
+
+/// Owner-only in the default matrix; the Worker enforces it regardless, so this
+/// only decides whether the tab is worth showing.
+final Provider<bool> canEditPricesProvider = Provider<bool>((ref) {
+  final session = ref.watch(sessionProvider);
+  return session?.role == 'owner';
+});
+
 /// Which shell tab is open. A provider rather than local state so a card on the
 /// home screen can send the user to the customers tab with one tap.
 class ShellTab extends Notifier<int> {

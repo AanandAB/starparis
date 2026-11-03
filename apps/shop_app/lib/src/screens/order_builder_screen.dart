@@ -145,7 +145,8 @@ class _OrderBuilderScreenState extends ConsumerState<OrderBuilderScreen> {
         finishes: _finishes.toList(),
       );
 
-      final customerList = ref.read(allCustomersProvider).value ?? const <Customer>[];
+      final customerList =
+          ref.read(allCustomersProvider).value ?? const <Customer>[];
       String customerName = '';
       for (final customer in customerList) {
         if (customer.id == customerId) {

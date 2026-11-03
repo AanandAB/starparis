@@ -741,6 +741,14 @@ class LocalDatabase extends _$LocalDatabase {
     return row?.value;
   }
 
+  /// Live meta value, for screens that must follow a value changing underneath
+  /// them (the price-book version after an edit).
+  Stream<String?> watchMeta(String key) {
+    return (select(syncMeta)..where((t) => t.key.equals(key)))
+        .watchSingleOrNull()
+        .map((row) => row?.value);
+  }
+
   Future<void> setMeta(String key, String value) async {
     await into(
       syncMeta,
@@ -793,6 +801,16 @@ class LocalDatabase extends _$LocalDatabase {
           ..orderBy(<OrderClauseGenerator<$ProductsTable>>[
             (t) => OrderingTerm(expression: t.sort),
             (t) => OrderingTerm(expression: t.nameEn),
+          ]))
+        .watch();
+  }
+
+  /// Every price rule in the local book, for the price book editor.
+  Stream<List<PriceRuleRow>> watchAllRules() {
+    return (select(priceRules)
+          ..orderBy(<OrderClauseGenerator<$PriceRulesTable>>[
+            (t) => OrderingTerm(expression: t.priority),
+            (t) => OrderingTerm(expression: t.label),
           ]))
         .watch();
   }

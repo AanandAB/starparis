@@ -59,6 +59,28 @@ That run used the shipped client code — the real database, the real pricing en
 push/pull — against the deployed Worker. The first attempt failed on a real bug (the server
 injected `branch_id` into a table that has no such column); it is fixed and covered by a test.
 
+### Phase 2B — the owner can change prices
+
+| Piece | State |
+|---|---|
+| Endpoints | `PATCH /v1/price-book/rules/:id`, `PATCH /v1/price-book/products/:id`, `POST /v1/price-book/bulk-adjust` |
+| Permission | `price.edit` only — owner by default; the Worker refuses everyone else with `PERMISSION_DENIED` |
+| Audit | every change writes old and new JSON to `audit_log` |
+| Bulk adjust | dry-run preview computed with the same integer arithmetic as the apply |
+| App | Prices tab (owner only): every rule with its rate, edit dialog, bulk adjust with preview |
+
+Verified live with `apps/shop_app/tool/live_price_book_smoke.dart`:
+
+    baseline         rate=80 fils total=AED 122.00
+    edit             ok  rate=100 fils total=AED 131.00 (+900 fils)
+    restore          ok  total=AED 122.00
+    OK — the owner can change a price and the quote follows immediately.
+
+Design goal #2 — "let the owner edit every price from inside the software" — is now true for
+rates, minimum charges, markups, print rates, area rates, rounding and minimum order values.
+What it does **not** yet do: schedule a change for a future date (effective-dated price books),
+and import a whole price list from Excel.
+
 ## Commands
 ```bash
 # Dart workspace
@@ -86,6 +108,7 @@ bunx wrangler d1 execute starparis-dev --remote --file ../../seeds/catalogue.sql
 # Prove the deployed API end to end
 python tools/smoke_live.py
 (cd apps/shop_app && dart run tool/live_order_smoke.dart)
+(cd apps/shop_app && dart run tool/live_price_book_smoke.dart)
 
 # The app
 cd apps/shop_app

@@ -10,6 +10,7 @@ import 'customers_screen.dart';
 import 'diagnostics_sheet.dart';
 import 'home_screen.dart';
 import 'orders_screen.dart';
+import 'price_book_screen.dart';
 
 /// The frame every screen lives in: navigation, the sync chip, and the user
 /// menu. Three layouts — bottom bar on a phone, rail on a tablet, labelled rail
@@ -31,6 +32,7 @@ class AppShell extends ConsumerWidget {
       const HomeScreen(),
       const CustomersScreen(),
       const OrdersScreen(),
+      if (ref.watch(canEditPricesProvider)) const PriceBookScreen(),
     ];
 
     final destinations = <NavigationDestination>[
@@ -49,6 +51,12 @@ class AppShell extends ConsumerWidget {
         selectedIcon: Icon(Icons.receipt_long),
         label: 'Orders',
       ),
+      if (ref.watch(canEditPricesProvider))
+        const NavigationDestination(
+          icon: Icon(Icons.price_change_outlined),
+          selectedIcon: Icon(Icons.price_change),
+          label: 'Prices',
+        ),
     ];
 
     final width = MediaQuery.sizeOf(context).width;

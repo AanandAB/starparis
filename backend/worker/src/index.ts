@@ -12,6 +12,14 @@ import { z } from 'zod';
 
 import { error, loadSession, login, loginSchema, refreshSchema, refreshSession, revokeDevice } from './auth';
 import { loadCatalogue } from './catalogue';
+import {
+  bulkAdjust,
+  bulkAdjustSchema,
+  productPatchSchema,
+  rulePatchSchema,
+  updateProduct,
+  updateRule,
+} from './price_book';
 import { verifyAccessToken } from './crypto';
 import { leaseBlock } from './numbers';
 import { currentHead, pullChanges, pushMutations } from './sync';
@@ -168,6 +176,50 @@ app.get('/v1/catalogue', async (c) => {
   const ctx = c.get('auth');
   const catalogue = await loadCatalogue(c.env, ctx.tenantId);
   return c.json(catalogue);
+});
+
+// --- price book editing (owner / price.edit only) -------------------------
+
+app.patch('/v1/price-book/rules/:id', async (c) => {
+  const ctx = c.get('auth');
+  const session = await loadSession(c.env, ctx);
+  if (!session.ok) return c.json(error(session.code, session.message), 401);
+
+  const parsed = rulePatchSchema.safeParse(await safeJson(c));
+  if (!parsed.success) {
+    return c.json(error('BAD_REQUEST', 'Nothing valid to change.'), 400);
+  }
+
+  const result = await updateRule(c.env, ctx, c.req.param('id'), parsed.data);
+  return c.json(result.body, result.status as 200);
+});
+
+app.patch('/v1/price-book/products/:id', async (c) => {
+  const ctx = c.get('auth');
+  const session = await loadSession(c.env, ctx);
+  if (!session.ok) return c.json(error(session.code, session.message), 401);
+
+  const parsed = productPatchSchema.safeParse(await safeJson(c));
+  if (!parsed.success) {
+    return c.json(error('BAD_REQUEST', 'Nothing valid to change.'), 400);
+  }
+
+  const result = await updateProduct(c.env, ctx, c.req.param('id'), parsed.data);
+  return c.json(result.body, result.status as 200);
+});
+
+app.post('/v1/price-book/bulk-adjust', async (c) => {
+  const ctx = c.get('auth');
+  const session = await loadSession(c.env, ctx);
+  if (!session.ok) return c.json(error(session.code, session.message), 401);
+
+  const parsed = bulkAdjustSchema.safeParse(await safeJson(c));
+  if (!parsed.success) {
+    return c.json(error('BAD_REQUEST', 'A percentage is required.'), 400);
+  }
+
+  const result = await bulkAdjust(c.env, ctx, parsed.data);
+  return c.json(result.body, result.status as 200);
 });
 
 app.get('/v1/pull', async (c) => {

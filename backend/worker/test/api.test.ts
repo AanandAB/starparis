@@ -48,6 +48,17 @@ function authed(token: string, body?: unknown): RequestInit {
   };
 }
 
+function patchRequest(token: string, body: unknown): RequestInit {
+  return {
+    method: 'PATCH',
+    headers: {
+      authorization: `Bearer ${token}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  };
+}
+
 async function loginAs(phone: string, deviceName: string): Promise<Session> {
   const response = await api('/v1/auth/login', {
     method: 'POST',
@@ -546,6 +557,115 @@ describe('orders', () => {
     };
     expect(body.results[0]!.status).toBe('rejected');
     expect(body.results[0]!.error.code).toBe('MISSING_FIELD');
+  });
+});
+
+describe('price book editing', () => {
+  it('lets the owner change a rate and the catalogue reflects it', async () => {
+    const response = await api(
+      '/v1/price-book/rules/rule_lamination_matt',
+      patchRequest(owner.access_token, { rate_fils: 95 }),
+    );
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { rule: { rate_fils: number } };
+    expect(body.rule.rate_fils).toBe(95);
+
+    const catalogue = await api('/v1/catalogue', authed(owner.access_token));
+    const catalogueBody = (await catalogue.json()) as {
+      rules: Array<{ id: string; rate_fils: number }>;
+    };
+    const rule = catalogueBody.rules.find((item) => item.id === 'rule_lamination_matt');
+    expect(rule!.rate_fils).toBe(95);
+  });
+
+  it('writes an audit row with the old and the new value', async () => {
+    const audit = await env.DB.prepare(
+      "SELECT old_json, new_json FROM audit_log WHERE action = 'price.rule.update' ORDER BY at DESC LIMIT 1",
+    ).first<{ old_json: string; new_json: string }>();
+    expect(audit).toBeTruthy();
+    expect(audit!.old_json).toContain('"rate_fils":80');
+    expect(audit!.new_json).toContain('"rate_fils":95');
+  });
+
+  it('refuses a counter clerk', async () => {
+    const response = await api(
+      '/v1/price-book/rules/rule_lamination_matt',
+      patchRequest(counter.access_token, { rate_fils: 1 }),
+    );
+    expect(response.status).toBe(403);
+    const body = (await response.json()) as { error: { code: string } };
+    expect(body.error.code).toBe('PERMISSION_DENIED');
+  });
+
+  it('previews a bulk adjust without changing anything', async () => {
+    const response = await api(
+      '/v1/price-book/bulk-adjust',
+      authed(owner.access_token, { percent_bps: 1000, dry_run: true }),
+    );
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      applied: boolean;
+      changes: Array<{ id: string; rate_fils: number; new_rate_fils: number }>;
+    };
+    expect(body.applied).toBe(false);
+    const lamination = body.changes.find((change) => change.id === 'rule_lamination_matt');
+    expect(lamination!.rate_fils).toBe(95);
+    expect(lamination!.new_rate_fils).toBe(105); // 95 + 10%, rounded
+
+    const catalogue = await api('/v1/catalogue', authed(owner.access_token));
+    const catalogueBody = (await catalogue.json()) as {
+      rules: Array<{ id: string; rate_fils: number }>;
+    };
+    expect(
+      catalogueBody.rules.find((item) => item.id === 'rule_lamination_matt')!.rate_fils,
+    ).toBe(95);
+  });
+
+  it('applies a bulk adjust and audits it once', async () => {
+    const response = await api(
+      '/v1/price-book/bulk-adjust',
+      authed(owner.access_token, {
+        product_id: 'prod_cards',
+        percent_bps: 1000,
+        dry_run: false,
+      }),
+    );
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      applied: boolean;
+      changes: Array<{ new_rate_fils: number }>;
+    };
+    expect(body.applied).toBe(true);
+
+    const catalogue = await api('/v1/catalogue', authed(owner.access_token));
+    const catalogueBody = (await catalogue.json()) as {
+      rules: Array<{ id: string; rate_fils: number }>;
+    };
+    expect(
+      catalogueBody.rules.find((item) => item.id === 'rule_lamination_matt')!.rate_fils,
+    ).toBe(105);
+
+    const audit = await env.DB.prepare(
+      "SELECT COUNT(*) AS total FROM audit_log WHERE action = 'price.bulk_adjust'",
+    ).first<{ total: number }>();
+    expect(Number(audit!.total)).toBe(1);
+  });
+
+  it('lets the owner change a markup and refuses nonsense', async () => {
+    const ok = await api(
+      '/v1/price-book/products/prod_cards',
+      patchRequest(owner.access_token, { markup_bps: 7000 }),
+    );
+    if (ok.status !== 200) {
+      console.log('PATCH product failed:', ok.status, await ok.text());
+    }
+    expect(ok.status).toBe(200);
+
+    const bad = await api(
+      '/v1/price-book/products/prod_business_cards',
+      patchRequest(owner.access_token, { markup_bps: -5 }),
+    );
+    expect(bad.status).toBe(400);
   });
 });
 

@@ -17,7 +17,6 @@ import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:http/http.dart' as http;
-import 'package:starparis_domain/starparis_domain.dart';
 import 'package:starparis_pricing/pricing_engine.dart';
 import 'package:starparis_sync/starparis_sync.dart';
 
