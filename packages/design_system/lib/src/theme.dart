@@ -123,6 +123,17 @@ abstract final class StarTheme {
       ),
       // The bottom bar is a surface, not a shadow: flat, with a tinted pill
       // behind the current item.
+      // Every page transition in the app comes from here, so a route pushed from
+      // anywhere feels the same and nobody has to remember to add an animation.
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: <TargetPlatform, PageTransitionsBuilder>{
+          TargetPlatform.windows: _StarTransitions(),
+          TargetPlatform.linux: _StarTransitions(),
+          TargetPlatform.macOS: _StarTransitions(),
+          TargetPlatform.android: _StarTransitions(),
+          TargetPlatform.iOS: _StarTransitions(),
+        },
+      ),
       navigationBarTheme: NavigationBarThemeData(
         height: 68,
         elevation: 0,
@@ -160,5 +171,33 @@ abstract final class StarTheme {
           labelLarge: base.labelLarge?.copyWith(fontWeight: FontWeight.w600),
           labelSmall: base.labelSmall?.copyWith(letterSpacing: 0.2),
         );
+  }
+}
+
+
+/// A short fade with a small scale — enough to show that the screen changed,
+/// short enough that a counter clerk never waits for it. Reduce-motion wins.
+class _StarTransitions extends PageTransitionsBuilder {
+  const _StarTransitions();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) {
+      return child;
+    }
+    final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+    return FadeTransition(
+      opacity: curved,
+      child: ScaleTransition(
+        scale: Tween<double>(begin: 0.98, end: 1).animate(curved),
+        child: child,
+      ),
+    );
   }
 }

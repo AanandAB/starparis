@@ -7,6 +7,7 @@ import 'package:starparis_design/starparis_design.dart';
 import 'package:starparis_sync/starparis_sync.dart';
 
 import '../providers.dart';
+import '../theme_provider.dart';
 import '../sales/till_sheet.dart';
 import 'board_screen.dart';
 import 'catalogue_screen.dart';
@@ -294,6 +295,10 @@ class _AppShellState extends ConsumerState<AppShell> {
                     await showTillSheet(context);
                     return;
                   }
+                  if (value == 'theme') {
+                    ref.read(themeModeProvider.notifier).toggle();
+                    return;
+                  }
                   if (value == 'log') {
                     await showLogSheet(context);
                     return;
@@ -318,6 +323,14 @@ class _AppShellState extends ConsumerState<AppShell> {
                   PopupMenuItem<String>(
                     value: 'till',
                     child: Text(t('menu.till')),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'theme',
+                    child: Text(
+                      ref.watch(themeModeProvider) == ThemeMode.dark
+                          ? t('menu.themeLight')
+                          : t('menu.themeDark'),
+                    ),
                   ),
                   PopupMenuItem<String>(
                     value: 'log',

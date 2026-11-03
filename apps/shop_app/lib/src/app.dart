@@ -7,6 +7,7 @@ import 'package:starparis_design/starparis_design.dart';
 
 import 'auth_gate.dart';
 import 'providers.dart';
+import 'theme_provider.dart';
 
 /// The app shell above the shell.
 ///
@@ -33,7 +34,7 @@ class StarParisApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: StarTheme.light(desktop: desktop),
       darkTheme: StarTheme.dark(desktop: desktop),
-      themeMode: ThemeMode.light,
+      themeMode: ref.watch(themeModeProvider),
       locale: locale,
       supportedLocales: const <Locale>[Locale('en'), Locale('ar', 'AE')],
       localizationsDelegates: const <LocalizationsDelegate<Object>>[
