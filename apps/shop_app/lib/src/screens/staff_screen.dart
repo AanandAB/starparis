@@ -105,29 +105,15 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
         return ListView(
           padding: const EdgeInsets.all(StarSpace.lg),
           children: <Widget>[
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text('Staff', style: theme.textTheme.headlineSmall),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Who can sign in, and what each of them may do.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+            ScreenHeader(
+              title: 'Staff',
+              subtitle: 'Who can sign in, and what each of them may do.',
+              actions: <Widget>[
                 TextButton.icon(
                   onPressed: _refresh,
                   icon: const Icon(Icons.refresh, size: 18),
                   label: const Text('Refresh'),
                 ),
-                const SizedBox(width: StarSpace.sm),
                 FilledButton.icon(
                   onPressed: _add,
                   icon: const Icon(Icons.person_add_alt_1, size: 18),

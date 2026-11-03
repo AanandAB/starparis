@@ -34,29 +34,15 @@ class VendorsScreen extends ConsumerWidget {
             return ListView(
               padding: const EdgeInsets.all(StarSpace.lg),
               children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Text('Vendors', style: theme.textTheme.headlineSmall),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Work handed to other shops, what it costs, and when it is due back.',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                ScreenHeader(
+                  title: 'Vendors',
+                  subtitle: 'Work handed to other shops, what it costs, and when it is due back.',
+                  actions: <Widget>[
                     OutlinedButton.icon(
                       onPressed: () => _addVendor(context, ref),
                       icon: const Icon(Icons.store_outlined, size: 18),
                       label: const Text('Add vendor'),
                     ),
-                    const SizedBox(width: StarSpace.sm),
                     FilledButton.icon(
                       onPressed: vendors.isEmpty
                           ? null
