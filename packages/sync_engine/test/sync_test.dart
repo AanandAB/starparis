@@ -715,6 +715,112 @@ void main() {
 
   });
 
+  group('proofs', () {
+    test('a proof link becomes the next version and travels as a draft', () async {
+      final orderId = await db.createOrderLocal(
+        tenantId: 't1',
+        branchId: 'b1',
+        customerId: 'c1',
+        customerName: 'Ahmed Traders',
+        userId: 'u1',
+        numberDisplay: '10452',
+        lines: const <OrderLineDraft>[
+          OrderLineDraft(
+            productId: 'prod_cards',
+            description: 'Business cards',
+            optionsJson: '{}',
+            quantity: 500,
+            priceBookVersion: 1,
+            breakdownJson: '{}',
+            subtotalFils: 12200,
+            vatFils: 610,
+            totalFils: 12810,
+          ),
+        ],
+      );
+
+      await db.addProofLocal(
+        orderId: orderId,
+        tenantId: 't1',
+        branchId: 'b1',
+        userId: 'u1',
+        label: 'Front',
+        url: 'https://drive.example/front.pdf',
+      );
+      await db.addProofLocal(
+        orderId: orderId,
+        tenantId: 't1',
+        branchId: 'b1',
+        userId: 'u1',
+        label: 'Back',
+        url: 'https://drive.example/back.pdf',
+      );
+
+      final proofs = await db.watchProofs(orderId).first;
+      expect(proofs.map((proof) => proof.revision).toList(), <int>[1, 2]);
+      expect(proofs.first.status, 'draft');
+    });
+
+    test('a rejection needs a note and records it', () async {
+      final orderId = await db.createOrderLocal(
+        tenantId: 't1',
+        branchId: 'b1',
+        customerId: 'c1',
+        customerName: 'Ahmed Traders',
+        userId: 'u1',
+        numberDisplay: '10453',
+        lines: const <OrderLineDraft>[
+          OrderLineDraft(
+            productId: 'prod_cards',
+            description: 'Business cards',
+            optionsJson: '{}',
+            quantity: 500,
+            priceBookVersion: 1,
+            breakdownJson: '{}',
+            subtotalFils: 12200,
+            vatFils: 610,
+            totalFils: 12810,
+          ),
+        ],
+      );
+      await db.addProofLocal(
+        orderId: orderId,
+        tenantId: 't1',
+        branchId: 'b1',
+        userId: 'u1',
+        label: 'Front',
+        url: 'https://drive.example/front.pdf',
+      );
+      var proof = (await db.watchProofs(orderId).first).single;
+
+      await expectLater(
+        db.setProofStatus(proof: proof, status: 'approved', userId: 'u1'),
+        throwsA(isA<StateError>()),
+        reason: 'nothing is approved before it was sent',
+      );
+
+      await db.setProofStatus(proof: proof, status: 'sent', userId: 'u1');
+      proof = (await db.watchProofs(orderId).first).single;
+      expect(proof.sentAt, isNotNull);
+
+      await expectLater(
+        db.setProofStatus(proof: proof, status: 'rejected', userId: 'u1'),
+        throwsA(isA<StateError>()),
+      );
+
+      await db.setProofStatus(
+        proof: proof,
+        status: 'rejected',
+        userId: 'u1',
+        note: 'Logo too close to the trim',
+      );
+      proof = (await db.watchProofs(orderId).first).single;
+      expect(proof.status, 'rejected');
+      expect(proof.decidedNote, contains('trim'));
+      expect(proof.decidedAt, isNotNull);
+    });
+  });
+
   group('state', () {
     test('emits syncing then synced', () async {
       final phases = <SyncPhase>[];

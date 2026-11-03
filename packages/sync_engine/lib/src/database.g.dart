@@ -3372,6 +3372,1739 @@ class TasksCompanion extends UpdateCompanion<Task> {
   }
 }
 
+class $ProofsTable extends Proofs with TableInfo<$ProofsTable, Proof> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProofsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tenantIdMeta = const VerificationMeta(
+    'tenantId',
+  );
+  @override
+  late final GeneratedColumn<String> tenantId = GeneratedColumn<String>(
+    'tenant_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _branchIdMeta = const VerificationMeta(
+    'branchId',
+  );
+  @override
+  late final GeneratedColumn<String> branchId = GeneratedColumn<String>(
+    'branch_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _orderIdMeta = const VerificationMeta(
+    'orderId',
+  );
+  @override
+  late final GeneratedColumn<String> orderId = GeneratedColumn<String>(
+    'order_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _revisionMeta = const VerificationMeta(
+    'revision',
+  );
+  @override
+  late final GeneratedColumn<int> revision = GeneratedColumn<int>(
+    'revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('proof'),
+  );
+  static const VerificationMeta _labelMeta = const VerificationMeta('label');
+  @override
+  late final GeneratedColumn<String> label = GeneratedColumn<String>(
+    'label',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _urlMeta = const VerificationMeta('url');
+  @override
+  late final GeneratedColumn<String> url = GeneratedColumn<String>(
+    'url',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('draft'),
+  );
+  static const VerificationMeta _sentAtMeta = const VerificationMeta('sentAt');
+  @override
+  late final GeneratedColumn<DateTime> sentAt = GeneratedColumn<DateTime>(
+    'sent_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _decidedAtMeta = const VerificationMeta(
+    'decidedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> decidedAt = GeneratedColumn<DateTime>(
+    'decided_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _decidedNoteMeta = const VerificationMeta(
+    'decidedNote',
+  );
+  @override
+  late final GeneratedColumn<String> decidedNote = GeneratedColumn<String>(
+    'decided_note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdByMeta = const VerificationMeta(
+    'createdBy',
+  );
+  @override
+  late final GeneratedColumn<String> createdBy = GeneratedColumn<String>(
+    'created_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _versionMeta = const VerificationMeta(
+    'version',
+  );
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+    'version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    tenantId,
+    branchId,
+    orderId,
+    revision,
+    kind,
+    label,
+    url,
+    note,
+    status,
+    sentAt,
+    decidedAt,
+    decidedNote,
+    createdAt,
+    updatedAt,
+    createdBy,
+    version,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'proofs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Proof> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('tenant_id')) {
+      context.handle(
+        _tenantIdMeta,
+        tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tenantIdMeta);
+    }
+    if (data.containsKey('branch_id')) {
+      context.handle(
+        _branchIdMeta,
+        branchId.isAcceptableOrUnknown(data['branch_id']!, _branchIdMeta),
+      );
+    }
+    if (data.containsKey('order_id')) {
+      context.handle(
+        _orderIdMeta,
+        orderId.isAcceptableOrUnknown(data['order_id']!, _orderIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_orderIdMeta);
+    }
+    if (data.containsKey('revision')) {
+      context.handle(
+        _revisionMeta,
+        revision.isAcceptableOrUnknown(data['revision']!, _revisionMeta),
+      );
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    }
+    if (data.containsKey('label')) {
+      context.handle(
+        _labelMeta,
+        label.isAcceptableOrUnknown(data['label']!, _labelMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_labelMeta);
+    }
+    if (data.containsKey('url')) {
+      context.handle(
+        _urlMeta,
+        url.isAcceptableOrUnknown(data['url']!, _urlMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_urlMeta);
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('sent_at')) {
+      context.handle(
+        _sentAtMeta,
+        sentAt.isAcceptableOrUnknown(data['sent_at']!, _sentAtMeta),
+      );
+    }
+    if (data.containsKey('decided_at')) {
+      context.handle(
+        _decidedAtMeta,
+        decidedAt.isAcceptableOrUnknown(data['decided_at']!, _decidedAtMeta),
+      );
+    }
+    if (data.containsKey('decided_note')) {
+      context.handle(
+        _decidedNoteMeta,
+        decidedNote.isAcceptableOrUnknown(
+          data['decided_note']!,
+          _decidedNoteMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('created_by')) {
+      context.handle(
+        _createdByMeta,
+        createdBy.isAcceptableOrUnknown(data['created_by']!, _createdByMeta),
+      );
+    }
+    if (data.containsKey('version')) {
+      context.handle(
+        _versionMeta,
+        version.isAcceptableOrUnknown(data['version']!, _versionMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Proof map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Proof(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      tenantId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tenant_id'],
+      )!,
+      branchId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}branch_id'],
+      ),
+      orderId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}order_id'],
+      )!,
+      revision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}revision'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      label: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}label'],
+      )!,
+      url: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}url'],
+      )!,
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      sentAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}sent_at'],
+      ),
+      decidedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}decided_at'],
+      ),
+      decidedNote: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}decided_note'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      createdBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}created_by'],
+      ),
+      version: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}version'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $ProofsTable createAlias(String alias) {
+    return $ProofsTable(attachedDatabase, alias);
+  }
+}
+
+class Proof extends DataClass implements Insertable<Proof> {
+  final String id;
+  final String tenantId;
+  final String? branchId;
+  final String orderId;
+
+  /// The version the customer sees: v1, v2, …
+  final int revision;
+  final String kind;
+  final String label;
+  final String url;
+  final String? note;
+
+  /// draft, sent, approved, rejected, superseded
+  final String status;
+  final DateTime? sentAt;
+  final DateTime? decidedAt;
+  final String? decidedNote;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String? createdBy;
+  final int version;
+  final DateTime? deletedAt;
+  const Proof({
+    required this.id,
+    required this.tenantId,
+    this.branchId,
+    required this.orderId,
+    required this.revision,
+    required this.kind,
+    required this.label,
+    required this.url,
+    this.note,
+    required this.status,
+    this.sentAt,
+    this.decidedAt,
+    this.decidedNote,
+    required this.createdAt,
+    required this.updatedAt,
+    this.createdBy,
+    required this.version,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['tenant_id'] = Variable<String>(tenantId);
+    if (!nullToAbsent || branchId != null) {
+      map['branch_id'] = Variable<String>(branchId);
+    }
+    map['order_id'] = Variable<String>(orderId);
+    map['revision'] = Variable<int>(revision);
+    map['kind'] = Variable<String>(kind);
+    map['label'] = Variable<String>(label);
+    map['url'] = Variable<String>(url);
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    map['status'] = Variable<String>(status);
+    if (!nullToAbsent || sentAt != null) {
+      map['sent_at'] = Variable<DateTime>(sentAt);
+    }
+    if (!nullToAbsent || decidedAt != null) {
+      map['decided_at'] = Variable<DateTime>(decidedAt);
+    }
+    if (!nullToAbsent || decidedNote != null) {
+      map['decided_note'] = Variable<String>(decidedNote);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || createdBy != null) {
+      map['created_by'] = Variable<String>(createdBy);
+    }
+    map['version'] = Variable<int>(version);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  ProofsCompanion toCompanion(bool nullToAbsent) {
+    return ProofsCompanion(
+      id: Value(id),
+      tenantId: Value(tenantId),
+      branchId: branchId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(branchId),
+      orderId: Value(orderId),
+      revision: Value(revision),
+      kind: Value(kind),
+      label: Value(label),
+      url: Value(url),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      status: Value(status),
+      sentAt: sentAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sentAt),
+      decidedAt: decidedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(decidedAt),
+      decidedNote: decidedNote == null && nullToAbsent
+          ? const Value.absent()
+          : Value(decidedNote),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      createdBy: createdBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdBy),
+      version: Value(version),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory Proof.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Proof(
+      id: serializer.fromJson<String>(json['id']),
+      tenantId: serializer.fromJson<String>(json['tenantId']),
+      branchId: serializer.fromJson<String?>(json['branchId']),
+      orderId: serializer.fromJson<String>(json['orderId']),
+      revision: serializer.fromJson<int>(json['revision']),
+      kind: serializer.fromJson<String>(json['kind']),
+      label: serializer.fromJson<String>(json['label']),
+      url: serializer.fromJson<String>(json['url']),
+      note: serializer.fromJson<String?>(json['note']),
+      status: serializer.fromJson<String>(json['status']),
+      sentAt: serializer.fromJson<DateTime?>(json['sentAt']),
+      decidedAt: serializer.fromJson<DateTime?>(json['decidedAt']),
+      decidedNote: serializer.fromJson<String?>(json['decidedNote']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      createdBy: serializer.fromJson<String?>(json['createdBy']),
+      version: serializer.fromJson<int>(json['version']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'tenantId': serializer.toJson<String>(tenantId),
+      'branchId': serializer.toJson<String?>(branchId),
+      'orderId': serializer.toJson<String>(orderId),
+      'revision': serializer.toJson<int>(revision),
+      'kind': serializer.toJson<String>(kind),
+      'label': serializer.toJson<String>(label),
+      'url': serializer.toJson<String>(url),
+      'note': serializer.toJson<String?>(note),
+      'status': serializer.toJson<String>(status),
+      'sentAt': serializer.toJson<DateTime?>(sentAt),
+      'decidedAt': serializer.toJson<DateTime?>(decidedAt),
+      'decidedNote': serializer.toJson<String?>(decidedNote),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'createdBy': serializer.toJson<String?>(createdBy),
+      'version': serializer.toJson<int>(version),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  Proof copyWith({
+    String? id,
+    String? tenantId,
+    Value<String?> branchId = const Value.absent(),
+    String? orderId,
+    int? revision,
+    String? kind,
+    String? label,
+    String? url,
+    Value<String?> note = const Value.absent(),
+    String? status,
+    Value<DateTime?> sentAt = const Value.absent(),
+    Value<DateTime?> decidedAt = const Value.absent(),
+    Value<String?> decidedNote = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<String?> createdBy = const Value.absent(),
+    int? version,
+    Value<DateTime?> deletedAt = const Value.absent(),
+  }) => Proof(
+    id: id ?? this.id,
+    tenantId: tenantId ?? this.tenantId,
+    branchId: branchId.present ? branchId.value : this.branchId,
+    orderId: orderId ?? this.orderId,
+    revision: revision ?? this.revision,
+    kind: kind ?? this.kind,
+    label: label ?? this.label,
+    url: url ?? this.url,
+    note: note.present ? note.value : this.note,
+    status: status ?? this.status,
+    sentAt: sentAt.present ? sentAt.value : this.sentAt,
+    decidedAt: decidedAt.present ? decidedAt.value : this.decidedAt,
+    decidedNote: decidedNote.present ? decidedNote.value : this.decidedNote,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    createdBy: createdBy.present ? createdBy.value : this.createdBy,
+    version: version ?? this.version,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  Proof copyWithCompanion(ProofsCompanion data) {
+    return Proof(
+      id: data.id.present ? data.id.value : this.id,
+      tenantId: data.tenantId.present ? data.tenantId.value : this.tenantId,
+      branchId: data.branchId.present ? data.branchId.value : this.branchId,
+      orderId: data.orderId.present ? data.orderId.value : this.orderId,
+      revision: data.revision.present ? data.revision.value : this.revision,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      label: data.label.present ? data.label.value : this.label,
+      url: data.url.present ? data.url.value : this.url,
+      note: data.note.present ? data.note.value : this.note,
+      status: data.status.present ? data.status.value : this.status,
+      sentAt: data.sentAt.present ? data.sentAt.value : this.sentAt,
+      decidedAt: data.decidedAt.present ? data.decidedAt.value : this.decidedAt,
+      decidedNote: data.decidedNote.present
+          ? data.decidedNote.value
+          : this.decidedNote,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      createdBy: data.createdBy.present ? data.createdBy.value : this.createdBy,
+      version: data.version.present ? data.version.value : this.version,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Proof(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('branchId: $branchId, ')
+          ..write('orderId: $orderId, ')
+          ..write('revision: $revision, ')
+          ..write('kind: $kind, ')
+          ..write('label: $label, ')
+          ..write('url: $url, ')
+          ..write('note: $note, ')
+          ..write('status: $status, ')
+          ..write('sentAt: $sentAt, ')
+          ..write('decidedAt: $decidedAt, ')
+          ..write('decidedNote: $decidedNote, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('createdBy: $createdBy, ')
+          ..write('version: $version, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    tenantId,
+    branchId,
+    orderId,
+    revision,
+    kind,
+    label,
+    url,
+    note,
+    status,
+    sentAt,
+    decidedAt,
+    decidedNote,
+    createdAt,
+    updatedAt,
+    createdBy,
+    version,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Proof &&
+          other.id == this.id &&
+          other.tenantId == this.tenantId &&
+          other.branchId == this.branchId &&
+          other.orderId == this.orderId &&
+          other.revision == this.revision &&
+          other.kind == this.kind &&
+          other.label == this.label &&
+          other.url == this.url &&
+          other.note == this.note &&
+          other.status == this.status &&
+          other.sentAt == this.sentAt &&
+          other.decidedAt == this.decidedAt &&
+          other.decidedNote == this.decidedNote &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.createdBy == this.createdBy &&
+          other.version == this.version &&
+          other.deletedAt == this.deletedAt);
+}
+
+class ProofsCompanion extends UpdateCompanion<Proof> {
+  final Value<String> id;
+  final Value<String> tenantId;
+  final Value<String?> branchId;
+  final Value<String> orderId;
+  final Value<int> revision;
+  final Value<String> kind;
+  final Value<String> label;
+  final Value<String> url;
+  final Value<String?> note;
+  final Value<String> status;
+  final Value<DateTime?> sentAt;
+  final Value<DateTime?> decidedAt;
+  final Value<String?> decidedNote;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String?> createdBy;
+  final Value<int> version;
+  final Value<DateTime?> deletedAt;
+  final Value<int> rowid;
+  const ProofsCompanion({
+    this.id = const Value.absent(),
+    this.tenantId = const Value.absent(),
+    this.branchId = const Value.absent(),
+    this.orderId = const Value.absent(),
+    this.revision = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.label = const Value.absent(),
+    this.url = const Value.absent(),
+    this.note = const Value.absent(),
+    this.status = const Value.absent(),
+    this.sentAt = const Value.absent(),
+    this.decidedAt = const Value.absent(),
+    this.decidedNote = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.createdBy = const Value.absent(),
+    this.version = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ProofsCompanion.insert({
+    required String id,
+    required String tenantId,
+    this.branchId = const Value.absent(),
+    required String orderId,
+    this.revision = const Value.absent(),
+    this.kind = const Value.absent(),
+    required String label,
+    required String url,
+    this.note = const Value.absent(),
+    this.status = const Value.absent(),
+    this.sentAt = const Value.absent(),
+    this.decidedAt = const Value.absent(),
+    this.decidedNote = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.createdBy = const Value.absent(),
+    this.version = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       tenantId = Value(tenantId),
+       orderId = Value(orderId),
+       label = Value(label),
+       url = Value(url),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<Proof> custom({
+    Expression<String>? id,
+    Expression<String>? tenantId,
+    Expression<String>? branchId,
+    Expression<String>? orderId,
+    Expression<int>? revision,
+    Expression<String>? kind,
+    Expression<String>? label,
+    Expression<String>? url,
+    Expression<String>? note,
+    Expression<String>? status,
+    Expression<DateTime>? sentAt,
+    Expression<DateTime>? decidedAt,
+    Expression<String>? decidedNote,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? createdBy,
+    Expression<int>? version,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (tenantId != null) 'tenant_id': tenantId,
+      if (branchId != null) 'branch_id': branchId,
+      if (orderId != null) 'order_id': orderId,
+      if (revision != null) 'revision': revision,
+      if (kind != null) 'kind': kind,
+      if (label != null) 'label': label,
+      if (url != null) 'url': url,
+      if (note != null) 'note': note,
+      if (status != null) 'status': status,
+      if (sentAt != null) 'sent_at': sentAt,
+      if (decidedAt != null) 'decided_at': decidedAt,
+      if (decidedNote != null) 'decided_note': decidedNote,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (createdBy != null) 'created_by': createdBy,
+      if (version != null) 'version': version,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ProofsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? tenantId,
+    Value<String?>? branchId,
+    Value<String>? orderId,
+    Value<int>? revision,
+    Value<String>? kind,
+    Value<String>? label,
+    Value<String>? url,
+    Value<String?>? note,
+    Value<String>? status,
+    Value<DateTime?>? sentAt,
+    Value<DateTime?>? decidedAt,
+    Value<String?>? decidedNote,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String?>? createdBy,
+    Value<int>? version,
+    Value<DateTime?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return ProofsCompanion(
+      id: id ?? this.id,
+      tenantId: tenantId ?? this.tenantId,
+      branchId: branchId ?? this.branchId,
+      orderId: orderId ?? this.orderId,
+      revision: revision ?? this.revision,
+      kind: kind ?? this.kind,
+      label: label ?? this.label,
+      url: url ?? this.url,
+      note: note ?? this.note,
+      status: status ?? this.status,
+      sentAt: sentAt ?? this.sentAt,
+      decidedAt: decidedAt ?? this.decidedAt,
+      decidedNote: decidedNote ?? this.decidedNote,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      createdBy: createdBy ?? this.createdBy,
+      version: version ?? this.version,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (tenantId.present) {
+      map['tenant_id'] = Variable<String>(tenantId.value);
+    }
+    if (branchId.present) {
+      map['branch_id'] = Variable<String>(branchId.value);
+    }
+    if (orderId.present) {
+      map['order_id'] = Variable<String>(orderId.value);
+    }
+    if (revision.present) {
+      map['revision'] = Variable<int>(revision.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (label.present) {
+      map['label'] = Variable<String>(label.value);
+    }
+    if (url.present) {
+      map['url'] = Variable<String>(url.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (sentAt.present) {
+      map['sent_at'] = Variable<DateTime>(sentAt.value);
+    }
+    if (decidedAt.present) {
+      map['decided_at'] = Variable<DateTime>(decidedAt.value);
+    }
+    if (decidedNote.present) {
+      map['decided_note'] = Variable<String>(decidedNote.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (createdBy.present) {
+      map['created_by'] = Variable<String>(createdBy.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProofsCompanion(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('branchId: $branchId, ')
+          ..write('orderId: $orderId, ')
+          ..write('revision: $revision, ')
+          ..write('kind: $kind, ')
+          ..write('label: $label, ')
+          ..write('url: $url, ')
+          ..write('note: $note, ')
+          ..write('status: $status, ')
+          ..write('sentAt: $sentAt, ')
+          ..write('decidedAt: $decidedAt, ')
+          ..write('decidedNote: $decidedNote, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('createdBy: $createdBy, ')
+          ..write('version: $version, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $TimeEntriesTable extends TimeEntries
+    with TableInfo<$TimeEntriesTable, TimeEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TimeEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tenantIdMeta = const VerificationMeta(
+    'tenantId',
+  );
+  @override
+  late final GeneratedColumn<String> tenantId = GeneratedColumn<String>(
+    'tenant_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _branchIdMeta = const VerificationMeta(
+    'branchId',
+  );
+  @override
+  late final GeneratedColumn<String> branchId = GeneratedColumn<String>(
+    'branch_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _taskIdMeta = const VerificationMeta('taskId');
+  @override
+  late final GeneratedColumn<String> taskId = GeneratedColumn<String>(
+    'task_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _orderIdMeta = const VerificationMeta(
+    'orderId',
+  );
+  @override
+  late final GeneratedColumn<String> orderId = GeneratedColumn<String>(
+    'order_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _startedAtMeta = const VerificationMeta(
+    'startedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startedAt = GeneratedColumn<DateTime>(
+    'started_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endedAtMeta = const VerificationMeta(
+    'endedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> endedAt = GeneratedColumn<DateTime>(
+    'ended_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _minutesMeta = const VerificationMeta(
+    'minutes',
+  );
+  @override
+  late final GeneratedColumn<int> minutes = GeneratedColumn<int>(
+    'minutes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _autoMeta = const VerificationMeta('auto');
+  @override
+  late final GeneratedColumn<bool> auto = GeneratedColumn<bool>(
+    'auto',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("auto" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _versionMeta = const VerificationMeta(
+    'version',
+  );
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+    'version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    tenantId,
+    branchId,
+    taskId,
+    orderId,
+    userId,
+    startedAt,
+    endedAt,
+    minutes,
+    auto,
+    createdAt,
+    version,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'time_entries';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TimeEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('tenant_id')) {
+      context.handle(
+        _tenantIdMeta,
+        tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tenantIdMeta);
+    }
+    if (data.containsKey('branch_id')) {
+      context.handle(
+        _branchIdMeta,
+        branchId.isAcceptableOrUnknown(data['branch_id']!, _branchIdMeta),
+      );
+    }
+    if (data.containsKey('task_id')) {
+      context.handle(
+        _taskIdMeta,
+        taskId.isAcceptableOrUnknown(data['task_id']!, _taskIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_taskIdMeta);
+    }
+    if (data.containsKey('order_id')) {
+      context.handle(
+        _orderIdMeta,
+        orderId.isAcceptableOrUnknown(data['order_id']!, _orderIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_orderIdMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    }
+    if (data.containsKey('started_at')) {
+      context.handle(
+        _startedAtMeta,
+        startedAt.isAcceptableOrUnknown(data['started_at']!, _startedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startedAtMeta);
+    }
+    if (data.containsKey('ended_at')) {
+      context.handle(
+        _endedAtMeta,
+        endedAt.isAcceptableOrUnknown(data['ended_at']!, _endedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_endedAtMeta);
+    }
+    if (data.containsKey('minutes')) {
+      context.handle(
+        _minutesMeta,
+        minutes.isAcceptableOrUnknown(data['minutes']!, _minutesMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_minutesMeta);
+    }
+    if (data.containsKey('auto')) {
+      context.handle(
+        _autoMeta,
+        auto.isAcceptableOrUnknown(data['auto']!, _autoMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('version')) {
+      context.handle(
+        _versionMeta,
+        version.isAcceptableOrUnknown(data['version']!, _versionMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TimeEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TimeEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      tenantId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tenant_id'],
+      )!,
+      branchId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}branch_id'],
+      ),
+      taskId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}task_id'],
+      )!,
+      orderId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}order_id'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      ),
+      startedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}started_at'],
+      )!,
+      endedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}ended_at'],
+      )!,
+      minutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}minutes'],
+      )!,
+      auto: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}auto'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      version: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}version'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $TimeEntriesTable createAlias(String alias) {
+    return $TimeEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class TimeEntry extends DataClass implements Insertable<TimeEntry> {
+  final String id;
+  final String tenantId;
+  final String? branchId;
+  final String taskId;
+  final String orderId;
+  final String? userId;
+  final DateTime startedAt;
+  final DateTime endedAt;
+  final int minutes;
+  final bool auto;
+  final DateTime createdAt;
+  final int version;
+  final DateTime? deletedAt;
+  const TimeEntry({
+    required this.id,
+    required this.tenantId,
+    this.branchId,
+    required this.taskId,
+    required this.orderId,
+    this.userId,
+    required this.startedAt,
+    required this.endedAt,
+    required this.minutes,
+    required this.auto,
+    required this.createdAt,
+    required this.version,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['tenant_id'] = Variable<String>(tenantId);
+    if (!nullToAbsent || branchId != null) {
+      map['branch_id'] = Variable<String>(branchId);
+    }
+    map['task_id'] = Variable<String>(taskId);
+    map['order_id'] = Variable<String>(orderId);
+    if (!nullToAbsent || userId != null) {
+      map['user_id'] = Variable<String>(userId);
+    }
+    map['started_at'] = Variable<DateTime>(startedAt);
+    map['ended_at'] = Variable<DateTime>(endedAt);
+    map['minutes'] = Variable<int>(minutes);
+    map['auto'] = Variable<bool>(auto);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['version'] = Variable<int>(version);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  TimeEntriesCompanion toCompanion(bool nullToAbsent) {
+    return TimeEntriesCompanion(
+      id: Value(id),
+      tenantId: Value(tenantId),
+      branchId: branchId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(branchId),
+      taskId: Value(taskId),
+      orderId: Value(orderId),
+      userId: userId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(userId),
+      startedAt: Value(startedAt),
+      endedAt: Value(endedAt),
+      minutes: Value(minutes),
+      auto: Value(auto),
+      createdAt: Value(createdAt),
+      version: Value(version),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory TimeEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TimeEntry(
+      id: serializer.fromJson<String>(json['id']),
+      tenantId: serializer.fromJson<String>(json['tenantId']),
+      branchId: serializer.fromJson<String?>(json['branchId']),
+      taskId: serializer.fromJson<String>(json['taskId']),
+      orderId: serializer.fromJson<String>(json['orderId']),
+      userId: serializer.fromJson<String?>(json['userId']),
+      startedAt: serializer.fromJson<DateTime>(json['startedAt']),
+      endedAt: serializer.fromJson<DateTime>(json['endedAt']),
+      minutes: serializer.fromJson<int>(json['minutes']),
+      auto: serializer.fromJson<bool>(json['auto']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      version: serializer.fromJson<int>(json['version']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'tenantId': serializer.toJson<String>(tenantId),
+      'branchId': serializer.toJson<String?>(branchId),
+      'taskId': serializer.toJson<String>(taskId),
+      'orderId': serializer.toJson<String>(orderId),
+      'userId': serializer.toJson<String?>(userId),
+      'startedAt': serializer.toJson<DateTime>(startedAt),
+      'endedAt': serializer.toJson<DateTime>(endedAt),
+      'minutes': serializer.toJson<int>(minutes),
+      'auto': serializer.toJson<bool>(auto),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'version': serializer.toJson<int>(version),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  TimeEntry copyWith({
+    String? id,
+    String? tenantId,
+    Value<String?> branchId = const Value.absent(),
+    String? taskId,
+    String? orderId,
+    Value<String?> userId = const Value.absent(),
+    DateTime? startedAt,
+    DateTime? endedAt,
+    int? minutes,
+    bool? auto,
+    DateTime? createdAt,
+    int? version,
+    Value<DateTime?> deletedAt = const Value.absent(),
+  }) => TimeEntry(
+    id: id ?? this.id,
+    tenantId: tenantId ?? this.tenantId,
+    branchId: branchId.present ? branchId.value : this.branchId,
+    taskId: taskId ?? this.taskId,
+    orderId: orderId ?? this.orderId,
+    userId: userId.present ? userId.value : this.userId,
+    startedAt: startedAt ?? this.startedAt,
+    endedAt: endedAt ?? this.endedAt,
+    minutes: minutes ?? this.minutes,
+    auto: auto ?? this.auto,
+    createdAt: createdAt ?? this.createdAt,
+    version: version ?? this.version,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  TimeEntry copyWithCompanion(TimeEntriesCompanion data) {
+    return TimeEntry(
+      id: data.id.present ? data.id.value : this.id,
+      tenantId: data.tenantId.present ? data.tenantId.value : this.tenantId,
+      branchId: data.branchId.present ? data.branchId.value : this.branchId,
+      taskId: data.taskId.present ? data.taskId.value : this.taskId,
+      orderId: data.orderId.present ? data.orderId.value : this.orderId,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
+      endedAt: data.endedAt.present ? data.endedAt.value : this.endedAt,
+      minutes: data.minutes.present ? data.minutes.value : this.minutes,
+      auto: data.auto.present ? data.auto.value : this.auto,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      version: data.version.present ? data.version.value : this.version,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TimeEntry(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('branchId: $branchId, ')
+          ..write('taskId: $taskId, ')
+          ..write('orderId: $orderId, ')
+          ..write('userId: $userId, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('endedAt: $endedAt, ')
+          ..write('minutes: $minutes, ')
+          ..write('auto: $auto, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('version: $version, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    tenantId,
+    branchId,
+    taskId,
+    orderId,
+    userId,
+    startedAt,
+    endedAt,
+    minutes,
+    auto,
+    createdAt,
+    version,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TimeEntry &&
+          other.id == this.id &&
+          other.tenantId == this.tenantId &&
+          other.branchId == this.branchId &&
+          other.taskId == this.taskId &&
+          other.orderId == this.orderId &&
+          other.userId == this.userId &&
+          other.startedAt == this.startedAt &&
+          other.endedAt == this.endedAt &&
+          other.minutes == this.minutes &&
+          other.auto == this.auto &&
+          other.createdAt == this.createdAt &&
+          other.version == this.version &&
+          other.deletedAt == this.deletedAt);
+}
+
+class TimeEntriesCompanion extends UpdateCompanion<TimeEntry> {
+  final Value<String> id;
+  final Value<String> tenantId;
+  final Value<String?> branchId;
+  final Value<String> taskId;
+  final Value<String> orderId;
+  final Value<String?> userId;
+  final Value<DateTime> startedAt;
+  final Value<DateTime> endedAt;
+  final Value<int> minutes;
+  final Value<bool> auto;
+  final Value<DateTime> createdAt;
+  final Value<int> version;
+  final Value<DateTime?> deletedAt;
+  final Value<int> rowid;
+  const TimeEntriesCompanion({
+    this.id = const Value.absent(),
+    this.tenantId = const Value.absent(),
+    this.branchId = const Value.absent(),
+    this.taskId = const Value.absent(),
+    this.orderId = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.startedAt = const Value.absent(),
+    this.endedAt = const Value.absent(),
+    this.minutes = const Value.absent(),
+    this.auto = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.version = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TimeEntriesCompanion.insert({
+    required String id,
+    required String tenantId,
+    this.branchId = const Value.absent(),
+    required String taskId,
+    required String orderId,
+    this.userId = const Value.absent(),
+    required DateTime startedAt,
+    required DateTime endedAt,
+    required int minutes,
+    this.auto = const Value.absent(),
+    required DateTime createdAt,
+    this.version = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       tenantId = Value(tenantId),
+       taskId = Value(taskId),
+       orderId = Value(orderId),
+       startedAt = Value(startedAt),
+       endedAt = Value(endedAt),
+       minutes = Value(minutes),
+       createdAt = Value(createdAt);
+  static Insertable<TimeEntry> custom({
+    Expression<String>? id,
+    Expression<String>? tenantId,
+    Expression<String>? branchId,
+    Expression<String>? taskId,
+    Expression<String>? orderId,
+    Expression<String>? userId,
+    Expression<DateTime>? startedAt,
+    Expression<DateTime>? endedAt,
+    Expression<int>? minutes,
+    Expression<bool>? auto,
+    Expression<DateTime>? createdAt,
+    Expression<int>? version,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (tenantId != null) 'tenant_id': tenantId,
+      if (branchId != null) 'branch_id': branchId,
+      if (taskId != null) 'task_id': taskId,
+      if (orderId != null) 'order_id': orderId,
+      if (userId != null) 'user_id': userId,
+      if (startedAt != null) 'started_at': startedAt,
+      if (endedAt != null) 'ended_at': endedAt,
+      if (minutes != null) 'minutes': minutes,
+      if (auto != null) 'auto': auto,
+      if (createdAt != null) 'created_at': createdAt,
+      if (version != null) 'version': version,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TimeEntriesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? tenantId,
+    Value<String?>? branchId,
+    Value<String>? taskId,
+    Value<String>? orderId,
+    Value<String?>? userId,
+    Value<DateTime>? startedAt,
+    Value<DateTime>? endedAt,
+    Value<int>? minutes,
+    Value<bool>? auto,
+    Value<DateTime>? createdAt,
+    Value<int>? version,
+    Value<DateTime?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return TimeEntriesCompanion(
+      id: id ?? this.id,
+      tenantId: tenantId ?? this.tenantId,
+      branchId: branchId ?? this.branchId,
+      taskId: taskId ?? this.taskId,
+      orderId: orderId ?? this.orderId,
+      userId: userId ?? this.userId,
+      startedAt: startedAt ?? this.startedAt,
+      endedAt: endedAt ?? this.endedAt,
+      minutes: minutes ?? this.minutes,
+      auto: auto ?? this.auto,
+      createdAt: createdAt ?? this.createdAt,
+      version: version ?? this.version,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (tenantId.present) {
+      map['tenant_id'] = Variable<String>(tenantId.value);
+    }
+    if (branchId.present) {
+      map['branch_id'] = Variable<String>(branchId.value);
+    }
+    if (taskId.present) {
+      map['task_id'] = Variable<String>(taskId.value);
+    }
+    if (orderId.present) {
+      map['order_id'] = Variable<String>(orderId.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (startedAt.present) {
+      map['started_at'] = Variable<DateTime>(startedAt.value);
+    }
+    if (endedAt.present) {
+      map['ended_at'] = Variable<DateTime>(endedAt.value);
+    }
+    if (minutes.present) {
+      map['minutes'] = Variable<int>(minutes.value);
+    }
+    if (auto.present) {
+      map['auto'] = Variable<bool>(auto.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TimeEntriesCompanion(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('branchId: $branchId, ')
+          ..write('taskId: $taskId, ')
+          ..write('orderId: $orderId, ')
+          ..write('userId: $userId, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('endedAt: $endedAt, ')
+          ..write('minutes: $minutes, ')
+          ..write('auto: $auto, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('version: $version, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -9084,6 +10817,8 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
   late final $CustomerPhonesTable customerPhones = $CustomerPhonesTable(this);
   late final $WorkflowStagesTable workflowStages = $WorkflowStagesTable(this);
   late final $TasksTable tasks = $TasksTable(this);
+  late final $ProofsTable proofs = $ProofsTable(this);
+  late final $TimeEntriesTable timeEntries = $TimeEntriesTable(this);
   late final $ProductsTable products = $ProductsTable(this);
   late final $MaterialsTable materials = $MaterialsTable(this);
   late final $PriceRulesTable priceRules = $PriceRulesTable(this);
@@ -9102,6 +10837,8 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
     customerPhones,
     workflowStages,
     tasks,
+    proofs,
+    timeEntries,
     products,
     materials,
     priceRules,
@@ -10710,6 +12447,817 @@ typedef $$TasksTableProcessedTableManager =
       $$TasksTableUpdateCompanionBuilder,
       (Task, BaseReferences<_$LocalDatabase, $TasksTable, Task>),
       Task,
+      PrefetchHooks Function()
+    >;
+typedef $$ProofsTableCreateCompanionBuilder = ProofsCompanion Function({
+  required String id,
+  required String tenantId,
+  Value<String?> branchId,
+  required String orderId,
+  Value<int> revision,
+  Value<String> kind,
+  required String label,
+  required String url,
+  Value<String?> note,
+  Value<String> status,
+  Value<DateTime?> sentAt,
+  Value<DateTime?> decidedAt,
+  Value<String?> decidedNote,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  Value<String?> createdBy,
+  Value<int> version,
+  Value<DateTime?> deletedAt,
+  Value<int> rowid,
+});
+typedef $$ProofsTableUpdateCompanionBuilder = ProofsCompanion Function({
+  Value<String> id,
+  Value<String> tenantId,
+  Value<String?> branchId,
+  Value<String> orderId,
+  Value<int> revision,
+  Value<String> kind,
+  Value<String> label,
+  Value<String> url,
+  Value<String?> note,
+  Value<String> status,
+  Value<DateTime?> sentAt,
+  Value<DateTime?> decidedAt,
+  Value<String?> decidedNote,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<String?> createdBy,
+  Value<int> version,
+  Value<DateTime?> deletedAt,
+  Value<int> rowid,
+});
+
+class $$ProofsTableFilterComposer
+    extends Composer<_$LocalDatabase, $ProofsTable> {
+  $$ProofsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tenantId => $composableBuilder(
+    column: $table.tenantId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get branchId => $composableBuilder(
+    column: $table.branchId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get orderId => $composableBuilder(
+    column: $table.orderId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get label => $composableBuilder(
+    column: $table.label,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get url => $composableBuilder(
+    column: $table.url,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get sentAt => $composableBuilder(
+    column: $table.sentAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get decidedAt => $composableBuilder(
+    column: $table.decidedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get decidedNote => $composableBuilder(
+    column: $table.decidedNote,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get createdBy => $composableBuilder(
+    column: $table.createdBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ProofsTableOrderingComposer
+    extends Composer<_$LocalDatabase, $ProofsTable> {
+  $$ProofsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tenantId => $composableBuilder(
+    column: $table.tenantId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get branchId => $composableBuilder(
+    column: $table.branchId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get orderId => $composableBuilder(
+    column: $table.orderId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get label => $composableBuilder(
+    column: $table.label,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get url => $composableBuilder(
+    column: $table.url,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get sentAt => $composableBuilder(
+    column: $table.sentAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get decidedAt => $composableBuilder(
+    column: $table.decidedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get decidedNote => $composableBuilder(
+    column: $table.decidedNote,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get createdBy => $composableBuilder(
+    column: $table.createdBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ProofsTableAnnotationComposer
+    extends Composer<_$LocalDatabase, $ProofsTable> {
+  $$ProofsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get tenantId =>
+      $composableBuilder(column: $table.tenantId, builder: (column) => column);
+
+  GeneratedColumn<String> get branchId =>
+      $composableBuilder(column: $table.branchId, builder: (column) => column);
+
+  GeneratedColumn<String> get orderId =>
+      $composableBuilder(column: $table.orderId, builder: (column) => column);
+
+  GeneratedColumn<int> get revision =>
+      $composableBuilder(column: $table.revision, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get label =>
+      $composableBuilder(column: $table.label, builder: (column) => column);
+
+  GeneratedColumn<String> get url =>
+      $composableBuilder(column: $table.url, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get sentAt =>
+      $composableBuilder(column: $table.sentAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get decidedAt =>
+      $composableBuilder(column: $table.decidedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get decidedNote => $composableBuilder(
+    column: $table.decidedNote,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get createdBy =>
+      $composableBuilder(column: $table.createdBy, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+}
+
+class $$ProofsTableTableManager
+    extends
+        RootTableManager<
+          _$LocalDatabase,
+          $ProofsTable,
+          Proof,
+          $$ProofsTableFilterComposer,
+          $$ProofsTableOrderingComposer,
+          $$ProofsTableAnnotationComposer,
+          $$ProofsTableCreateCompanionBuilder,
+          $$ProofsTableUpdateCompanionBuilder,
+          (Proof, BaseReferences<_$LocalDatabase, $ProofsTable, Proof>),
+          Proof,
+          PrefetchHooks Function()
+        > {
+  $$ProofsTableTableManager(_$LocalDatabase db, $ProofsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ProofsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ProofsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ProofsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> tenantId = const Value.absent(),
+                Value<String?> branchId = const Value.absent(),
+                Value<String> orderId = const Value.absent(),
+                Value<int> revision = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> label = const Value.absent(),
+                Value<String> url = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<DateTime?> sentAt = const Value.absent(),
+                Value<DateTime?> decidedAt = const Value.absent(),
+                Value<String?> decidedNote = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String?> createdBy = const Value.absent(),
+                Value<int> version = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProofsCompanion(
+                id: id,
+                tenantId: tenantId,
+                branchId: branchId,
+                orderId: orderId,
+                revision: revision,
+                kind: kind,
+                label: label,
+                url: url,
+                note: note,
+                status: status,
+                sentAt: sentAt,
+                decidedAt: decidedAt,
+                decidedNote: decidedNote,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                createdBy: createdBy,
+                version: version,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String tenantId,
+                Value<String?> branchId = const Value.absent(),
+                required String orderId,
+                Value<int> revision = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                required String label,
+                required String url,
+                Value<String?> note = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<DateTime?> sentAt = const Value.absent(),
+                Value<DateTime?> decidedAt = const Value.absent(),
+                Value<String?> decidedNote = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<String?> createdBy = const Value.absent(),
+                Value<int> version = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProofsCompanion.insert(
+                id: id,
+                tenantId: tenantId,
+                branchId: branchId,
+                orderId: orderId,
+                revision: revision,
+                kind: kind,
+                label: label,
+                url: url,
+                note: note,
+                status: status,
+                sentAt: sentAt,
+                decidedAt: decidedAt,
+                decidedNote: decidedNote,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                createdBy: createdBy,
+                version: version,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ProofsTable, Proof>(table),
+                  BaseReferences<_$LocalDatabase, $ProofsTable, Proof>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ProofsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$LocalDatabase,
+      $ProofsTable,
+      Proof,
+      $$ProofsTableFilterComposer,
+      $$ProofsTableOrderingComposer,
+      $$ProofsTableAnnotationComposer,
+      $$ProofsTableCreateCompanionBuilder,
+      $$ProofsTableUpdateCompanionBuilder,
+      (Proof, BaseReferences<_$LocalDatabase, $ProofsTable, Proof>),
+      Proof,
+      PrefetchHooks Function()
+    >;
+typedef $$TimeEntriesTableCreateCompanionBuilder =
+    TimeEntriesCompanion Function({
+      required String id,
+      required String tenantId,
+      Value<String?> branchId,
+      required String taskId,
+      required String orderId,
+      Value<String?> userId,
+      required DateTime startedAt,
+      required DateTime endedAt,
+      required int minutes,
+      Value<bool> auto,
+      required DateTime createdAt,
+      Value<int> version,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+typedef $$TimeEntriesTableUpdateCompanionBuilder =
+    TimeEntriesCompanion Function({
+      Value<String> id,
+      Value<String> tenantId,
+      Value<String?> branchId,
+      Value<String> taskId,
+      Value<String> orderId,
+      Value<String?> userId,
+      Value<DateTime> startedAt,
+      Value<DateTime> endedAt,
+      Value<int> minutes,
+      Value<bool> auto,
+      Value<DateTime> createdAt,
+      Value<int> version,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+
+class $$TimeEntriesTableFilterComposer
+    extends Composer<_$LocalDatabase, $TimeEntriesTable> {
+  $$TimeEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tenantId => $composableBuilder(
+    column: $table.tenantId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get branchId => $composableBuilder(
+    column: $table.branchId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get taskId => $composableBuilder(
+    column: $table.taskId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get orderId => $composableBuilder(
+    column: $table.orderId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get endedAt => $composableBuilder(
+    column: $table.endedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get minutes => $composableBuilder(
+    column: $table.minutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get auto => $composableBuilder(
+    column: $table.auto,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$TimeEntriesTableOrderingComposer
+    extends Composer<_$LocalDatabase, $TimeEntriesTable> {
+  $$TimeEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tenantId => $composableBuilder(
+    column: $table.tenantId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get branchId => $composableBuilder(
+    column: $table.branchId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get taskId => $composableBuilder(
+    column: $table.taskId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get orderId => $composableBuilder(
+    column: $table.orderId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get endedAt => $composableBuilder(
+    column: $table.endedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get minutes => $composableBuilder(
+    column: $table.minutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get auto => $composableBuilder(
+    column: $table.auto,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TimeEntriesTableAnnotationComposer
+    extends Composer<_$LocalDatabase, $TimeEntriesTable> {
+  $$TimeEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get tenantId =>
+      $composableBuilder(column: $table.tenantId, builder: (column) => column);
+
+  GeneratedColumn<String> get branchId =>
+      $composableBuilder(column: $table.branchId, builder: (column) => column);
+
+  GeneratedColumn<String> get taskId =>
+      $composableBuilder(column: $table.taskId, builder: (column) => column);
+
+  GeneratedColumn<String> get orderId =>
+      $composableBuilder(column: $table.orderId, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get startedAt =>
+      $composableBuilder(column: $table.startedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get endedAt =>
+      $composableBuilder(column: $table.endedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get minutes =>
+      $composableBuilder(column: $table.minutes, builder: (column) => column);
+
+  GeneratedColumn<bool> get auto =>
+      $composableBuilder(column: $table.auto, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+}
+
+class $$TimeEntriesTableTableManager
+    extends
+        RootTableManager<
+          _$LocalDatabase,
+          $TimeEntriesTable,
+          TimeEntry,
+          $$TimeEntriesTableFilterComposer,
+          $$TimeEntriesTableOrderingComposer,
+          $$TimeEntriesTableAnnotationComposer,
+          $$TimeEntriesTableCreateCompanionBuilder,
+          $$TimeEntriesTableUpdateCompanionBuilder,
+          (
+            TimeEntry,
+            BaseReferences<_$LocalDatabase, $TimeEntriesTable, TimeEntry>,
+          ),
+          TimeEntry,
+          PrefetchHooks Function()
+        > {
+  $$TimeEntriesTableTableManager(_$LocalDatabase db, $TimeEntriesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TimeEntriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TimeEntriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TimeEntriesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> tenantId = const Value.absent(),
+                Value<String?> branchId = const Value.absent(),
+                Value<String> taskId = const Value.absent(),
+                Value<String> orderId = const Value.absent(),
+                Value<String?> userId = const Value.absent(),
+                Value<DateTime> startedAt = const Value.absent(),
+                Value<DateTime> endedAt = const Value.absent(),
+                Value<int> minutes = const Value.absent(),
+                Value<bool> auto = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> version = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TimeEntriesCompanion(
+                id: id,
+                tenantId: tenantId,
+                branchId: branchId,
+                taskId: taskId,
+                orderId: orderId,
+                userId: userId,
+                startedAt: startedAt,
+                endedAt: endedAt,
+                minutes: minutes,
+                auto: auto,
+                createdAt: createdAt,
+                version: version,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String tenantId,
+                Value<String?> branchId = const Value.absent(),
+                required String taskId,
+                required String orderId,
+                Value<String?> userId = const Value.absent(),
+                required DateTime startedAt,
+                required DateTime endedAt,
+                required int minutes,
+                Value<bool> auto = const Value.absent(),
+                required DateTime createdAt,
+                Value<int> version = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TimeEntriesCompanion.insert(
+                id: id,
+                tenantId: tenantId,
+                branchId: branchId,
+                taskId: taskId,
+                orderId: orderId,
+                userId: userId,
+                startedAt: startedAt,
+                endedAt: endedAt,
+                minutes: minutes,
+                auto: auto,
+                createdAt: createdAt,
+                version: version,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$TimeEntriesTable, TimeEntry>(table),
+                  BaseReferences<_$LocalDatabase, $TimeEntriesTable, TimeEntry>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$TimeEntriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$LocalDatabase,
+      $TimeEntriesTable,
+      TimeEntry,
+      $$TimeEntriesTableFilterComposer,
+      $$TimeEntriesTableOrderingComposer,
+      $$TimeEntriesTableAnnotationComposer,
+      $$TimeEntriesTableCreateCompanionBuilder,
+      $$TimeEntriesTableUpdateCompanionBuilder,
+      (
+        TimeEntry,
+        BaseReferences<_$LocalDatabase, $TimeEntriesTable, TimeEntry>,
+      ),
+      TimeEntry,
       PrefetchHooks Function()
     >;
 typedef $$ProductsTableCreateCompanionBuilder = ProductsCompanion Function({
@@ -13430,6 +15978,10 @@ class $LocalDatabaseManager {
       $$WorkflowStagesTableTableManager(_db, _db.workflowStages);
   $$TasksTableTableManager get tasks =>
       $$TasksTableTableManager(_db, _db.tasks);
+  $$ProofsTableTableManager get proofs =>
+      $$ProofsTableTableManager(_db, _db.proofs);
+  $$TimeEntriesTableTableManager get timeEntries =>
+      $$TimeEntriesTableTableManager(_db, _db.timeEntries);
   $$ProductsTableTableManager get products =>
       $$ProductsTableTableManager(_db, _db.products);
   $$MaterialsTableTableManager get materials =>

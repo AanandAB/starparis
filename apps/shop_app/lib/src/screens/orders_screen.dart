@@ -11,6 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../app_config.dart';
 import '../providers.dart';
 import '../sales/documents_service.dart';
+import '../sales/proofs_section.dart';
 import '../sales/whatsapp.dart';
 import 'order_builder_screen.dart';
 
@@ -412,6 +413,10 @@ class _OrderSheetState extends ConsumerState<_OrderSheet> {
             value: Fils(order.totalFils).aedLabel,
             emphatic: true,
           ),
+          const Divider(height: StarSpace.lg),
+          ProofsSection(order: order),
+          const Divider(height: StarSpace.lg),
+          _TimeLogged(order: order),
           const SizedBox(height: StarSpace.lg),
           Wrap(
             spacing: StarSpace.sm,
@@ -450,6 +455,31 @@ class _OrderSheetState extends ConsumerState<_OrderSheet> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Minutes the server recorded for this job, from time_entries.
+class _TimeLogged extends ConsumerWidget {
+  const _TimeLogged({required this.order});
+
+  final Order order;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final db = ref.watch(bootstrapProvider).db;
+    return FutureBuilder<int>(
+      future: db.minutesForOrder(order.id),
+      builder: (context, snapshot) {
+        final minutes = snapshot.data ?? 0;
+        if (minutes == 0) return const SizedBox.shrink();
+        final hours = minutes ~/ 60;
+        final rest = minutes % 60;
+        return _SummaryRow(
+          label: 'Time logged',
+          value: hours > 0 ? '${hours}h ${rest}m' : '${minutes}m',
+        );
+      },
     );
   }
 }

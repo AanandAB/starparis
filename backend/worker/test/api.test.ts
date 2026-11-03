@@ -731,6 +731,186 @@ describe('tasks', () => {
   });
 });
 
+describe('proofs', () => {
+  const proofId = '0193f0b1-0000-7000-8000-0000000000ca';
+  const ORDER = '0193f0b1-0000-7000-8000-0000000000aa';
+
+  async function proofRow(): Promise<Record<string, unknown>> {
+    return (await env.DB.prepare('SELECT * FROM proofs WHERE id = ?').bind(proofId).first()) as Record<
+      string,
+      unknown
+    >;
+  }
+
+  async function pushProof(
+    session: Session,
+    status: string,
+    baseVersion: number,
+    extra: Record<string, unknown> = {},
+  ) {
+    const response = await api(
+      '/v1/push',
+      authed(session.access_token, {
+        device_id: session.device_id,
+        mutations: [
+          mutation({
+            mutation_id: `m-proof-${status}-${baseVersion}-${Math.random().toString(36).slice(2, 8)}`,
+            entity: 'proofs',
+            op: 'patch',
+            row_id: proofId,
+            base_version: baseVersion,
+            fields: { status, ...extra },
+          }),
+        ],
+      }),
+    );
+    return (await response.json()) as {
+      results: Array<{ status: string; error?: { code: string } }>;
+    };
+  }
+
+  it('takes a proof link from the counter', async () => {
+    const response = await api(
+      '/v1/push',
+      authed(counter.access_token, {
+        device_id: counter.device_id,
+        mutations: [
+          mutation({
+            mutation_id: 'm-proof-1',
+            entity: 'proofs',
+            row_id: proofId,
+            fields: {
+              order_id: ORDER,
+              revision: 1,
+              kind: 'proof',
+              label: 'Business cards front',
+              url: 'https://drive.example/proof-10452-v1.pdf',
+              note: 'Sent on WhatsApp as well',
+            },
+          }),
+        ],
+      }),
+    );
+    const body = (await response.json()) as { results: Array<{ status: string }> };
+    expect(body.results[0]!.status).toBe('applied');
+    expect((await proofRow())['revision']).toBe(1);
+  });
+
+  it('will not let a draft be approved before it was sent', async () => {
+    const body = await pushProof(counter, 'approved', 1);
+    expect(body.results[0]!.status).toBe('rejected');
+    expect(body.results[0]!.error!.code).toBe('ILLEGAL_TRANSITION');
+  });
+
+  it('records the send, then the rejection and its reason', async () => {
+    const sent = await pushProof(counter, 'sent', 1);
+    expect(sent.results[0]!.status).toBe('applied');
+    expect((await proofRow())['sent_at']).toBeTruthy();
+
+    const noNote = await pushProof(counter, 'rejected', 2);
+    expect(noNote.results[0]!.status).toBe('rejected');
+    expect(noNote.results[0]!.error!.code).toBe('NOTE_REQUIRED');
+
+    const rejected = await pushProof(counter, 'rejected', 2, {
+      decided_note: 'Logo is too close to the trim on the back',
+    });
+    expect(rejected.results[0]!.status).toBe('applied');
+
+    const row = await proofRow();
+    expect(row['status']).toBe('rejected');
+    expect(row['decided_at']).toBeTruthy();
+    expect(row['decided_note']).toContain('trim');
+  });
+
+  it('lets a new version supersede a rejected one', async () => {
+    const body = await pushProof(counter, 'superseded', 3);
+    expect(body.results[0]!.status).toBe('applied');
+    expect((await proofRow())['status']).toBe('superseded');
+  });
+});
+
+describe('time tracking', () => {
+  const timeTask = '0193f0b1-0000-7000-8000-0000000000cc';
+
+  it('writes a time entry when a task leaves in_progress', async () => {
+    const now = new Date().toISOString();
+    await env.DB.prepare(
+      `INSERT INTO tasks (id, tenant_id, branch_id, order_id, stage_key, stage_name, sequence,
+                          title, status, assigned_to, required_role, qty, priority,
+                          created_at, updated_at, version)
+       VALUES (?, ?, ?, ?, 'qc', 'Quality check', 40, 'Time test', 'assigned', ?, 'manager',
+               100, 'normal', ?, ?, 1)`,
+    )
+      .bind(timeTask, TENANT, BRANCH_SHJ, '0193f0b1-0000-7000-8000-0000000000aa', USER_OWNER, now, now)
+      .run();
+
+    const start = await api(
+      '/v1/push',
+      authed(owner.access_token, {
+        device_id: owner.device_id,
+        mutations: [
+          mutation({
+            mutation_id: 'm-time-start',
+            entity: 'tasks',
+            op: 'patch',
+            row_id: timeTask,
+            base_version: 1,
+            fields: { status: 'in_progress' },
+          }),
+        ],
+      }),
+    );
+    expect(((await start.json()) as { results: Array<{ status: string }> }).results[0]!.status).toBe(
+      'applied',
+    );
+
+    // Move the clock back so the stretch is a measurable number of minutes
+    // rather than the one-minute floor.
+    await env.DB.prepare('UPDATE tasks SET started_at = ? WHERE id = ?')
+      .bind(new Date(Date.now() - 12 * 60000).toISOString(), timeTask)
+      .run();
+
+    const finish = await api(
+      '/v1/push',
+      authed(owner.access_token, {
+        device_id: owner.device_id,
+        mutations: [
+          mutation({
+            mutation_id: 'm-time-done',
+            entity: 'tasks',
+            op: 'patch',
+            row_id: timeTask,
+            base_version: 2,
+            fields: { status: 'done' },
+          }),
+        ],
+      }),
+    );
+    expect(((await finish.json()) as { results: Array<{ status: string }> }).results[0]!.status).toBe(
+      'applied',
+    );
+
+    const entries = await env.DB.prepare('SELECT * FROM time_entries WHERE task_id = ?')
+      .bind(timeTask)
+      .all<{ minutes: number; started_at: string; ended_at: string }>();
+    expect(entries.results).toHaveLength(1);
+    expect(entries.results[0]!.minutes).toBeGreaterThanOrEqual(10);
+    expect(entries.results[0]!.minutes).toBeLessThanOrEqual(20);
+
+    // The live timer stops: the duration now lives in time_entries.
+    const task = (await env.DB.prepare('SELECT started_at, done_at FROM tasks WHERE id = ?')
+      .bind(timeTask)
+      .first()) as { started_at: string | null; done_at: string | null };
+    expect(task.started_at).toBeNull();
+    expect(task.done_at).toBeTruthy();
+
+    const logged = await env.DB.prepare(
+      "SELECT COUNT(*) AS n FROM change_log WHERE entity = 'time_entries'",
+    ).first<{ n: number }>();
+    expect(Number(logged?.n ?? 0)).toBeGreaterThan(0);
+  });
+});
+
 describe('price book editing', () => {
   it('lets the owner change a rate and the catalogue reflects it', async () => {
     const response = await api(

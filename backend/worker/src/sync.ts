@@ -20,6 +20,7 @@
 import type { AuthContext, Env, Mutation, MutationResult } from './types';
 import { can, permits, redactCosts, type Permission, type RoleKey } from './policy';
 import { cascadeStage, prepareTaskPatch, taskEventStatement } from './tasks';
+import { prepareProofPatch, recordTimeEntry } from './proofs';
 
 interface EntityDef {
   table: string;
@@ -146,6 +147,28 @@ export const ENTITIES: Record<string, EntityDef> = {
     branchScoped: true,
     softDelete: true,
     mutate: ({ fields, existing, ctx }) => prepareTaskPatch(fields, existing, ctx),
+  },
+  proofs: {
+    table: 'proofs',
+    columns: new Set([
+      'order_id',
+      'revision',
+      'kind',
+      'label',
+      'url',
+      'note',
+      'status',
+      'sent_at',
+      'decided_at',
+      'decided_note',
+      'branch_id',
+    ]),
+    required: ['order_id', 'label', 'url'],
+    permission: 'order.create',
+    mergeable: false,
+    branchScoped: true,
+    softDelete: true,
+    mutate: ({ fields, existing, ctx }) => prepareProofPatch(fields, existing, ctx),
   },
 };
 
@@ -418,6 +441,15 @@ async function patchRow(
     statements.push(
       buildConflict(env, ctx, mutation, working, existing, differing),
     );
+  }
+
+  // Time is recorded when work stops, from the server's own clock.
+  if (
+    mutation.entity === 'tasks' &&
+    statusChanged &&
+    String(existing['status']) === 'in_progress'
+  ) {
+    statements.push(...recordTimeEntry(env, ctx, existing));
   }
 
   await env.DB.batch(statements);

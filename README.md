@@ -136,7 +136,6 @@ cd ../../apps/shop_app && dart run tool/live_tasks_smoke.dart http://127.0.0.1:8
 ```
 
 Two real bugs surfaced only by running it, both now covered by tests:
-
 1. **The outbox coalesced state changes.** Claim → start → finish, all offline, merged into one
    patch, so the server saw `available → done` and correctly refused it. Status patches are now
    never coalesced, and the outbox is ordered by `created_at` then the monotonic UUIDv7 id so a
@@ -145,6 +144,31 @@ Two real bugs surfaced only by running it, both now covered by tests:
    does the server; the device's copy came back `VERSION_CONFLICT` and sat in the outbox forever.
    A rejected patch whose fields already equal the server's row is a duplicate, and is now
    dropped instead of pinning a permanent "1 pending" badge.
+
+### Phase 3B — proofs, approvals and time
+
+| Piece | State |
+|---|---|
+| Proofs | versions per order (v1, v2, …), stored as **links** to wherever the artwork already lives |
+| Sending | "Send" marks it sent and opens WhatsApp with the version, the link and "reply APPROVED or tell us what to change" |
+| Decision | staff record Approved, or Rejected with the customer's reason (mandatory) |
+| Server rules | nothing is approved before it was sent; a rejection needs a note; a new version supersedes the old |
+| Time | the Server writes a `time_entries` row when a task leaves `in_progress`, from its own clock — a device cannot bill minutes |
+| Where it shows | order sheet: proof list with status, decisions and "Time logged"; Production task sheet: live timer |
+
+Why links and not files: R2 is not enabled on this account and a D1 row is capped at 2 MB, so
+uploading proofs would mean a storage decision the client has not made yet. The shop already
+sends artwork through WhatsApp and Drive; what goes missing is the *record*, and that is what this
+keeps. When the client picks storage, the `url` column is what changes.
+
+Live proof from the same smoke run:
+
+    proof            rejected  note=Trim is too tight on the back  pending=0
+    time             1 entries, 1m total
+
+Time is deliberately server-side. The device sets `started_at` so the board shows a live timer, but
+the Worker overwrites it, and the minutes in `time_entries` come from the Worker's clock and the
+Worker's `started_at`. Each stretch of work is its own row, so pause → resume does not double-count.
 
 ## Commands
 ```bash

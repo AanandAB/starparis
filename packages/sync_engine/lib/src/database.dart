@@ -272,6 +272,56 @@ class Tasks extends Table {
   Set<Column<Object>> get primaryKey => <Column<Object>>{id};
 }
 
+/// Proofs are links plus a decision, not files (see migration 0004).
+class Proofs extends Table {
+  TextColumn get id => text()();
+  TextColumn get tenantId => text()();
+  TextColumn get branchId => text().nullable()();
+  TextColumn get orderId => text()();
+
+  /// The version the customer sees: v1, v2, …
+  IntColumn get revision => integer().withDefault(const Constant(1))();
+  TextColumn get kind => text().withDefault(const Constant('proof'))();
+  TextColumn get label => text()();
+  TextColumn get url => text()();
+  TextColumn get note => text().nullable()();
+
+  /// draft, sent, approved, rejected, superseded
+  TextColumn get status => text().withDefault(const Constant('draft'))();
+  DateTimeColumn get sentAt => dateTime().nullable()();
+  DateTimeColumn get decidedAt => dateTime().nullable()();
+  TextColumn get decidedNote => text().nullable()();
+
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  TextColumn get createdBy => text().nullable()();
+  IntColumn get version => integer().withDefault(const Constant(0))();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
+/// Worked minutes, written by the server when a task leaves in_progress.
+class TimeEntries extends Table {
+  TextColumn get id => text()();
+  TextColumn get tenantId => text()();
+  TextColumn get branchId => text().nullable()();
+  TextColumn get taskId => text()();
+  TextColumn get orderId => text()();
+  TextColumn get userId => text().nullable()();
+  DateTimeColumn get startedAt => dateTime()();
+  DateTimeColumn get endedAt => dateTime()();
+  IntColumn get minutes => integer()();
+  BoolColumn get auto => boolean().withDefault(const Constant(true))();
+  DateTimeColumn get createdAt => dateTime()();
+  IntColumn get version => integer().withDefault(const Constant(0))();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
 /// Sync bookkeeping: cursor, last sync, last head.
 class SyncMeta extends Table {
   TextColumn get key => text()();
@@ -287,6 +337,8 @@ class SyncMeta extends Table {
     CustomerPhones,
     WorkflowStages,
     Tasks,
+    Proofs,
+    TimeEntries,
     Products,
     Materials,
     PriceRules,
@@ -300,7 +352,7 @@ class LocalDatabase extends _$LocalDatabase {
   LocalDatabase(super.executor);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -323,6 +375,10 @@ class LocalDatabase extends _$LocalDatabase {
         }
         await m.createTable(workflowStages);
         await m.createTable(tasks);
+      }
+      if (from < 4) {
+        await m.createTable(proofs);
+        await m.createTable(timeEntries);
       }
     },
   );
@@ -531,9 +587,62 @@ class LocalDatabase extends _$LocalDatabase {
         await _upsertOrderItem(data);
       case 'tasks':
         await _upsertTask(data);
+      case 'proofs':
+        await _upsertProof(data);
+      case 'time_entries':
+        await _upsertTimeEntry(data);
       default:
         break;
     }
+  }
+
+  Future<void> _upsertProof(Map<String, Object?> data) async {
+    final id = data['id'] as String?;
+    if (id == null) return;
+    await into(proofs).insertOnConflictUpdate(
+      ProofsCompanion(
+        id: Value(id),
+        tenantId: Value(data['tenant_id'] as String? ?? ''),
+        branchId: Value(data['branch_id'] as String?),
+        orderId: Value(data['order_id'] as String? ?? ''),
+        revision: Value((data['revision'] as num?)?.toInt() ?? 1),
+        kind: Value(data['kind'] as String? ?? 'proof'),
+        label: Value(data['label'] as String? ?? ''),
+        url: Value(data['url'] as String? ?? ''),
+        note: Value(data['note'] as String?),
+        status: Value(data['status'] as String? ?? 'draft'),
+        sentAt: Value(_asDate(data['sent_at'])),
+        decidedAt: Value(_asDate(data['decided_at'])),
+        decidedNote: Value(data['decided_note'] as String?),
+        createdAt: Value(_asDate(data['created_at']) ?? DateTime.now().toUtc()),
+        updatedAt: Value(_asDate(data['updated_at']) ?? DateTime.now().toUtc()),
+        createdBy: Value(data['created_by'] as String?),
+        version: Value((data['version'] as num?)?.toInt() ?? 0),
+        deletedAt: Value(_asDate(data['deleted_at'])),
+      ),
+    );
+  }
+
+  Future<void> _upsertTimeEntry(Map<String, Object?> data) async {
+    final id = data['id'] as String?;
+    if (id == null) return;
+    await into(timeEntries).insertOnConflictUpdate(
+      TimeEntriesCompanion(
+        id: Value(id),
+        tenantId: Value(data['tenant_id'] as String? ?? ''),
+        branchId: Value(data['branch_id'] as String?),
+        taskId: Value(data['task_id'] as String? ?? ''),
+        orderId: Value(data['order_id'] as String? ?? ''),
+        userId: Value(data['user_id'] as String?),
+        startedAt: Value(_asDate(data['started_at']) ?? DateTime.now().toUtc()),
+        endedAt: Value(_asDate(data['ended_at']) ?? DateTime.now().toUtc()),
+        minutes: Value((data['minutes'] as num?)?.toInt() ?? 0),
+        auto: Value(_asBool(data['auto'])),
+        createdAt: Value(_asDate(data['created_at']) ?? DateTime.now().toUtc()),
+        version: Value((data['version'] as num?)?.toInt() ?? 0),
+        deletedAt: Value(_asDate(data['deleted_at'])),
+      ),
+    );
   }
 
   Future<void> _upsertTask(Map<String, Object?> data) async {
@@ -1408,6 +1517,165 @@ class LocalDatabase extends _$LocalDatabase {
       baseVersion: next.version,
       fields: <String, Object?>{'status': wanted},
     );
+  }
+
+  // -------------------------------------------------------------------------
+  // Proofs and time
+  // -------------------------------------------------------------------------
+
+  /// Legal proof moves, mirroring PROOF_TRANSITIONS in src/proofs.ts.
+  static const Map<String, List<String>> _proofMoves = <String, List<String>>{
+    'draft': <String>['sent', 'superseded'],
+    'sent': <String>['approved', 'rejected', 'superseded'],
+    'approved': <String>['superseded'],
+    'rejected': <String>['superseded'],
+    'superseded': <String>[],
+  };
+
+  Stream<List<Proof>> watchProofs(String orderId) {
+    return (select(proofs)
+          ..where((t) => t.orderId.equals(orderId) & t.deletedAt.isNull())
+          ..orderBy(<OrderClauseGenerator<$ProofsTable>>[
+            (t) => OrderingTerm(expression: t.revision),
+          ]))
+        .watch();
+  }
+
+  /// Adds the next version of the proof for an order. The link is the proof —
+  /// the file stays wherever the shop already keeps it.
+  Future<String> addProofLocal({
+    required String orderId,
+    required String tenantId,
+    required String? branchId,
+    required String userId,
+    required String label,
+    required String url,
+    String kind = 'proof',
+    String? note,
+  }) async {
+    final existing = await (select(
+      proofs,
+    )..where((t) => t.orderId.equals(orderId))).get();
+    final revision = existing.fold<int>(
+          0,
+          (highest, proof) => proof.revision > highest ? proof.revision : highest,
+        ) +
+        1;
+
+    final id = Uuid7.generate();
+    final now = DateTime.now().toUtc();
+
+    await transaction(() async {
+      await into(proofs).insert(
+        ProofsCompanion.insert(
+          id: id,
+          tenantId: tenantId,
+          branchId: Value(branchId),
+          orderId: orderId,
+          revision: Value(revision),
+          kind: Value(kind),
+          label: label,
+          url: url,
+          note: Value(note),
+          createdAt: now,
+          updatedAt: now,
+          createdBy: Value(userId),
+        ),
+      );
+
+      await _enqueue(
+        entity: 'proofs',
+        rowId: id,
+        op: 'insert',
+        baseVersion: 0,
+        fields: <String, Object?>{
+          'order_id': orderId,
+          'revision': revision,
+          'kind': kind,
+          'label': label,
+          'url': url,
+          'note': note,
+          'status': 'draft',
+        },
+      );
+    });
+
+    return id;
+  }
+
+  /// Moves a proof along its own small state machine. Same rules as the
+  /// server: nothing is approved before it was sent, and a rejection carries
+  /// the reason the designer needs.
+  Future<void> setProofStatus({
+    required Proof proof,
+    required String status,
+    required String userId,
+    String? note,
+  }) async {
+    final allowed = _proofMoves[proof.status] ?? const <String>[];
+    if (!allowed.contains(status)) {
+      throw StateError('A proof cannot move from ${proof.status} to $status');
+    }
+    final cleanNote = note?.trim();
+    if (status == 'rejected' && (cleanNote == null || cleanNote.length < 3)) {
+      throw StateError('Write what the customer asked to change');
+    }
+
+    final now = DateTime.now().toUtc();
+    final fields = <String, Object?>{'status': status};
+    if (status == 'sent') fields['sent_at'] = now.toIso8601String();
+    if (status == 'approved' || status == 'rejected') {
+      fields['decided_at'] = now.toIso8601String();
+      if (cleanNote != null && cleanNote.isNotEmpty) {
+        fields['decided_note'] = cleanNote;
+      }
+    }
+
+    await transaction(() async {
+      await (update(proofs)..where((t) => t.id.equals(proof.id))).write(
+        ProofsCompanion(
+          status: Value(status),
+          sentAt: Value(
+            status == 'sent' ? now : proof.sentAt,
+          ),
+          decidedAt: Value(
+            status == 'approved' || status == 'rejected'
+                ? now
+                : proof.decidedAt,
+          ),
+          decidedNote: Value(
+            cleanNote == null || cleanNote.isEmpty
+                ? proof.decidedNote
+                : cleanNote,
+          ),
+          updatedAt: Value(now),
+          version: Value(proof.version + 1),
+        ),
+      );
+
+      await _enqueue(
+        entity: 'proofs',
+        rowId: proof.id,
+        op: 'patch',
+        baseVersion: proof.version,
+        fields: fields,
+      );
+    });
+  }
+
+  /// Minutes recorded against a task, straight from the server's entries.
+  Future<int> minutesForTask(String taskId) async {
+    final rows = await (select(
+      timeEntries,
+    )..where((t) => t.taskId.equals(taskId))).get();
+    return rows.fold<int>(0, (sum, entry) => sum + entry.minutes);
+  }
+
+  Future<int> minutesForOrder(String orderId) async {
+    final rows = await (select(
+      timeEntries,
+    )..where((t) => t.orderId.equals(orderId))).get();
+    return rows.fold<int>(0, (sum, entry) => sum + entry.minutes);
   }
 
   Stream<List<Order>> watchOrders({int limit = 200}) {

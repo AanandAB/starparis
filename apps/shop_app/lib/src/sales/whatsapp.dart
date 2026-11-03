@@ -68,4 +68,24 @@ class WhatsApp {
       shopName,
     ].join('\n');
   }
+
+  /// Proof for approval. The link is the file; the system only keeps the trail
+  /// of which version went out and what came back.
+  static String proofMessage({
+    required String customerName,
+    required String jobNumber,
+    required int revision,
+    required String url,
+    required String shopName,
+  }) {
+    return <String>[
+      'Hello $customerName,',
+      '',
+      'Here is proof v$revision for job $jobNumber:',
+      url,
+      '',
+      'Please reply APPROVED, or tell us what to change.',
+      shopName,
+    ].join('\n');
+  }
 }

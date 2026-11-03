@@ -200,6 +200,55 @@ Future<void> main(List<String> args) async {
     exit(1);
   }
 
+  // ---- proofs: link, send, reject with a reason --------------------------
+  await db.addProofLocal(
+    orderId: orderId,
+    tenantId: tenantId,
+    branchId: branchId,
+    userId: userId,
+    label: 'Smoke proof',
+    url: 'https://drive.example/smoke-proof-v1.pdf',
+  );
+  var proof = (await db.watchProofs(orderId).first).single;
+  await db.setProofStatus(proof: proof, status: 'sent', userId: userId);
+  proof = (await db.watchProofs(orderId).first).single;
+  await db.setProofStatus(
+    proof: proof,
+    status: 'rejected',
+    userId: userId,
+    note: 'Trim is too tight on the back',
+  );
+
+  await engine.syncNow();
+  final afterProofs = await api.pull(since: 0, limit: 500);
+  final serverProof = afterProofs.rows
+      .where((row) => row.entity == 'proofs' && row.data['order_id'] == orderId)
+      .map((row) => row.data)
+      .firstOrNull;
+  stdout.writeln(
+    'proof            ${serverProof?['status']}  '
+    'note=${serverProof?['decided_note']}  pending=${await db.pendingCount()}',
+  );
+  if (serverProof?['status'] != 'rejected' || serverProof?['decided_note'] == null) {
+    stderr.writeln('the proof did not reach the server with its reason');
+    exit(1);
+  }
+
+  // ---- time: the server writes a stretch when work stops -----------------
+  final timeRows = afterProofs.rows
+      .where((row) => row.entity == 'time_entries' && row.data['order_id'] == orderId)
+      .map((row) => row.data)
+      .toList();
+  final minutes = timeRows.fold<int>(
+    0,
+    (sum, row) => sum + ((row['minutes'] as num?)?.toInt() ?? 0),
+  );
+  stdout.writeln('time             ${timeRows.length} entries, ${minutes}m total');
+  if (timeRows.isEmpty || minutes < 1) {
+    stderr.writeln('finishing a stage did not record time on the server');
+    exit(1);
+  }
+
   // ---- the server must refuse a jump even when asked directly ------------
   final printRow = serverTasks['print']!;
   final jumpResponse = await client.post(

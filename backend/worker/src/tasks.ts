@@ -110,12 +110,18 @@ export function prepareTaskPatch(
 
     // Server-owned timestamps: the client's clock is not trusted for these.
     const now = new Date().toISOString();
-    if (to === 'in_progress' && !existing['started_at']) {
+    if (to === 'in_progress') {
+      // Every stretch of work starts its own clock; the previous one was
+      // written to time_entries when the task left in_progress.
       next['started_at'] = now;
     }
     if (to === 'done') {
       next['done_at'] = now;
-      if (!existing['started_at']) next['started_at'] = now;
+    }
+    if (to !== 'in_progress' && from === 'in_progress') {
+      // Closing the stretch: the duration lives in time_entries, so the live
+      // timer must stop here rather than keep counting to the next pull.
+      next['started_at'] = null;
     }
     if (to === 'rework') {
       next['done_at'] = null;
