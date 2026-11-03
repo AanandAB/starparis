@@ -12,9 +12,20 @@ void main() {
     });
 
     test('rejects anything that is not a plain money value', () {
-      for (final bad in <String>['', 'AED 12', '12,000', '1.234', 'abc', '.5', '1e3']) {
-        expect(() => Fils.parse(bad), throwsA(isA<FormatException>()),
-            reason: 'should reject "$bad"');
+      for (final bad in <String>[
+        '',
+        'AED 12',
+        '12,000',
+        '1.234',
+        'abc',
+        '.5',
+        '1e3',
+      ]) {
+        expect(
+          () => Fils.parse(bad),
+          throwsA(isA<FormatException>()),
+          reason: 'should reject "$bad"',
+        );
       }
     });
 
@@ -75,19 +86,30 @@ void main() {
     test('produces canonical lowercase identifiers', () {
       final id = Uuid7.generate();
       expect(Uuid7.isValid(id), isTrue, reason: id);
-      expect(id.split('-').map((p) => p.length).toList(),
-          <int>[8, 4, 4, 4, 12]);
+      expect(id.split('-').map((p) => p.length).toList(), <int>[
+        8,
+        4,
+        4,
+        4,
+        12,
+      ]);
       expect(id[14], '7', reason: 'version nibble');
-      expect(<String>['8', '9', 'a', 'b'], contains(id[19]),
-          reason: 'variant nibble');
+      expect(
+        <String>['8', '9', 'a', 'b'],
+        contains(id[19]),
+        reason: 'variant nibble',
+      );
     });
 
     test('is strictly increasing across many rapid calls', () {
       var previous = Uuid7.generate();
       for (var i = 0; i < 5000; i++) {
         final next = Uuid7.generate();
-        expect(next.compareTo(previous), 1,
-            reason: 'ids must sort by creation order: $previous then $next');
+        expect(
+          next.compareTo(previous),
+          1,
+          reason: 'ids must sort by creation order: $previous then $next',
+        );
         previous = next;
       }
     });
@@ -109,8 +131,11 @@ void main() {
     test('rejects malformed identifiers', () {
       expect(Uuid7.isValid('not-an-id'), isFalse);
       expect(Uuid7.isValid(''), isFalse);
-      expect(Uuid7.timestampOf('11111111-1111-4111-8111-111111111111'), isNull,
-          reason: 'v4 identifier has no embedded timestamp');
+      expect(
+        Uuid7.timestampOf('11111111-1111-4111-8111-111111111111'),
+        isNull,
+        reason: 'v4 identifier has no embedded timestamp',
+      );
     });
   });
 
@@ -124,46 +149,91 @@ void main() {
         TaskStatus.done,
       ];
       for (var i = 0; i < path.length - 1; i++) {
-        expect(TaskStateMachine.canTransition(path[i], path[i + 1]), isTrue,
-            reason: '${path[i].wire} -> ${path[i + 1].wire}');
+        expect(
+          TaskStateMachine.canTransition(path[i], path[i + 1]),
+          isTrue,
+          reason: '${path[i].wire} -> ${path[i + 1].wire}',
+        );
       }
     });
 
     test('refuses shortcuts that skip the floor', () {
-      expect(TaskStateMachine.canTransition(
-          TaskStatus.waiting, TaskStatus.inProgress), isFalse);
-      expect(TaskStateMachine.canTransition(
-          TaskStatus.available, TaskStatus.done), isFalse);
-      expect(TaskStateMachine.canTransition(
-          TaskStatus.done, TaskStatus.inProgress), isFalse);
-      expect(TaskStateMachine.canTransition(
-          TaskStatus.cancelled, TaskStatus.available), isFalse);
+      expect(
+        TaskStateMachine.canTransition(
+          TaskStatus.waiting,
+          TaskStatus.inProgress,
+        ),
+        isFalse,
+      );
+      expect(
+        TaskStateMachine.canTransition(TaskStatus.available, TaskStatus.done),
+        isFalse,
+      );
+      expect(
+        TaskStateMachine.canTransition(TaskStatus.done, TaskStatus.inProgress),
+        isFalse,
+      );
+      expect(
+        TaskStateMachine.canTransition(
+          TaskStatus.cancelled,
+          TaskStatus.available,
+        ),
+        isFalse,
+      );
     });
 
     test('demands a reason for pause and rework', () {
-      expect(TaskStateMachine.requiresReason(
-          TaskStatus.inProgress, TaskStatus.paused), isTrue);
-      expect(TaskStateMachine.requiresReason(
-          TaskStatus.inProgress, TaskStatus.rework), isTrue);
-      expect(TaskStateMachine.requiresReason(
-          TaskStatus.inProgress, TaskStatus.done), isFalse);
+      expect(
+        TaskStateMachine.requiresReason(
+          TaskStatus.inProgress,
+          TaskStatus.paused,
+        ),
+        isTrue,
+      );
+      expect(
+        TaskStateMachine.requiresReason(
+          TaskStatus.inProgress,
+          TaskStatus.rework,
+        ),
+        isTrue,
+      );
+      expect(
+        TaskStateMachine.requiresReason(TaskStatus.inProgress, TaskStatus.done),
+        isFalse,
+      );
     });
 
     test('restricts cancellation and reopening to managers', () {
-      expect(TaskStateMachine.isManagerOnly(
-          TaskStatus.inProgress, TaskStatus.cancelled), isTrue);
-      expect(TaskStateMachine.isManagerOnly(
-          TaskStatus.done, TaskStatus.rework), isTrue);
-      expect(TaskStateMachine.isManagerOnly(
-          TaskStatus.inProgress, TaskStatus.done), isFalse);
+      expect(
+        TaskStateMachine.isManagerOnly(
+          TaskStatus.inProgress,
+          TaskStatus.cancelled,
+        ),
+        isTrue,
+      );
+      expect(
+        TaskStateMachine.isManagerOnly(TaskStatus.done, TaskStatus.rework),
+        isTrue,
+      );
+      expect(
+        TaskStateMachine.isManagerOnly(TaskStatus.inProgress, TaskStatus.done),
+        isFalse,
+      );
     });
 
     test('assertTransition throws with a useful message', () {
       expect(
         () => TaskStateMachine.assertTransition(
-            TaskStatus.waiting, TaskStatus.done),
-        throwsA(isA<StateError>().having(
-            (e) => e.message, 'message', contains('waiting -> done'))),
+          TaskStatus.waiting,
+          TaskStatus.done,
+        ),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            contains('waiting -> done'),
+          ),
+        ),
       );
     });
 
@@ -172,8 +242,11 @@ void main() {
         if (status == TaskStatus.cancelled) {
           continue;
         }
-        expect(TaskStateMachine.nextStates(status), isNotEmpty,
-            reason: '${status.wire} is a dead end');
+        expect(
+          TaskStateMachine.nextStates(status),
+          isNotEmpty,
+          reason: '${status.wire} is a dead end',
+        );
       }
     });
   });
@@ -228,29 +301,49 @@ void main() {
   group('customer-facing projection', () {
     test('never leaks internal stage detail', () {
       expect(OrderStatus.confirmed.customerView, CustomerFacingStatus.received);
-      expect(OrderStatus.inProduction.customerView,
-          CustomerFacingStatus.inProduction);
-      expect(OrderStatus.partiallyDelivered.customerView,
-          CustomerFacingStatus.delivered);
+      expect(
+        OrderStatus.inProduction.customerView,
+        CustomerFacingStatus.inProduction,
+      );
+      expect(
+        OrderStatus.partiallyDelivered.customerView,
+        CustomerFacingStatus.delivered,
+      );
       expect(OrderStatus.closed.customerView, CustomerFacingStatus.delivered);
     });
   });
 
   group('permissions', () {
     const owner = UserContext(
-        userId: 'u-owner', tenantId: 't1', role: Role.owner);
+      userId: 'u-owner',
+      tenantId: 't1',
+      role: Role.owner,
+    );
     const counter = UserContext(
-        userId: 'u-counter', tenantId: 't1', role: Role.counter, branchId: 'b-shj');
+      userId: 'u-counter',
+      tenantId: 't1',
+      role: Role.counter,
+      branchId: 'b-shj',
+    );
     const designer = UserContext(
-        userId: 'u-designer', tenantId: 't1', role: Role.designer,
-        branchId: 'b-shj');
+      userId: 'u-designer',
+      tenantId: 't1',
+      role: Role.designer,
+      branchId: 'b-shj',
+    );
     const accountant = UserContext(
-        userId: 'u-acc', tenantId: 't1', role: Role.accountant);
+      userId: 'u-acc',
+      tenantId: 't1',
+      role: Role.accountant,
+    );
 
     test('owner reaches everything at every scope', () {
       for (final permission in Permission.values) {
-        expect(owner.can(permission, at: Scope.all), isTrue,
-            reason: permission.wire);
+        expect(
+          owner.can(permission, at: Scope.all),
+          isTrue,
+          reason: permission.wire,
+        );
       }
     });
 
@@ -261,15 +354,18 @@ void main() {
       expect(designer.can(Permission.orderCreate), isFalse);
     });
 
-    test('the counter sells and takes money but cannot price or issue credit', () {
-      expect(counter.can(Permission.orderCreate), isTrue);
-      expect(counter.can(Permission.paymentTake), isTrue);
-      expect(counter.can(Permission.invoiceIssue), isTrue);
-      expect(counter.can(Permission.creditNoteIssue), isFalse);
-      expect(counter.can(Permission.priceEdit), isFalse);
-      expect(counter.can(Permission.costView), isFalse);
-      expect(counter.mustRedactCosts, isTrue);
-    });
+    test(
+      'the counter sells and takes money but cannot price or issue credit',
+      () {
+        expect(counter.can(Permission.orderCreate), isTrue);
+        expect(counter.can(Permission.paymentTake), isTrue);
+        expect(counter.can(Permission.invoiceIssue), isTrue);
+        expect(counter.can(Permission.creditNoteIssue), isFalse);
+        expect(counter.can(Permission.priceEdit), isFalse);
+        expect(counter.can(Permission.costView), isFalse);
+        expect(counter.mustRedactCosts, isTrue);
+      },
+    );
 
     test('the accountant reads everything but never touches production', () {
       expect(accountant.can(Permission.orderView, at: Scope.all), isTrue);
@@ -281,10 +377,7 @@ void main() {
 
     test('scope is enforced per row, not just per permission', () {
       // Counter's order.view is branch-scoped.
-      expect(
-        counter.permits(Permission.orderView, branchId: 'b-shj'),
-        isTrue,
-      );
+      expect(counter.permits(Permission.orderView, branchId: 'b-shj'), isTrue);
       expect(
         counter.permits(Permission.orderView, branchId: 'b-dxb'),
         isFalse,

@@ -28,10 +28,7 @@ final class PricingEngine {
       );
     }
     if (request.sides <= 0) {
-      throw const PricingException(
-        'SIDES_INVALID',
-        'Sides must be 1 or 2.',
-      );
+      throw const PricingException('SIDES_INVALID', 'Sides must be 1 or 2.');
     }
 
     final warnings = <String>[];
@@ -78,7 +75,11 @@ final class PricingEngine {
           );
         }
         // mm² × qty / 1000 = thousandths of a square metre.
-        areaMilliSqm = mulDivRoundHalfUp(width * height, request.quantity, 1000);
+        areaMilliSqm = mulDivRoundHalfUp(
+          width * height,
+          request.quantity,
+          1000,
+        );
 
       case ProductKind.perUnit:
       case ProductKind.service:
@@ -111,7 +112,9 @@ final class PricingEngine {
 
     // --- 2. Material -----------------------------------------------------
     final materialRate = context.materialCostPerSheetFils;
-    if (request.kind == ProductKind.sheet && materialRate != null && materialRate > 0) {
+    if (request.kind == ProductKind.sheet &&
+        materialRate != null &&
+        materialRate > 0) {
       if (sheets > 0) {
         final amount = Fils(materialRate * sheets);
         costSubtotal += amount;
@@ -133,7 +136,9 @@ final class PricingEngine {
 
     // --- 3. Print --------------------------------------------------------
     final printRate = context.printRatePerSheetSideFils;
-    if (request.kind == ProductKind.sheet && printRate != null && printRate > 0) {
+    if (request.kind == ProductKind.sheet &&
+        printRate != null &&
+        printRate > 0) {
       final units = sheets * request.sides;
       if (units > 0) {
         final amount = Fils(printRate * units);
@@ -146,7 +151,8 @@ final class PricingEngine {
             quantity: units,
             rateFils: printRate,
             amount: amount,
-            explain: '$sheets sheets × ${request.sides} '
+            explain:
+                '$sheets sheets × ${request.sides} '
                 '${request.sides == 1 ? 'side' : 'sides'} × '
                 '${Fils(printRate).aedLabel}',
           ),
@@ -246,7 +252,8 @@ final class PricingEngine {
     final Fils priceBeforeSurcharges;
     switch (context.mode) {
       case PricingMode.costPlus:
-        priceBeforeSurcharges = costSubtotal + costSubtotal.timesBps(context.markupBps);
+        priceBeforeSurcharges =
+            costSubtotal + costSubtotal.timesBps(context.markupBps);
       case PricingMode.priceTable:
         final tier = _tierFor(request, context);
         final tableAmount = Fils(tier.unitPriceFils * request.quantity);
@@ -259,7 +266,8 @@ final class PricingEngine {
             quantity: request.quantity,
             rateFils: tier.unitPriceFils,
             amount: tableAmount,
-            explain: '${request.quantity} pieces × ${Fils(tier.unitPriceFils).aedLabel}',
+            explain:
+                '${request.quantity} pieces × ${Fils(tier.unitPriceFils).aedLabel}',
           ),
         );
         priceBeforeSurcharges = tableAmount + addOns;
@@ -273,7 +281,8 @@ final class PricingEngine {
     var running = priceBeforeSurcharges;
     var surcharges = Fils.zero;
     for (final rule in sortedRules) {
-      if (rule.phase != RulePhase.surcharge || !rule.appliesTo(request, facts)) {
+      if (rule.phase != RulePhase.surcharge ||
+          !rule.appliesTo(request, facts)) {
         continue;
       }
       final evaluation = RuleEvaluator(
@@ -304,7 +313,8 @@ final class PricingEngine {
     final priceBeforeDiscount = running;
 
     // --- 8. Discount -----------------------------------------------------
-    var discount = priceBeforeDiscount.timesBps(request.discountBps) +
+    var discount =
+        priceBeforeDiscount.timesBps(request.discountBps) +
         Fils(request.discountFils);
     if (discount > priceBeforeDiscount) {
       warnings.add('Discount was larger than the price and has been capped.');
@@ -329,7 +339,9 @@ final class PricingEngine {
     // --- 9. Minimum order ------------------------------------------------
     final minimum = Fils(context.minOrderFils);
     if (minimum.isPositive && net < minimum) {
-      warnings.add('Raised to the minimum order charge of ${minimum.aedLabel}.');
+      warnings.add(
+        'Raised to the minimum order charge of ${minimum.aedLabel}.',
+      );
       net = minimum;
     }
 
@@ -365,11 +377,10 @@ final class PricingEngine {
   static Map<String, Object?> priceJson(
     Map<String, Object?> requestJson,
     Map<String, Object?> contextJson,
-  ) =>
-      price(
-        PriceRequest.fromJson(requestJson),
-        PricingContext.fromJson(contextJson),
-      ).toJson();
+  ) => price(
+    PriceRequest.fromJson(requestJson),
+    PricingContext.fromJson(contextJson),
+  ).toJson();
 
   static PriceTier _tierFor(PriceRequest request, PricingContext context) {
     if (context.tiers.isEmpty) {
@@ -404,7 +415,9 @@ final class PricingEngine {
   static String _percentText(int bps) {
     final whole = bps ~/ 100;
     final fraction = bps % 100;
-    return fraction == 0 ? '$whole%' : '$whole.${fraction.toString().padLeft(2, '0')}%';
+    return fraction == 0
+        ? '$whole%'
+        : '$whole.${fraction.toString().padLeft(2, '0')}%';
   }
 
   static String _sqmText(int milliSqm) {

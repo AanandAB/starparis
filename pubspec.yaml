@@ -9,6 +9,17 @@ environment:
 workspace:
   - packages/domain
   - packages/pricing_engine
+  - packages/sync_engine
+  - packages/design_system
+  - apps/shop_app
+
+# Bundle SQLite3MultipleCiphers instead of plain SQLite, so the local database
+# can be encrypted at rest on both Windows and Android with one setting.
+# See https://drift.simonbinder.eu/platforms/encryption/
+hooks:
+  user_defines:
+    sqlite3:
+      source: sqlite3mc
 
 dev_dependencies:
   lints: ^6.1.0

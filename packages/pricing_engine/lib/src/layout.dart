@@ -34,20 +34,20 @@ final class SheetSpec {
   int get areaSqMm => widthMm * heightMm;
 
   factory SheetSpec.fromJson(Map<String, Object?> json) => SheetSpec(
-        widthMm: (json['width_mm']! as num).toInt(),
-        heightMm: (json['height_mm']! as num).toInt(),
-        bleedMm: ((json['bleed_mm'] as num?) ?? 3).toInt(),
-        gutterMm: ((json['gutter_mm'] as num?) ?? 3).toInt(),
-        label: (json['label'] as String?) ?? '',
-      );
+    widthMm: (json['width_mm']! as num).toInt(),
+    heightMm: (json['height_mm']! as num).toInt(),
+    bleedMm: ((json['bleed_mm'] as num?) ?? 3).toInt(),
+    gutterMm: ((json['gutter_mm'] as num?) ?? 3).toInt(),
+    label: (json['label'] as String?) ?? '',
+  );
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'width_mm': widthMm,
-        'height_mm': heightMm,
-        'bleed_mm': bleedMm,
-        'gutter_mm': gutterMm,
-        if (label.isNotEmpty) 'label': label,
-      };
+    'width_mm': widthMm,
+    'height_mm': heightMm,
+    'bleed_mm': bleedMm,
+    'gutter_mm': gutterMm,
+    if (label.isNotEmpty) 'label': label,
+  };
 }
 
 /// The result of fitting one finished size onto one sheet size.
@@ -89,15 +89,15 @@ final class SheetFit {
   int get producedPieces => trimSheets * piecesPerSheet;
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'pieces_per_sheet': piecesPerSheet,
-        'pieces_across': piecesAcross,
-        'pieces_down': piecesDown,
-        'is_rotated': isRotated,
-        'trim_sheets': trimSheets,
-        'setup_sheets': setupSheets,
-        'spoilage_sheets': spoilageSheets,
-        'billable_sheets': billableSheets,
-      };
+    'pieces_per_sheet': piecesPerSheet,
+    'pieces_across': piecesAcross,
+    'pieces_down': piecesDown,
+    'is_rotated': isRotated,
+    'trim_sheets': trimSheets,
+    'setup_sheets': setupSheets,
+    'spoilage_sheets': spoilageSheets,
+    'billable_sheets': billableSheets,
+  };
 }
 
 /// Fits a finished size onto a sheet and returns the sheet count to charge for.
@@ -135,8 +135,20 @@ SheetFit fitOnSheet({
   final pieceW = pieceWidthMm + sheet.bleedMm * 2;
   final pieceH = pieceHeightMm + sheet.bleedMm * 2;
 
-  final upright = _pack(sheet.widthMm, sheet.heightMm, pieceW, pieceH, sheet.gutterMm);
-  final rotated = _pack(sheet.widthMm, sheet.heightMm, pieceH, pieceW, sheet.gutterMm);
+  final upright = _pack(
+    sheet.widthMm,
+    sheet.heightMm,
+    pieceW,
+    pieceH,
+    sheet.gutterMm,
+  );
+  final rotated = _pack(
+    sheet.widthMm,
+    sheet.heightMm,
+    pieceH,
+    pieceW,
+    sheet.gutterMm,
+  );
 
   final useRotated = rotated.$1 > upright.$1;
   final width = useRotated ? pieceH : pieceW;
@@ -147,8 +159,8 @@ SheetFit fitOnSheet({
     throw PricingException(
       'SIZE_DOES_NOT_FIT',
       'A $pieceWidthMm×$pieceHeightMm mm piece does not fit on a '
-      '${sheet.widthMm}×${sheet.heightMm} mm sheet'
-      '${sheet.label.isEmpty ? '' : ' (${sheet.label})'}.',
+          '${sheet.widthMm}×${sheet.heightMm} mm sheet'
+          '${sheet.label.isEmpty ? '' : ' (${sheet.label})'}.',
     );
   }
 
@@ -173,7 +185,13 @@ SheetFit fitOnSheet({
 }
 
 /// (count, across, down) for one orientation.
-(int, int, int) _pack(int sheetW, int sheetH, int pieceW, int pieceH, int gutter) {
+(int, int, int) _pack(
+  int sheetW,
+  int sheetH,
+  int pieceW,
+  int pieceH,
+  int gutter,
+) {
   final across = (sheetW + gutter) ~/ (pieceW + gutter);
   final down = (sheetH + gutter) ~/ (pieceH + gutter);
   return (across * down, across, down);

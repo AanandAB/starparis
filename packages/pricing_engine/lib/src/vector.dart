@@ -28,17 +28,17 @@ final class PricingVector {
   final Map<String, Object?> expectedJson;
 
   factory PricingVector.fromJson(Map<String, Object?> json) => PricingVector(
-        name: json['name']! as String,
-        note: (json['note'] as String?) ?? '',
-        requestJson: (json['request']! as Map).cast<String, Object?>(),
-        contextJson: (json['context']! as Map).cast<String, Object?>(),
-        expectedJson: (json['expected']! as Map).cast<String, Object?>(),
-      );
+    name: json['name']! as String,
+    note: (json['note'] as String?) ?? '',
+    requestJson: (json['request']! as Map).cast<String, Object?>(),
+    contextJson: (json['context']! as Map).cast<String, Object?>(),
+    expectedJson: (json['expected']! as Map).cast<String, Object?>(),
+  );
 
   PriceBreakdown run() => PricingEngine.price(
-        PriceRequest.fromJson(requestJson),
-        PricingContext.fromJson(contextJson),
-      );
+    PriceRequest.fromJson(requestJson),
+    PricingContext.fromJson(contextJson),
+  );
 
   Map<String, Object?> actualJson() => run().toJson();
 }

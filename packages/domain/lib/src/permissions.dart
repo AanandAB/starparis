@@ -27,9 +27,9 @@ enum Scope {
   bool covers(Scope required) => rank >= required.rank;
 
   static Scope fromWire(String wire) => values.firstWhere(
-        (value) => value.name == wire,
-        orElse: () => throw ArgumentError.value(wire, 'wire', 'unknown Scope'),
-      );
+    (value) => value.name == wire,
+    orElse: () => throw ArgumentError.value(wire, 'wire', 'unknown Scope'),
+  );
 }
 
 /// Every capability the system checks. Keep the wire keys stable: they are
@@ -58,9 +58,9 @@ enum Permission {
   final String wire;
 
   static Permission fromWire(String wire) => values.firstWhere(
-        (value) => value.wire == wire,
-        orElse: () => throw ArgumentError.value(wire, 'wire', 'unknown Permission'),
-      );
+    (value) => value.wire == wire,
+    orElse: () => throw ArgumentError.value(wire, 'wire', 'unknown Permission'),
+  );
 }
 
 /// Built-in roles. The owner may add more; a custom role is a row in `roles`
@@ -80,9 +80,9 @@ enum Role {
   final String wire;
 
   static Role fromWire(String wire) => values.firstWhere(
-        (value) => value.wire == wire,
-        orElse: () => throw ArgumentError.value(wire, 'wire', 'unknown Role'),
-      );
+    (value) => value.wire == wire,
+    orElse: () => throw ArgumentError.value(wire, 'wire', 'unknown Role'),
+  );
 }
 
 const Map<Permission, Scope> _owner = <Permission, Scope>{
@@ -170,15 +170,15 @@ const Map<Permission, Scope> _driver = <Permission, Scope>{
 /// The design's §14.2 matrix, as code. `null` means "no access at all".
 const Map<Role, Map<Permission, Scope>> defaultRolePermissions =
     <Role, Map<Permission, Scope>>{
-  Role.owner: _owner,
-  Role.manager: _manager,
-  Role.counter: _counter,
-  Role.designer: _designer,
-  Role.operator: _operator,
-  Role.accountant: _accountant,
-  Role.vendorCoordinator: _vendorCoordinator,
-  Role.driver: _driver,
-};
+      Role.owner: _owner,
+      Role.manager: _manager,
+      Role.counter: _counter,
+      Role.designer: _designer,
+      Role.operator: _operator,
+      Role.accountant: _accountant,
+      Role.vendorCoordinator: _vendorCoordinator,
+      Role.driver: _driver,
+    };
 
 /// The signed-in user, as the policy layer needs them. Constructed once per
 /// request on the server from the JWT plus the (cached) role row; constructed
@@ -244,11 +244,12 @@ final class UserContext {
     return switch (scope) {
       Scope.all => true,
       Scope.branch => branchId == null || branchId == this.branchId,
-      Scope.team => assigneeId != null
-          ? teamUserIds.contains(assigneeId)
-          : ownerId != null
-              ? teamUserIds.contains(ownerId)
-              : branchId == this.branchId,
+      Scope.team =>
+        assigneeId != null
+            ? teamUserIds.contains(assigneeId)
+            : ownerId != null
+            ? teamUserIds.contains(ownerId)
+            : branchId == this.branchId,
       Scope.own => assigneeId == userId || ownerId == userId,
     };
   }

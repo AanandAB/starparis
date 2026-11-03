@@ -55,36 +55,36 @@ final class RuleEvaluator {
     final (int units, Fils amount, String detail) = switch (rule.basis) {
       RuleBasis.flat => (1, rate, 'flat charge'),
       RuleBasis.perSheet => (
-          sheets,
-          rate * sheets,
-          '$sheets ${_plural(sheets, 'sheet')} × ${rate.aedLabel}',
-        ),
+        sheets,
+        rate * sheets,
+        '$sheets ${_plural(sheets, 'sheet')} × ${rate.aedLabel}',
+      ),
       RuleBasis.perSheetSide => (
-          sheets * sides,
-          rate * (sheets * sides),
-          '$sheets ${_plural(sheets, 'sheet')} × $sides '
-              '${_plural(sides, 'side')} × ${rate.aedLabel}',
-        ),
+        sheets * sides,
+        rate * (sheets * sides),
+        '$sheets ${_plural(sheets, 'sheet')} × $sides '
+            '${_plural(sides, 'side')} × ${rate.aedLabel}',
+      ),
       RuleBasis.perPiece => (
-          quantity,
-          rate * quantity,
-          '$quantity ${_plural(quantity, 'piece')} × ${rate.aedLabel}',
-        ),
+        quantity,
+        rate * quantity,
+        '$quantity ${_plural(quantity, 'piece')} × ${rate.aedLabel}',
+      ),
       RuleBasis.perSqm => (
-          areaMilliSqm,
-          Fils(mulDivRoundHalfUp(rule.rateFils, areaMilliSqm, 1000)),
-          '${_sqm(areaMilliSqm)} m² × ${rate.aedLabel}',
-        ),
+        areaMilliSqm,
+        Fils(mulDivRoundHalfUp(rule.rateFils, areaMilliSqm, 1000)),
+        '${_sqm(areaMilliSqm)} m² × ${rate.aedLabel}',
+      ),
       RuleBasis.perHour => (
-          hours,
-          rate * hours,
-          '$hours ${_plural(hours, 'hour')} × ${rate.aedLabel}',
-        ),
+        hours,
+        rate * hours,
+        '$hours ${_plural(hours, 'hour')} × ${rate.aedLabel}',
+      ),
       RuleBasis.percentOfSubtotal => (
-          1,
-          runningSubtotal.timesBps(rule.rateFils),
-          '${_percent(rule.rateFils)} of ${runningSubtotal.aedLabel}',
-        ),
+        1,
+        runningSubtotal.timesBps(rule.rateFils),
+        '${_percent(rule.rateFils)} of ${runningSubtotal.aedLabel}',
+      ),
     };
 
     if (rule.minChargeFils > 0 && amount.raw < rule.minChargeFils) {
@@ -105,7 +105,8 @@ final class RuleEvaluator {
     return RuleEvaluation(quantity: units, amount: amount, explain: detail);
   }
 
-  static String _plural(int count, String noun) => count == 1 ? noun : '${noun}s';
+  static String _plural(int count, String noun) =>
+      count == 1 ? noun : '${noun}s';
 
   /// 6000 → "6.000", 1250 → "1.250". Three decimals, because vinyl is sold by
   /// the part square metre and rounding it to two loses money on every roll.
@@ -122,7 +123,10 @@ final class RuleEvaluator {
     if (fraction == 0) {
       return '$whole%';
     }
-    final text = fraction.toString().padLeft(2, '0').replaceAll(RegExp(r'0$'), '');
+    final text = fraction
+        .toString()
+        .padLeft(2, '0')
+        .replaceAll(RegExp(r'0$'), '');
     return '$whole.$text%';
   }
 }

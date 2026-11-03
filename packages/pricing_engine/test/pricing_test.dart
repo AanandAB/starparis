@@ -12,7 +12,8 @@ Directory _repositoryRoot() {
   var current = Directory.current;
   for (var i = 0; i < 8; i++) {
     if (Directory('${current.path}/shared_test_vectors').existsSync() ||
-        Directory('${current.path}/packages/shared_test_vectors').existsSync()) {
+        Directory('${current.path}/packages/shared_test_vectors')
+            .existsSync()) {
       return current;
     }
     final parent = current.parent;
@@ -21,7 +22,9 @@ Directory _repositoryRoot() {
     }
     current = parent;
   }
-  throw StateError('Could not find shared_test_vectors from ${Directory.current}');
+  throw StateError(
+    'Could not find shared_test_vectors from ${Directory.current}',
+  );
 }
 
 Directory _vectorsDirectory() {
@@ -35,17 +38,22 @@ Directory _vectorsDirectory() {
 
 void main() {
   group('shared pricing vectors', () {
-    final files = _vectorsDirectory()
-        .listSync()
-        .whereType<File>()
-        .where((f) => f.path.endsWith('.json'))
-        .toList()
-      ..sort((a, b) => a.path.compareTo(b.path));
+    final files =
+        _vectorsDirectory()
+            .listSync()
+            .whereType<File>()
+            .where((f) => f.path.endsWith('.json'))
+            .toList()
+          ..sort((a, b) => a.path.compareTo(b.path));
 
     test('the vector directory is not empty', () {
-      expect(files, isNotEmpty,
-          reason: 'golden vectors are the contract with the shop; do not '
-              'delete them to make a test pass');
+      expect(
+        files,
+        isNotEmpty,
+        reason:
+            'golden vectors are the contract with the shop; do not '
+            'delete them to make a test pass',
+      );
     });
 
     for (final file in files) {
@@ -54,8 +62,11 @@ void main() {
 
       test('${file.uri.pathSegments.last}: ${vector.name}', () {
         final actual = vector.actualJson();
-        expect(vector.note, isNotEmpty,
-            reason: 'every vector must explain its arithmetic in plain English');
+        expect(
+          vector.note,
+          isNotEmpty,
+          reason: 'every vector must explain its arithmetic in plain English',
+        );
         expect(actual, vector.expectedJson);
       });
     }
@@ -84,7 +95,12 @@ void main() {
       final fit = fitOnSheet(
         pieceWidthMm: 400,
         pieceHeightMm: 100,
-        sheet: const SheetSpec(widthMm: 320, heightMm: 450, bleedMm: 0, gutterMm: 0),
+        sheet: const SheetSpec(
+          widthMm: 320,
+          heightMm: 450,
+          bleedMm: 0,
+          gutterMm: 0,
+        ),
         quantity: 3,
       );
       expect(fit.isRotated, isTrue);
@@ -113,8 +129,13 @@ void main() {
           sheet: const SheetSpec(widthMm: 320, heightMm: 450),
           quantity: 1,
         ),
-        throwsA(isA<PricingException>()
-            .having((e) => e.code, 'code', 'SIZE_DOES_NOT_FIT')),
+        throwsA(
+          isA<PricingException>().having(
+            (e) => e.code,
+            'code',
+            'SIZE_DOES_NOT_FIT',
+          ),
+        ),
       );
     });
 
@@ -126,8 +147,13 @@ void main() {
           sheet: const SheetSpec(widthMm: 320, heightMm: 450),
           quantity: 0,
         ),
-        throwsA(isA<PricingException>()
-            .having((e) => e.code, 'code', 'QUANTITY_INVALID')),
+        throwsA(
+          isA<PricingException>().having(
+            (e) => e.code,
+            'code',
+            'QUANTITY_INVALID',
+          ),
+        ),
       );
     });
   });
@@ -223,8 +249,13 @@ void main() {
             mode: PricingMode.priceTable,
           ),
         ),
-        throwsA(isA<PricingException>()
-            .having((e) => e.code, 'code', 'PRICE_TABLE_MISSING')),
+        throwsA(
+          isA<PricingException>().having(
+            (e) => e.code,
+            'code',
+            'PRICE_TABLE_MISSING',
+          ),
+        ),
       );
     });
 
@@ -234,8 +265,13 @@ void main() {
           cardsRequest,
           const PricingContext(priceBookVersion: 1, mode: PricingMode.costPlus),
         ),
-        throwsA(isA<PricingException>()
-            .having((e) => e.code, 'code', 'SHEET_MISSING')),
+        throwsA(
+          isA<PricingException>().having(
+            (e) => e.code,
+            'code',
+            'SHEET_MISSING',
+          ),
+        ),
       );
     });
 

@@ -32,10 +32,10 @@ enum ProductKind {
   final String wire;
 
   static ProductKind fromWire(String wire) => values.firstWhere(
-        (value) => value.wire == wire,
-        orElse: () =>
-            throw ArgumentError.value(wire, 'wire', 'unknown ProductKind'),
-      );
+    (value) => value.wire == wire,
+    orElse: () =>
+        throw ArgumentError.value(wire, 'wire', 'unknown ProductKind'),
+  );
 }
 
 /// How the selling price is derived from the cost.
@@ -54,10 +54,10 @@ enum PricingMode {
   final String wire;
 
   static PricingMode fromWire(String wire) => values.firstWhere(
-        (value) => value.wire == wire,
-        orElse: () =>
-            throw ArgumentError.value(wire, 'wire', 'unknown PricingMode'),
-      );
+    (value) => value.wire == wire,
+    orElse: () =>
+        throw ArgumentError.value(wire, 'wire', 'unknown PricingMode'),
+  );
 }
 
 /// Where a rule sits in the calculation pipeline.
@@ -75,10 +75,9 @@ enum RulePhase {
   final String wire;
 
   static RulePhase fromWire(String wire) => values.firstWhere(
-        (value) => value.wire == wire,
-        orElse: () =>
-            throw ArgumentError.value(wire, 'wire', 'unknown RulePhase'),
-      );
+    (value) => value.wire == wire,
+    orElse: () => throw ArgumentError.value(wire, 'wire', 'unknown RulePhase'),
+  );
 }
 
 /// What a rule multiplies its rate by.
@@ -96,10 +95,9 @@ enum RuleBasis {
   final String wire;
 
   static RuleBasis fromWire(String wire) => values.firstWhere(
-        (value) => value.wire == wire,
-        orElse: () =>
-            throw ArgumentError.value(wire, 'wire', 'unknown RuleBasis'),
-      );
+    (value) => value.wire == wire,
+    orElse: () => throw ArgumentError.value(wire, 'wire', 'unknown RuleBasis'),
+  );
 }
 
 /// Comparison operators a rule condition may use. Deliberately tiny: a pricing
@@ -119,10 +117,10 @@ enum ConditionOp {
   final String wire;
 
   static ConditionOp fromWire(String wire) => values.firstWhere(
-        (value) => value.wire == wire,
-        orElse: () =>
-            throw ArgumentError.value(wire, 'wire', 'unknown ConditionOp'),
-      );
+    (value) => value.wire == wire,
+    orElse: () =>
+        throw ArgumentError.value(wire, 'wire', 'unknown ConditionOp'),
+  );
 }
 
 /// One test against the request facts, for example
@@ -151,16 +149,16 @@ final class RuleCondition {
   }
 
   factory RuleCondition.fromJson(Map<String, Object?> json) => RuleCondition(
-        json['field']! as String,
-        ConditionOp.fromWire(json['op']! as String),
-        json['value'],
-      );
+    json['field']! as String,
+    ConditionOp.fromWire(json['op']! as String),
+    json['value'],
+  );
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'field': field,
-        'op': op.wire,
-        if (value != null) 'value': value,
-      };
+    'field': field,
+    'op': op.wire,
+    if (value != null) 'value': value,
+  };
 
   static int _compare(Object? a, Object? b) {
     if (a is num && b is num) {
@@ -250,51 +248,55 @@ final class PriceRule {
   }
 
   factory PriceRule.fromJson(Map<String, Object?> json) => PriceRule(
-        id: json['id']! as String,
-        label: (json['label'] as String?) ?? json['id']! as String,
-        phase: RulePhase.fromWire(json['phase']! as String),
-        basis: RuleBasis.fromWire(json['basis']! as String),
-        rateFils: (json['rate_fils']! as num).toInt(),
-        productKinds: <ProductKind>{
-          for (final kind in (json['product_kinds'] as List<Object?>? ?? const []))
-            ProductKind.fromWire(kind! as String),
-        },
-        productIds: <String>{
-          for (final id in (json['product_ids'] as List<Object?>? ?? const []))
-            id! as String,
-        },
-        when: <RuleCondition>[
-          for (final condition
-              in (json['when'] as List<Object?>? ?? const <Object?>[]))
-            RuleCondition.fromJson((condition! as Map).cast<String, Object?>()),
-        ],
-        minChargeFils: ((json['min_charge_fils'] as num?) ?? 0).toInt(),
-        priority: ((json['priority'] as num?) ?? 100).toInt(),
-        quantityFrom: (json['quantity_from'] as num?)?.toInt(),
-        quantityTo: (json['quantity_to'] as num?)?.toInt(),
-      );
+    id: json['id']! as String,
+    label: (json['label'] as String?) ?? json['id']! as String,
+    phase: RulePhase.fromWire(json['phase']! as String),
+    basis: RuleBasis.fromWire(json['basis']! as String),
+    rateFils: (json['rate_fils']! as num).toInt(),
+    productKinds: <ProductKind>{
+      for (final kind in (json['product_kinds'] as List<Object?>? ?? const []))
+        ProductKind.fromWire(kind! as String),
+    },
+    productIds: <String>{
+      for (final id in (json['product_ids'] as List<Object?>? ?? const []))
+        id! as String,
+    },
+    when: <RuleCondition>[
+      for (final condition
+          in (json['when'] as List<Object?>? ?? const <Object?>[]))
+        RuleCondition.fromJson((condition! as Map).cast<String, Object?>()),
+    ],
+    minChargeFils: ((json['min_charge_fils'] as num?) ?? 0).toInt(),
+    priority: ((json['priority'] as num?) ?? 100).toInt(),
+    quantityFrom: (json['quantity_from'] as num?)?.toInt(),
+    quantityTo: (json['quantity_to'] as num?)?.toInt(),
+  );
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'id': id,
-        'label': label,
-        'phase': phase.wire,
-        'basis': basis.wire,
-        'rate_fils': rateFils,
-        if (productKinds.isNotEmpty)
-          'product_kinds': <String>[for (final k in productKinds) k.wire],
-        if (productIds.isNotEmpty) 'product_ids': productIds.toList(),
-        if (when.isNotEmpty)
-          'when': <Map<String, Object?>>[for (final c in when) c.toJson()],
-        if (minChargeFils != 0) 'min_charge_fils': minChargeFils,
-        'priority': priority,
-        if (quantityFrom != null) 'quantity_from': quantityFrom,
-        if (quantityTo != null) 'quantity_to': quantityTo,
-      };
+    'id': id,
+    'label': label,
+    'phase': phase.wire,
+    'basis': basis.wire,
+    'rate_fils': rateFils,
+    if (productKinds.isNotEmpty)
+      'product_kinds': <String>[for (final k in productKinds) k.wire],
+    if (productIds.isNotEmpty) 'product_ids': productIds.toList(),
+    if (when.isNotEmpty)
+      'when': <Map<String, Object?>>[for (final c in when) c.toJson()],
+    if (minChargeFils != 0) 'min_charge_fils': minChargeFils,
+    'priority': priority,
+    if (quantityFrom != null) 'quantity_from': quantityFrom,
+    if (quantityTo != null) 'quantity_to': quantityTo,
+  };
 }
 
 /// A quantity break for table pricing: 500–999 cards at 17 fils each.
 final class PriceTier {
-  const PriceTier({required this.qtyFrom, this.qtyTo, required this.unitPriceFils});
+  const PriceTier({
+    required this.qtyFrom,
+    this.qtyTo,
+    required this.unitPriceFils,
+  });
 
   final int qtyFrom;
   final int? qtyTo;
@@ -304,16 +306,16 @@ final class PriceTier {
       quantity >= qtyFrom && (qtyTo == null || quantity <= qtyTo!);
 
   factory PriceTier.fromJson(Map<String, Object?> json) => PriceTier(
-        qtyFrom: (json['qty_from']! as num).toInt(),
-        qtyTo: (json['qty_to'] as num?)?.toInt(),
-        unitPriceFils: (json['unit_price_fils']! as num).toInt(),
-      );
+    qtyFrom: (json['qty_from']! as num).toInt(),
+    qtyTo: (json['qty_to'] as num?)?.toInt(),
+    unitPriceFils: (json['unit_price_fils']! as num).toInt(),
+  );
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'qty_from': qtyFrom,
-        if (qtyTo != null) 'qty_to': qtyTo,
-        'unit_price_fils': unitPriceFils,
-      };
+    'qty_from': qtyFrom,
+    if (qtyTo != null) 'qty_to': qtyTo,
+    'unit_price_fils': unitPriceFils,
+  };
 }
 
 /// What the counter asked for. This is the whole input surface for pricing.
@@ -360,44 +362,44 @@ final class PriceRequest {
   final int hours;
 
   factory PriceRequest.fromJson(Map<String, Object?> json) => PriceRequest(
-        productId: json['product_id']! as String,
-        kind: ProductKind.fromWire(json['kind']! as String),
-        quantity: (json['quantity']! as num).toInt(),
-        widthMm: (json['width_mm'] as num?)?.toInt(),
-        heightMm: (json['height_mm'] as num?)?.toInt(),
-        sides: ((json['sides'] as num?) ?? 1).toInt(),
-        materialCode: json['material'] as String?,
-        finishCodes: <String>[
-          for (final code in (json['finish'] as List<Object?>? ?? const []))
-            code! as String,
-        ],
-        priority: json['priority'] == null
-            ? Priority.normal
-            : Priority.values.firstWhere(
-                (p) => p.wire == json['priority'],
-                orElse: () => Priority.normal,
-              ),
-        customerTier: (json['customer_tier'] as String?) ?? 'retail',
-        discountBps: ((json['discount_bps'] as num?) ?? 0).toInt(),
-        discountFils: ((json['discount_fils'] as num?) ?? 0).toInt(),
-        hours: ((json['hours'] as num?) ?? 0).toInt(),
-      );
+    productId: json['product_id']! as String,
+    kind: ProductKind.fromWire(json['kind']! as String),
+    quantity: (json['quantity']! as num).toInt(),
+    widthMm: (json['width_mm'] as num?)?.toInt(),
+    heightMm: (json['height_mm'] as num?)?.toInt(),
+    sides: ((json['sides'] as num?) ?? 1).toInt(),
+    materialCode: json['material'] as String?,
+    finishCodes: <String>[
+      for (final code in (json['finish'] as List<Object?>? ?? const []))
+        code! as String,
+    ],
+    priority: json['priority'] == null
+        ? Priority.normal
+        : Priority.values.firstWhere(
+            (p) => p.wire == json['priority'],
+            orElse: () => Priority.normal,
+          ),
+    customerTier: (json['customer_tier'] as String?) ?? 'retail',
+    discountBps: ((json['discount_bps'] as num?) ?? 0).toInt(),
+    discountFils: ((json['discount_fils'] as num?) ?? 0).toInt(),
+    hours: ((json['hours'] as num?) ?? 0).toInt(),
+  );
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'product_id': productId,
-        'kind': kind.wire,
-        'quantity': quantity,
-        if (widthMm != null) 'width_mm': widthMm,
-        if (heightMm != null) 'height_mm': heightMm,
-        'sides': sides,
-        if (materialCode != null) 'material': materialCode,
-        if (finishCodes.isNotEmpty) 'finish': finishCodes,
-        'priority': priority.wire,
-        'customer_tier': customerTier,
-        if (discountBps != 0) 'discount_bps': discountBps,
-        if (discountFils != 0) 'discount_fils': discountFils,
-        if (hours != 0) 'hours': hours,
-      };
+    'product_id': productId,
+    'kind': kind.wire,
+    'quantity': quantity,
+    if (widthMm != null) 'width_mm': widthMm,
+    if (heightMm != null) 'height_mm': heightMm,
+    'sides': sides,
+    if (materialCode != null) 'material': materialCode,
+    if (finishCodes.isNotEmpty) 'finish': finishCodes,
+    'priority': priority.wire,
+    'customer_tier': customerTier,
+    if (discountBps != 0) 'discount_bps': discountBps,
+    if (discountFils != 0) 'discount_fils': discountFils,
+    if (hours != 0) 'hours': hours,
+  };
 }
 
 /// The price book snapshot the engine works against. Versioned and immutable:
@@ -459,53 +461,54 @@ final class PricingContext {
   final int vatBps;
 
   factory PricingContext.fromJson(Map<String, Object?> json) => PricingContext(
-        priceBookVersion: (json['price_book_version']! as num).toInt(),
-        mode: PricingMode.fromWire(json['mode']! as String),
-        rules: <PriceRule>[
-          for (final rule in (json['rules'] as List<Object?>? ?? const []))
-            PriceRule.fromJson((rule! as Map).cast<String, Object?>()),
-        ],
-        sheet: json['sheet'] == null
-            ? null
-            : SheetSpec.fromJson((json['sheet']! as Map).cast<String, Object?>()),
-        setupSheets: ((json['setup_sheets'] as num?) ?? 2).toInt(),
-        spoilageBps: ((json['spoilage_bps'] as num?) ?? 500).toInt(),
-        materialCostPerSheetFils:
-            (json['material_cost_per_sheet_fils'] as num?)?.toInt(),
-        printRatePerSheetSideFils:
-            (json['print_rate_per_sheet_side_fils'] as num?)?.toInt(),
-        areaRateFilsPerSqm: (json['area_rate_fils_per_sqm'] as num?)?.toInt(),
-        vendorCostFils: (json['vendor_cost_fils'] as num?)?.toInt(),
-        tiers: <PriceTier>[
-          for (final tier in (json['tiers'] as List<Object?>? ?? const []))
-            PriceTier.fromJson((tier! as Map).cast<String, Object?>()),
-        ],
-        markupBps: ((json['markup_bps'] as num?) ?? 0).toInt(),
-        minOrderFils: ((json['min_order_fils'] as num?) ?? 0).toInt(),
-        roundingStepFils: ((json['rounding_step_fils'] as num?) ?? 100).toInt(),
-        vatBps: ((json['vat_bps'] as num?) ?? 500).toInt(),
-      );
+    priceBookVersion: (json['price_book_version']! as num).toInt(),
+    mode: PricingMode.fromWire(json['mode']! as String),
+    rules: <PriceRule>[
+      for (final rule in (json['rules'] as List<Object?>? ?? const []))
+        PriceRule.fromJson((rule! as Map).cast<String, Object?>()),
+    ],
+    sheet: json['sheet'] == null
+        ? null
+        : SheetSpec.fromJson((json['sheet']! as Map).cast<String, Object?>()),
+    setupSheets: ((json['setup_sheets'] as num?) ?? 2).toInt(),
+    spoilageBps: ((json['spoilage_bps'] as num?) ?? 500).toInt(),
+    materialCostPerSheetFils: (json['material_cost_per_sheet_fils'] as num?)
+        ?.toInt(),
+    printRatePerSheetSideFils: (json['print_rate_per_sheet_side_fils'] as num?)
+        ?.toInt(),
+    areaRateFilsPerSqm: (json['area_rate_fils_per_sqm'] as num?)?.toInt(),
+    vendorCostFils: (json['vendor_cost_fils'] as num?)?.toInt(),
+    tiers: <PriceTier>[
+      for (final tier in (json['tiers'] as List<Object?>? ?? const []))
+        PriceTier.fromJson((tier! as Map).cast<String, Object?>()),
+    ],
+    markupBps: ((json['markup_bps'] as num?) ?? 0).toInt(),
+    minOrderFils: ((json['min_order_fils'] as num?) ?? 0).toInt(),
+    roundingStepFils: ((json['rounding_step_fils'] as num?) ?? 100).toInt(),
+    vatBps: ((json['vat_bps'] as num?) ?? 500).toInt(),
+  );
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'price_book_version': priceBookVersion,
-        'mode': mode.wire,
-        'rules': <Map<String, Object?>>[for (final r in rules) r.toJson()],
-        if (sheet != null) 'sheet': sheet!.toJson(),
-        'setup_sheets': setupSheets,
-        'spoilage_bps': spoilageBps,
-        if (materialCostPerSheetFils != null)
-          'material_cost_per_sheet_fils': materialCostPerSheetFils,
-        if (printRatePerSheetSideFils != null)
-          'print_rate_per_sheet_side_fils': printRatePerSheetSideFils,
-        if (areaRateFilsPerSqm != null) 'area_rate_fils_per_sqm': areaRateFilsPerSqm,
-        if (vendorCostFils != null) 'vendor_cost_fils': vendorCostFils,
-        if (tiers.isNotEmpty)
-          'tiers': <Map<String, Object?>>[for (final t in tiers) t.toJson()],
-        'markup_bps': markupBps,
-        'min_order_fils': minOrderFils,
-        'rounding_step_fils': roundingStepFils,
-        'vat_bps': vatBps,
-      };
+    'price_book_version': priceBookVersion,
+    'mode': mode.wire,
+    'rules': <Map<String, Object?>>[for (final r in rules) r.toJson()],
+    if (sheet != null) 'sheet': sheet!.toJson(),
+    'setup_sheets': setupSheets,
+    'spoilage_bps': spoilageBps,
+    if (materialCostPerSheetFils != null)
+      'material_cost_per_sheet_fils': materialCostPerSheetFils,
+    if (printRatePerSheetSideFils != null)
+      'print_rate_per_sheet_side_fils': printRatePerSheetSideFils,
+    if (areaRateFilsPerSqm != null)
+      'area_rate_fils_per_sqm': areaRateFilsPerSqm,
+    if (vendorCostFils != null) 'vendor_cost_fils': vendorCostFils,
+    if (tiers.isNotEmpty)
+      'tiers': <Map<String, Object?>>[for (final t in tiers) t.toJson()],
+    'markup_bps': markupBps,
+    'min_order_fils': minOrderFils,
+    'rounding_step_fils': roundingStepFils,
+    'vat_bps': vatBps,
+  };
 }
 
 enum PriceLineKind {
@@ -547,14 +550,14 @@ final class PriceLine {
   final String explain;
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'code': code,
-        'label': label,
-        'kind': kind.wire,
-        'quantity': quantity,
-        'rate_fils': rateFils,
-        'amount_fils': amount.raw,
-        'explain': explain,
-      };
+    'code': code,
+    'label': label,
+    'kind': kind.wire,
+    'quantity': quantity,
+    'rate_fils': rateFils,
+    'amount_fils': amount.raw,
+    'explain': explain,
+  };
 }
 
 /// The complete, reproducible answer.
@@ -619,23 +622,23 @@ final class PriceBreakdown {
   /// The snapshot stored with every quote and order line. Changing the price
   /// book later cannot alter this document.
   Map<String, Object?> toJson() => <String, Object?>{
-        'price_book_version': priceBookVersion,
-        'lines': <Map<String, Object?>>[for (final l in lines) l.toJson()],
-        'cost_subtotal_fils': costSubtotal.raw,
-        'add_ons_fils': addOns.raw,
-        'price_before_surcharges_fils': priceBeforeSurcharges.raw,
-        'surcharges_fils': surcharges.raw,
-        'price_before_discount_fils': priceBeforeDiscount.raw,
-        'discount_fils': discount.raw,
-        'net_before_rounding_fils': netBeforeRounding.raw,
-        'rounding_adjustment_fils': roundingAdjustment.raw,
-        'total_fils': total.raw,
-        'vat_bps': vatBps,
-        'vat_fils': vat.raw,
-        'grand_total_fils': grandTotal.raw,
-        'rounding_step_fils': roundingStepFils,
-        if (warnings.isNotEmpty) 'warnings': warnings,
-      };
+    'price_book_version': priceBookVersion,
+    'lines': <Map<String, Object?>>[for (final l in lines) l.toJson()],
+    'cost_subtotal_fils': costSubtotal.raw,
+    'add_ons_fils': addOns.raw,
+    'price_before_surcharges_fils': priceBeforeSurcharges.raw,
+    'surcharges_fils': surcharges.raw,
+    'price_before_discount_fils': priceBeforeDiscount.raw,
+    'discount_fils': discount.raw,
+    'net_before_rounding_fils': netBeforeRounding.raw,
+    'rounding_adjustment_fils': roundingAdjustment.raw,
+    'total_fils': total.raw,
+    'vat_bps': vatBps,
+    'vat_fils': vat.raw,
+    'grand_total_fils': grandTotal.raw,
+    'rounding_step_fils': roundingStepFils,
+    if (warnings.isNotEmpty) 'warnings': warnings,
+  };
 
   @override
   String toString() =>

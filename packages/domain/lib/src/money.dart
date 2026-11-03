@@ -82,8 +82,7 @@ final class Fils implements Comparable<Fils> {
     final base = raw ~/ parts;
     var remainder = raw - base * parts;
     return <Fils>[
-      for (var i = 0; i < parts; i++)
-        Fils(base + (remainder-- > 0 ? 1 : 0)),
+      for (var i = 0; i < parts; i++) Fils(base + (remainder-- > 0 ? 1 : 0)),
     ];
   }
 

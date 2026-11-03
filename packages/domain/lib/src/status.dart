@@ -29,15 +29,15 @@ enum TaskStatus {
   final String wire;
 
   static TaskStatus fromWire(String wire) => values.firstWhere(
-        (value) => value.wire == wire,
-        orElse: () => throw ArgumentError.value(wire, 'wire', 'unknown TaskStatus'),
-      );
+    (value) => value.wire == wire,
+    orElse: () => throw ArgumentError.value(wire, 'wire', 'unknown TaskStatus'),
+  );
 
   /// States in which a task still occupies a slot on the board.
   bool get isActive => switch (this) {
-        TaskStatus.done || TaskStatus.cancelled => false,
-        _ => true,
-      };
+    TaskStatus.done || TaskStatus.cancelled => false,
+    _ => true,
+  };
 
   /// States in which the task belongs to a named person.
   bool get isAssigned =>
@@ -72,19 +72,38 @@ const List<TaskTransition> _taskTransitions = <TaskTransition>[
   TaskTransition(TaskStatus.available, TaskStatus.assigned),
   TaskTransition(TaskStatus.available, TaskStatus.cancelled, managerOnly: true),
   TaskTransition(TaskStatus.assigned, TaskStatus.inProgress),
-  TaskTransition(TaskStatus.assigned, TaskStatus.available), // released back to the pool
+  TaskTransition(
+    TaskStatus.assigned,
+    TaskStatus.available,
+  ), // released back to the pool
   TaskTransition(TaskStatus.assigned, TaskStatus.cancelled, managerOnly: true),
-  TaskTransition(TaskStatus.inProgress, TaskStatus.paused, requiresReason: true),
+  TaskTransition(
+    TaskStatus.inProgress,
+    TaskStatus.paused,
+    requiresReason: true,
+  ),
   TaskTransition(TaskStatus.inProgress, TaskStatus.done),
-  TaskTransition(TaskStatus.inProgress, TaskStatus.rework, requiresReason: true),
-  TaskTransition(TaskStatus.inProgress, TaskStatus.cancelled, managerOnly: true),
+  TaskTransition(
+    TaskStatus.inProgress,
+    TaskStatus.rework,
+    requiresReason: true,
+  ),
+  TaskTransition(
+    TaskStatus.inProgress,
+    TaskStatus.cancelled,
+    managerOnly: true,
+  ),
   TaskTransition(TaskStatus.paused, TaskStatus.inProgress),
   TaskTransition(TaskStatus.paused, TaskStatus.rework, requiresReason: true),
   TaskTransition(TaskStatus.paused, TaskStatus.cancelled, managerOnly: true),
   // A manager may reopen a finished task (customer changed their mind);
   // that is a rework, never a silent edit.
-  TaskTransition(TaskStatus.done, TaskStatus.rework, requiresReason: true,
-      managerOnly: true),
+  TaskTransition(
+    TaskStatus.done,
+    TaskStatus.rework,
+    requiresReason: true,
+    managerOnly: true,
+  ),
   TaskTransition(TaskStatus.rework, TaskStatus.inProgress),
   TaskTransition(TaskStatus.rework, TaskStatus.cancelled, managerOnly: true),
 ];
@@ -121,9 +140,9 @@ final class TaskStateMachine {
   /// Every state reachable from [from] — used to render the status menu without
   /// duplicating the table in the UI layer.
   static List<TaskStatus> nextStates(TaskStatus from) => <TaskStatus>[
-        for (final t in _taskTransitions)
-          if (t.from == from) t.to,
-      ];
+    for (final t in _taskTransitions)
+      if (t.from == from) t.to,
+  ];
 }
 
 // ---------------------------------------------------------------------------
@@ -142,9 +161,9 @@ enum ItemStatus {
   final String wire;
 
   static ItemStatus fromWire(String wire) => values.firstWhere(
-        (value) => value.wire == wire,
-        orElse: () => throw ArgumentError.value(wire, 'wire', 'unknown ItemStatus'),
-      );
+    (value) => value.wire == wire,
+    orElse: () => throw ArgumentError.value(wire, 'wire', 'unknown ItemStatus'),
+  );
 }
 
 /// Order state. Never set by hand: it is always derived from the items, so an
@@ -165,22 +184,22 @@ enum OrderStatus {
   final String wire;
 
   static OrderStatus fromWire(String wire) => values.firstWhere(
-        (value) => value.wire == wire,
-        orElse: () => throw ArgumentError.value(wire, 'wire', 'unknown OrderStatus'),
-      );
+    (value) => value.wire == wire,
+    orElse: () =>
+        throw ArgumentError.value(wire, 'wire', 'unknown OrderStatus'),
+  );
 
   /// The six states a customer is allowed to see (design §8.3).
   CustomerFacingStatus get customerView => switch (this) {
-        OrderStatus.draft || OrderStatus.confirmed => CustomerFacingStatus.received,
-        OrderStatus.cancelled => CustomerFacingStatus.cancelled,
-        OrderStatus.inProduction => CustomerFacingStatus.inProduction,
-        OrderStatus.ready => CustomerFacingStatus.ready,
-        OrderStatus.partiallyDelivered ||
-        OrderStatus.delivered ||
-        OrderStatus.collected ||
-        OrderStatus.closed =>
-          CustomerFacingStatus.delivered,
-      };
+    OrderStatus.draft || OrderStatus.confirmed => CustomerFacingStatus.received,
+    OrderStatus.cancelled => CustomerFacingStatus.cancelled,
+    OrderStatus.inProduction => CustomerFacingStatus.inProduction,
+    OrderStatus.ready => CustomerFacingStatus.ready,
+    OrderStatus.partiallyDelivered ||
+    OrderStatus.delivered ||
+    OrderStatus.collected ||
+    OrderStatus.closed => CustomerFacingStatus.delivered,
+  };
 }
 
 enum CustomerFacingStatus {
@@ -207,7 +226,9 @@ OrderStatus deriveOrderStatus(Iterable<ItemStatus> items) {
   if (list.every((s) => s == ItemStatus.cancelled)) {
     return OrderStatus.cancelled;
   }
-  final live = list.where((s) => s != ItemStatus.cancelled).toList(growable: false);
+  final live = list
+      .where((s) => s != ItemStatus.cancelled)
+      .toList(growable: false);
   if (live.every((s) => s == ItemStatus.delivered)) {
     return OrderStatus.delivered;
   }
