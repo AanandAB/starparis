@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:starparis_domain/starparis_domain.dart';
@@ -18,6 +20,10 @@ class FakeApi implements SyncApi {
   int headValue = 0;
   int pullCursor = 0;
   final List<PullRow> serverRows = <PullRow>[];
+
+  /// When set, the next mutation is refused as a stale write and the server's
+  /// current row is handed back — exactly what D1 does on a version mismatch.
+  Map<String, Object?>? conflictWithRow;
 
   @override
   Future<HeadResult> head() async {
@@ -52,6 +58,19 @@ class FakeApi implements SyncApi {
           ),
         );
         rejectNextWith = null;
+        continue;
+      }
+      if (conflictWithRow != null) {
+        outcomes.add(
+          MutationOutcome(
+            mutationId: mutation.mutationId,
+            status: 'rejected',
+            errorCode: 'VERSION_CONFLICT',
+            errorMessage: 'This record changed on another device.',
+            row: conflictWithRow,
+          ),
+        );
+        conflictWithRow = null;
         continue;
       }
       outcomes.add(
@@ -604,6 +623,96 @@ void main() {
       expect(after.reworkCount, 1);
       expect(after.reason, contains('artwork'));
     });
+    test('each status change travels as its own mutation, in order', () async {
+      final orderId = await placedOrder();
+
+      // The inserts must be on their way before the moves make sense: a status
+      // patch merged into a pending insert is correct, a patch merged into
+      // another patch is not.
+      await db.markApplied(<String>[
+        for (final mutation in await db.nextBatch())
+          mutation.mutationId,
+      ]);
+
+      var task = (await db.tasksForOrder(orderId)).first;
+      await db.transitionTask(task: task, to: TaskStatus.assigned, userId: 'u1');
+      task = (await db.tasksForOrder(orderId)).first;
+      await db.transitionTask(task: task, to: TaskStatus.inProgress, userId: 'u1');
+      task = (await db.tasksForOrder(orderId)).first;
+      await db.transitionTask(task: task, to: TaskStatus.done, userId: 'u1');
+
+      final batch = await db.nextBatch();
+      final patches = batch
+          .where((m) => m.entity == 'tasks' && m.op == 'patch')
+          .toList();
+
+      // claim, start, done, then the cascade that opens print.
+      expect(patches, hasLength(4));
+      expect(
+        <Object?>[
+          for (final mutation in patches)
+            (jsonDecode(mutation.payloadJson) as Map<String, Object?>)['status'],
+        ],
+        <String>['assigned', 'in_progress', 'done', 'available'],
+        reason: 'coalescing a state machine would present the server a jump',
+      );
+      expect(patches.map((m) => m.baseVersion).toList(), <int>[0, 1, 2, 0]);
+    });
+    test('a duplicate cascade the server already applied is dropped, not queued', () async {
+      final orderId = await placedOrder();
+      await db.markApplied(<String>[
+        for (final mutation in await db.nextBatch())
+          mutation.mutationId,
+      ]);
+
+      var design = (await db.tasksForOrder(orderId)).first;
+      await db.transitionTask(task: design, to: TaskStatus.assigned, userId: 'u1');
+      design = (await db.tasksForOrder(orderId)).first;
+      await db.transitionTask(task: design, to: TaskStatus.inProgress, userId: 'u1');
+      design = (await db.tasksForOrder(orderId)).first;
+      await db.transitionTask(task: design, to: TaskStatus.done, userId: 'u1');
+
+      // Keep only the cascade patch in the outbox: the moves themselves are not
+      // what this test is about.
+      final batch = await db.nextBatch();
+      final cascade = batch.firstWhere((mutation) {
+        if (mutation.entity != 'tasks') return false;
+        final payload = (jsonDecode(mutation.payloadJson) as Map).cast<String, Object?>();
+        return payload['status'] == 'available';
+      });
+      await db.markApplied(<String>[
+        for (final mutation in batch)
+          if (mutation.mutationId != cascade.mutationId) mutation.mutationId,
+      ]);
+      expect(await db.pendingCount(), 1);
+
+      // The device cascaded print to available; so did the server. The device's
+      // copy comes back as a stale write, but the row already says what it
+      // wanted — that is a duplicate, not a conflict.
+      api.conflictWithRow = <String, Object?>{
+        'id': 'print-task',
+        'tenant_id': 't1',
+        'branch_id': 'b1',
+        'order_id': orderId,
+        'stage_key': 'print',
+        'stage_name': 'Print',
+        'sequence': 20,
+        'title': 'Print',
+        'status': 'available',
+        'required_role': 'operator',
+        'version': 2,
+        'created_at': DateTime.now().toUtc().toIso8601String(),
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      };
+
+      await engine.syncNow();
+      expect(
+        await db.pendingCount(),
+        0,
+        reason: 'a duplicate must not leave a permanent pending badge',
+      );
+    });
+
   });
 
   group('state', () {

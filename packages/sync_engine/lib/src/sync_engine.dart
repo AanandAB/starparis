@@ -10,6 +10,7 @@
 library;
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'api.dart';
 import 'database.dart';
@@ -164,17 +165,53 @@ class SyncEngine {
         continue;
       }
       if (outcome.isRejected) {
+        final mutation = batch.firstWhere(
+          (candidate) => candidate.mutationId == outcome.mutationId,
+          orElse: () => batch.first,
+        );
+
+        // The same change arriving twice is not a conflict. When this device
+        // cascaded a stage while the server cascaded it too (both are correct),
+        // the second one comes back as VERSION_CONFLICT even though the row
+        // already says exactly what we wanted. Dropping it keeps the outbox —
+        // and the "pending" badge — honest.
+        if (outcome.errorCode == 'VERSION_CONFLICT' &&
+            outcome.row != null &&
+            _alreadyMatches(mutation.payloadJson, outcome.row!)) {
+          applied.add(outcome.mutationId);
+          continue;
+        }
+
         await db.recordFailure(
           outcome.mutationId,
           '${outcome.errorCode ?? 'REJECTED'}: ${outcome.errorMessage ?? ''}'
               .trim(),
         );
-        // A version conflict is not fatal: the next pull brings the server's
-        // row, and the engineer re-applies the edit on top of it. For now the
-        // mutation stays queued and visible.
+        // A genuine version conflict is not fatal: the next pull brings the
+        // server's row, and the person re-applies the edit on top of it. For
+        // now the mutation stays queued and visible.
       }
     }
     await db.markApplied(applied);
+  }
+
+  /// True when every field this mutation wanted to write is already on the
+  /// server row. Values are compared loosely because JSON round-trips change
+  /// types (1 vs true, numbers vs strings).
+  static bool _alreadyMatches(
+    String payloadJson,
+    Map<String, Object?> serverRow,
+  ) {
+    final fields = (jsonDecode(payloadJson) as Map).cast<String, Object?>();
+    for (final entry in fields.entries) {
+      if (!serverRow.containsKey(entry.key)) return false;
+      final server = serverRow[entry.key];
+      final local = entry.value;
+      if (server == local) continue;
+      if (server == null || local == null) return false;
+      if (server.toString() != local.toString()) return false;
+    }
+    return true;
   }
 
   Future<void> _pull() async {

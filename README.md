@@ -103,6 +103,49 @@ but does not shape Arabic letters, so an Arabic invoice would print isolated let
 worse than an English one for a legal document. The decision and the three candidate solutions
 are in PLAN.md ADR-009; it needs the accountant and a font before it ships.
 
+### Phase 3A — production
+
+| Piece | State |
+|---|---|
+| Workflow stages | `workflow_stages` per workflow key, shipped in the catalogue, editable as rows |
+| Task generation | confirming an order (or converting a quote) creates one task per stage: first `available`, rest `waiting` |
+| Board | Production tab: Board / My work, one column per stage, qty, due date, overdue in red, rework reason on the card |
+| Moving work | Claim → Start → Finish, Pause or Send back with a mandatory reason; only legal moves are ever offered |
+| Cascade | finishing a stage opens the next, on the device and on the server |
+| Server rules | the Worker enforces the same state machine, refuses a jump (`available` → `done`), and stamps `started_at` / `done_at` itself |
+| Audit | `task_events` records every status change with actor, reason and time |
+
+Proven end to end against a real Worker and a real D1 (locally, via `wrangler dev`):
+
+    login            ok  role=owner
+    workflow         ok  design -> print -> finish -> qc -> delivery
+    tasks            ok  5 created, first=available rest={waiting}
+    push             synced  pending=0
+    transitions      synced  pending=0
+    server           design=done print=available finish=waiting qc=waiting delivery=waiting
+    server refuses   ILLEGAL_TRANSITION  (status=rejected)
+
+Run it yourself:
+
+```bash
+cd backend/worker && bunx wrangler d1 migrations apply starparis-dev --local
+bunx wrangler d1 execute starparis-dev --local --file ../../seeds/demo.sql
+bunx wrangler d1 execute starparis-dev --local --file ../../seeds/catalogue.sql
+bunx wrangler dev --port 8788            # needs backend/worker/.dev.vars with JWT_SECRET
+cd ../../apps/shop_app && dart run tool/live_tasks_smoke.dart http://127.0.0.1:8788 <owner-phone>
+```
+
+Two real bugs surfaced only by running it, both now covered by tests:
+
+1. **The outbox coalesced state changes.** Claim → start → finish, all offline, merged into one
+   patch, so the server saw `available → done` and correctly refused it. Status patches are now
+   never coalesced, and the outbox is ordered by `created_at` then the monotonic UUIDv7 id so a
+   chain of moves arrives in the order it was made.
+2. **A cascade done on both sides looked like a conflict.** The device opens the next stage and so
+   does the server; the device's copy came back `VERSION_CONFLICT` and sat in the outbox forever.
+   A rejected patch whose fields already equal the server's row is a duplicate, and is now
+   dropped instead of pinning a permanent "1 pending" badge.
+
 ## Commands
 ```bash
 # Dart workspace

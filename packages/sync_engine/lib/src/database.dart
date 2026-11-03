@@ -110,7 +110,8 @@ class Products extends Table {
       text().withDefault(const Constant('[]'))();
 
   /// Which production workflow this product creates (see WorkflowStages).
-  TextColumn get workflowKey => text().withDefault(const Constant('print_std'))();
+  TextColumn get workflowKey =>
+      text().withDefault(const Constant('print_std'))();
 
   IntColumn get sort => integer().withDefault(const Constant(100))();
   BoolColumn get active => boolean().withDefault(const Constant(true))();
@@ -222,13 +223,15 @@ class OrderItems extends Table {
 class WorkflowStages extends Table {
   TextColumn get id => text()();
   TextColumn get tenantId => text()();
-  TextColumn get workflowKey => text().withDefault(const Constant('print_std'))();
+  TextColumn get workflowKey =>
+      text().withDefault(const Constant('print_std'))();
   TextColumn get stageKey => text()();
   TextColumn get nameEn => text()();
   TextColumn get nameAr => text().nullable()();
   IntColumn get sequence => integer()();
   TextColumn get requiredRole => text()();
-  BoolColumn get waitsForPrevious => boolean().withDefault(const Constant(true))();
+  BoolColumn get waitsForPrevious =>
+      boolean().withDefault(const Constant(true))();
 
   @override
   Set<Column<Object>> get primaryKey => <Column<Object>>{id};
@@ -762,21 +765,32 @@ class LocalDatabase extends _$LocalDatabase {
       ..limit(1);
     final existing = await existingQuery.getSingleOrNull();
 
-    if (existing != null &&
-        (existing.op == 'insert' || existing.op == 'patch')) {
-      final merged = <String, Object?>{
-        ...jsonDecode(existing.payloadJson) as Map<String, Object?>,
-        ...fields,
-      };
-      await (update(
-        outboxMutations,
-      )..where((t) => t.mutationId.equals(existing.mutationId))).write(
-        OutboxMutationsCompanion(
-          payloadJson: Value(jsonEncode(merged)),
-          deviceTs: Value(DateTime.now().toUtc()),
-        ),
-      );
-      return;
+    if (existing != null) {
+      final existingPayload = (jsonDecode(existing.payloadJson) as Map)
+          .cast<String, Object?>();
+
+      // A patch that moves a state machine is never coalesced. Merging
+      // available -> assigned -> in_progress -> done into one patch would
+      // present the server with available -> done, which it correctly rejects
+      // as an illegal transition. Each move travels as its own mutation, in
+      // order, each with the version the previous one produced.
+      final touchesStatus =
+          fields.containsKey('status') || existingPayload.containsKey('status');
+      final canMerge =
+          existing.op == 'insert' || (existing.op == 'patch' && !touchesStatus);
+
+      if (canMerge) {
+        final merged = <String, Object?>{...existingPayload, ...fields};
+        await (update(
+          outboxMutations,
+        )..where((t) => t.mutationId.equals(existing.mutationId))).write(
+          OutboxMutationsCompanion(
+            payloadJson: Value(jsonEncode(merged)),
+            deviceTs: Value(DateTime.now().toUtc()),
+          ),
+        );
+        return;
+      }
     }
 
     await into(outboxMutations).insert(
@@ -797,6 +811,11 @@ class LocalDatabase extends _$LocalDatabase {
     return (select(outboxMutations)
           ..orderBy(<OrderClauseGenerator<$OutboxMutationsTable>>[
             (t) => OrderingTerm(expression: t.createdAt),
+            // UUIDv7 ids are monotonic, so this is the tie-breaker that keeps
+            // two patches written in the same millisecond in the order they
+            // were made — which matters when the second one depends on the
+            // version the first produced.
+            (t) => OrderingTerm(expression: t.mutationId),
           ])
           ..limit(limit))
         .get();
@@ -896,7 +915,9 @@ class LocalDatabase extends _$LocalDatabase {
       for (final row in stageRows) {
         await into(workflowStages).insert(
           WorkflowStagesCompanion.insert(
-            id: (row['id'] as String?) ?? '${row['workflow_key']}_${row['stage_key']}',
+            id:
+                (row['id'] as String?) ??
+                '${row['workflow_key']}_${row['stage_key']}',
             tenantId: (row['tenant_id'] as String?) ?? '',
             workflowKey: Value(row['workflow_key'] as String? ?? 'print_std'),
             stageKey: row['stage_key'] as String? ?? '',
@@ -1555,8 +1576,8 @@ class LocalDatabase extends _$LocalDatabase {
       final firstProduct = items.isEmpty
           ? null
           : await (select(products)
-                ..where((p) => p.id.equals(items.first.productId)))
-              .getSingleOrNull();
+                  ..where((p) => p.id.equals(items.first.productId)))
+                .getSingleOrNull();
       await createTasksForOrder(
         orderId: orderId,
         tenantId: quote.tenantId,
@@ -1658,7 +1679,22 @@ class StageTemplate {
 const List<StageTemplate> defaultStages = <StageTemplate>[
   StageTemplate(key: 'design', name: 'Design', sequence: 10, role: 'designer'),
   StageTemplate(key: 'print', name: 'Print', sequence: 20, role: 'operator'),
-  StageTemplate(key: 'finish', name: 'Finishing', sequence: 30, role: 'operator'),
-  StageTemplate(key: 'qc', name: 'Quality check', sequence: 40, role: 'manager'),
-  StageTemplate(key: 'delivery', name: 'Delivery', sequence: 50, role: 'driver'),
+  StageTemplate(
+    key: 'finish',
+    name: 'Finishing',
+    sequence: 30,
+    role: 'operator',
+  ),
+  StageTemplate(
+    key: 'qc',
+    name: 'Quality check',
+    sequence: 40,
+    role: 'manager',
+  ),
+  StageTemplate(
+    key: 'delivery',
+    name: 'Delivery',
+    sequence: 50,
+    role: 'driver',
+  ),
 ];
