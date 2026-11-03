@@ -9,6 +9,7 @@ import 'package:starparis_sync/starparis_sync.dart';
 import '../providers.dart';
 import '../sales/till_sheet.dart';
 import 'board_screen.dart';
+import 'catalogue_screen.dart';
 import 'customers_screen.dart';
 import 'diagnostics_sheet.dart';
 import 'home_screen.dart';
@@ -102,6 +103,17 @@ class _AppShellState extends ConsumerState<AppShell> {
     final business = <_Dest>[];
     final optionalPages = <Widget>[];
 
+    if (ref.watch(canEditPricesProvider)) {
+      business.add(
+        _Dest(
+          t('nav.catalogue'),
+          Icons.inventory_2_outlined,
+          Icons.inventory_2,
+          nextPage++,
+        ),
+      );
+      optionalPages.add(const CatalogueScreen());
+    }
     if (ref.watch(canEditPricesProvider)) {
       business.add(
         _Dest(
