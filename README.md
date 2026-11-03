@@ -428,6 +428,27 @@ Live through the app's own client:
 
 62 worker tests (1 new), 6 app tests, analyzer clean, Windows release build green.
 
+### Phase 4H — input VAT, so the return adds up
+
+`GET /v1/reports/expenses?from&to` groups the period's expenses by category with entries, net, VAT and
+total. The `vat.csv` export now carries a **purchases section** after the sales rows, then *VAT on
+purchases (input)* and *Net VAT payable (output − input)* — the two lines an accountant actually files.
+
+The Reports screen gains a **Purchases** section under the drawer: a row per category with entries and
+what was paid, and a footer reading *Paid out AED 150.00 · input VAT AED 5.00*. It loads separately
+from the VAT figures, so a failure there cannot blank the return above it.
+
+Live, through the app's own client:
+
+    purchases  AED 150.00 paid out · input VAT AED 5.00
+               Materials: 1 · AED 105.00 (VAT AED 5.00)
+               Courier: 1 · AED 45.00 (VAT AED 0.00)
+    csv:       VAT on purchases (input),,,,5.00,
+               Net VAT payable (output - input),,,,3.72,
+
+That last figure is the point: 8.72 charged on sales minus 5.00 already paid on materials = 3.72 owed.
+63 worker tests (1 new), 6 app tests, analyzer clean, Windows build green.
+
 ## Commands
 ```bash
 # Dart workspace

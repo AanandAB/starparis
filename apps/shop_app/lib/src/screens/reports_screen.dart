@@ -23,6 +23,25 @@ class ReportsScreen extends ConsumerStatefulWidget {
 class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   late DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
   late Future<(VatSummary, AgeingReport, TillHistory)> _report = _load();
+  late Future<ExpenseSummary> _purchases = _loadPurchases();
+
+  /// Purchases load separately: a failure there (an officer without access,
+  /// say) must not blank the VAT figures above it.
+  Future<ExpenseSummary> _loadPurchases() async {
+    final bootstrap = ref.read(bootstrapProvider);
+    final service = ReportsService(
+      baseUrl: AppConfig.apiBaseUrl,
+      tokenProvider: bootstrap.auth.accessToken,
+    );
+    try {
+      return await service.expenses(
+        from: DateTime(_month.year, _month.month),
+        to: DateTime(_month.year, _month.month + 1),
+      );
+    } finally {
+      service.dispose();
+    }
+  }
 
   Future<(VatSummary, AgeingReport, TillHistory)> _load() async {
     final bootstrap = ref.read(bootstrapProvider);
@@ -46,6 +65,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     setState(() {
       _month = DateTime(_month.year, _month.month + months);
       _report = _load();
+      _purchases = _loadPurchases();
     });
   }
 
@@ -76,7 +96,10 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 ),
                 const Spacer(),
                 TextButton.icon(
-                  onPressed: () => setState(() => _report = _load()),
+                  onPressed: () => setState(() {
+                    _report = _load();
+                    _purchases = _loadPurchases();
+                  }),
                   icon: const Icon(Icons.refresh, size: 18),
                   label: const Text('Refresh'),
                 ),
@@ -103,6 +126,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               _AgeingSection(report: snapshot.data!.$2),
               const SizedBox(height: StarSpace.xl),
               _TillsSection(history: snapshot.data!.$3),
+              const SizedBox(height: StarSpace.xl),
+              _PurchasesSection(purchases: _purchases),
             ],
           ],
         );
@@ -546,5 +571,115 @@ class _TillRow extends StatelessWidget {
     final hour = value.hour.toString().padLeft(2, '0');
     final minute = value.minute.toString().padLeft(2, '0');
     return '$hour:$minute';
+  }
+}
+
+/// What the shop spent, by category.
+///
+/// The VAT on these receipts is input VAT: already paid, so it comes off what
+/// is owed on sales. Showing it here means the owner sees the whole return, not
+/// half of it.
+class _PurchasesSection extends StatelessWidget {
+  const _PurchasesSection({required this.purchases});
+
+  final Future<ExpenseSummary> purchases;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return FutureBuilder<ExpenseSummary>(
+      future: purchases,
+      builder: (context, snapshot) {
+        final summary = snapshot.data;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text('Purchases', style: theme.textTheme.titleMedium),
+            const SizedBox(height: StarSpace.xs),
+            Text(
+              'Money paid out this month, by category. The VAT on these receipts '
+              'is input VAT and comes off the VAT due on sales.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: StarSpace.md),
+            if (snapshot.hasError)
+              _ErrorCard(message: '${snapshot.error}')
+            else if (summary == null)
+              const Padding(
+                padding: EdgeInsets.all(StarSpace.lg),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (summary.rows.isEmpty)
+              const EmptyState(
+                icon: Icons.receipt_long_outlined,
+                title: 'Nothing paid out this month',
+                message: 'Couriers, materials and taxis recorded from the cash drawer appear here.',
+              )
+            else
+              Card(
+                child: Column(
+                  children: <Widget>[
+                    for (final row in summary.rows)
+                      ListTile(
+                        dense: true,
+                        title: Text(row.category),
+                        subtitle: Text(
+                          row.entries == 1 ? '1 entry' : '${row.entries} entries',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        trailing: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: <Widget>[
+                            Text(
+                              Fils(row.totalFils).aedLabel,
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                            if (row.vatFils > 0)
+                              Text(
+                                'incl. ${Fils(row.vatFils).aedLabel} VAT',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    const Divider(height: 1),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: StarSpace.md,
+                        vertical: StarSpace.sm,
+                      ),
+                      child: Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: Text(
+                              'Paid out ${Fils(summary.totalFils).aedLabel}',
+                              style: theme.textTheme.labelLarge,
+                            ),
+                          ),
+                          Text(
+                            summary.vatFils == 0
+                                ? 'no VAT on these receipts'
+                                : 'input VAT ${Fils(summary.vatFils).aedLabel}',
+                            style: theme.textTheme.labelLarge,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        );
+      },
+    );
   }
 }

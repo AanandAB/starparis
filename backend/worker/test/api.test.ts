@@ -1603,6 +1603,35 @@ describe('expenses and the VAT export', () => {
     expect(body.short_fils).toBe(0);
   });
 
+  it('adds purchases and their input VAT to the export', async () => {
+    // 10.50 paid for materials, of which 0.50 was VAT the shop already paid.
+    const pushed = await push(counter, [
+      expense('0193f0b1-0000-7000-8000-0000000000f4', 1050, 'card', {
+        category: 'Materials',
+        vat_fils: 50,
+      }),
+    ]);
+    expect(pushed.results[0]!.status).toBe('applied');
+
+    const csv = await (
+      await api('/v1/reports/vat.csv?from=2020-01-01&to=2030-01-01', authed(owner.access_token))
+    ).text();
+    expect(csv).toContain('Purchases,category,entries');
+    expect(csv).toContain('Materials');
+    expect(csv).toContain('PURCHASES TOTAL');
+    expect(csv).toContain('VAT on purchases (input)');
+    expect(csv).toContain('Net VAT payable (output - input)');
+
+    const body = (await (
+      await api('/v1/reports/expenses?from=2020-01-01&to=2030-01-01', authed(owner.access_token))
+    ).json()) as { rows: Array<Record<string, number | string>>; vat_fils: number };
+    const materials = body.rows.find((row) => row['category'] === 'Materials')!;
+    expect(materials['entries']).toBe(1);
+    expect(materials['vat_fils']).toBe(50);
+    expect(materials['net_fils']).toBe(1000);
+    expect(body.vat_fils).toBe(50);
+  });
+
   it('keeps the counter out of the export', async () => {
     const response = await api('/v1/reports/vat.csv', authed(counter.access_token));
     expect(response.status).toBe(403);

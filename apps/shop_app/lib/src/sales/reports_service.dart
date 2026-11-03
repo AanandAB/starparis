@@ -193,6 +193,56 @@ class TillHistory {
   final int shortFils;
 }
 
+/// What the shop paid for, grouped by category.
+class ExpenseCategory {
+  const ExpenseCategory({
+    required this.category,
+    required this.entries,
+    required this.netFils,
+    required this.vatFils,
+    required this.totalFils,
+  });
+
+  factory ExpenseCategory.fromJson(Map<String, Object?> json) {
+    int asInt(String key) => (json[key] as num?)?.toInt() ?? 0;
+    return ExpenseCategory(
+      category: json['category'] as String? ?? 'Other',
+      entries: asInt('entries'),
+      netFils: asInt('net_fils'),
+      vatFils: asInt('vat_fils'),
+      totalFils: asInt('total_fils'),
+    );
+  }
+
+  final String category;
+  final int entries;
+  final int netFils;
+  final int vatFils;
+  final int totalFils;
+}
+
+class ExpenseSummary {
+  const ExpenseSummary({
+    required this.rows,
+    required this.vatFils,
+    required this.totalFils,
+  });
+
+  factory ExpenseSummary.fromJson(Map<String, Object?> json) {
+    final rows = (json['rows'] as List<Object?>? ?? const <Object?>[])
+        .cast<Map<String, Object?>>();
+    return ExpenseSummary(
+      rows: rows.map(ExpenseCategory.fromJson).toList(growable: false),
+      vatFils: (json['vat_fils'] as num?)?.toInt() ?? 0,
+      totalFils: (json['total_fils'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  final List<ExpenseCategory> rows;
+  final int vatFils;
+  final int totalFils;
+}
+
 class ReportsService {
   ReportsService({
     required this.baseUrl,
@@ -229,6 +279,18 @@ class ReportsService {
       '&to=${Uri.encodeQueryComponent(to.toUtc().toIso8601String())}',
     );
     return TillHistory.fromJson(body);
+  }
+
+  Future<ExpenseSummary> expenses({
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    final body = await _get(
+      '/v1/reports/expenses'
+      '?from=${Uri.encodeQueryComponent(from.toUtc().toIso8601String())}'
+      '&to=${Uri.encodeQueryComponent(to.toUtc().toIso8601String())}',
+    );
+    return ExpenseSummary.fromJson(body);
   }
 
   Future<Map<String, Object?>> _get(String path) async {

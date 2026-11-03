@@ -89,6 +89,21 @@ Future<void> main(List<String> args) async {
     );
   }
 
+  final purchases = await reports.expenses(
+    from: DateTime(now.year, now.month),
+    to: DateTime(now.year, now.month + 1),
+  );
+  stdout.writeln(
+    'purchases  ${Fils(purchases.totalFils).aedLabel} paid out · '
+    'input VAT ${Fils(purchases.vatFils).aedLabel}',
+  );
+  for (final row in purchases.rows) {
+    stdout.writeln(
+      '           ${row.category}: ${row.entries} · '
+      '${Fils(row.totalFils).aedLabel} (VAT ${Fils(row.vatFils).aedLabel})',
+    );
+  }
+
   reports.dispose();
   client.close();
 
