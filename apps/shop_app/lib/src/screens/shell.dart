@@ -6,6 +6,7 @@ import 'package:starparis_design/starparis_design.dart';
 import 'package:starparis_sync/starparis_sync.dart';
 
 import '../providers.dart';
+import '../sales/till_sheet.dart';
 import 'board_screen.dart';
 import 'customers_screen.dart';
 import 'diagnostics_sheet.dart';
@@ -113,6 +114,10 @@ class AppShell extends ConsumerWidget {
               ),
             ),
             onSelected: (value) async {
+              if (value == 'till') {
+                await showTillSheet(context);
+                return;
+              }
               if (value == 'diagnostics') {
                 await showDiagnosticsSheet(context);
                 return;
@@ -127,6 +132,10 @@ class AppShell extends ConsumerWidget {
                 child: Text('${session.name} · ${session.role}'),
               ),
               const PopupMenuDivider(),
+              const PopupMenuItem<String>(
+                value: 'till',
+                child: Text('Cash drawer'),
+              ),
               const PopupMenuItem<String>(
                 value: 'diagnostics',
                 child: Text('Sync diagnostics'),

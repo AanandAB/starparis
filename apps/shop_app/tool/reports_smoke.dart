@@ -11,7 +11,6 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:starparis_domain/starparis_domain.dart';
-import 'package:starparis_sync/starparis_sync.dart';
 import 'package:shop_app/src/sales/reports_service.dart';
 
 Future<void> main(List<String> args) async {

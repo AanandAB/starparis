@@ -355,6 +355,22 @@ drawer:
 Still to come: the Till screen in the app (open, see today's cash, close with a count), expenses, and
 the VAT export file.
 
+### Phase 4D — the Cash drawer
+
+The counter reaches it from the user menu: **Cash drawer**. Closed, it asks for the opening float and
+starts the shift. Open, it shows the float, when the shift began, the cash taken since, and **should
+be in the drawer** — float plus cash taken, a local preview. Closing asks for the counted amount,
+pre-filled with the preview, and tells you straight away whether it matches, or by how much it is
+over or short, before you confirm.
+
+The sheet says out loud that the server recomputes the expected amount from the payments attached to
+the session, and that a difference is the variance. The device is a preview; the Worker is the till.
+
+State: `schemaVersion 7` locally (`till_sessions` plus `payments.till_session_id`), 26 sync tests, 6
+app tests, analyzer clean, Windows release build green.
+
+Not yet done: expenses, the VAT export file, and the till history/month-end list.
+
 ## Commands
 ```bash
 # Dart workspace

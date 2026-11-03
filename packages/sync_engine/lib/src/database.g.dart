@@ -7356,6 +7356,17 @@ class $PaymentsTable extends Payments with TableInfo<$PaymentsTable, Payment> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _tillSessionIdMeta = const VerificationMeta(
+    'tillSessionId',
+  );
+  @override
+  late final GeneratedColumn<String> tillSessionId = GeneratedColumn<String>(
+    'till_session_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -7423,6 +7434,7 @@ class $PaymentsTable extends Payments with TableInfo<$PaymentsTable, Payment> {
     reference,
     takenAt,
     takenBy,
+    tillSessionId,
     createdAt,
     updatedAt,
     createdBy,
@@ -7504,6 +7516,15 @@ class $PaymentsTable extends Payments with TableInfo<$PaymentsTable, Payment> {
         takenBy.isAcceptableOrUnknown(data['taken_by']!, _takenByMeta),
       );
     }
+    if (data.containsKey('till_session_id')) {
+      context.handle(
+        _tillSessionIdMeta,
+        tillSessionId.isAcceptableOrUnknown(
+          data['till_session_id']!,
+          _tillSessionIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -7583,6 +7604,10 @@ class $PaymentsTable extends Payments with TableInfo<$PaymentsTable, Payment> {
         DriftSqlType.string,
         data['${effectivePrefix}taken_by'],
       ),
+      tillSessionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}till_session_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -7622,6 +7647,9 @@ class Payment extends DataClass implements Insertable<Payment> {
   final String? reference;
   final DateTime takenAt;
   final String? takenBy;
+
+  /// The till session this cash landed in, set by the server.
+  final String? tillSessionId;
   final DateTime createdAt;
   final DateTime updatedAt;
   final String? createdBy;
@@ -7637,6 +7665,7 @@ class Payment extends DataClass implements Insertable<Payment> {
     this.reference,
     required this.takenAt,
     this.takenBy,
+    this.tillSessionId,
     required this.createdAt,
     required this.updatedAt,
     this.createdBy,
@@ -7660,6 +7689,9 @@ class Payment extends DataClass implements Insertable<Payment> {
     map['taken_at'] = Variable<DateTime>(takenAt);
     if (!nullToAbsent || takenBy != null) {
       map['taken_by'] = Variable<String>(takenBy);
+    }
+    if (!nullToAbsent || tillSessionId != null) {
+      map['till_session_id'] = Variable<String>(tillSessionId);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -7690,6 +7722,9 @@ class Payment extends DataClass implements Insertable<Payment> {
       takenBy: takenBy == null && nullToAbsent
           ? const Value.absent()
           : Value(takenBy),
+      tillSessionId: tillSessionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tillSessionId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       createdBy: createdBy == null && nullToAbsent
@@ -7717,6 +7752,7 @@ class Payment extends DataClass implements Insertable<Payment> {
       reference: serializer.fromJson<String?>(json['reference']),
       takenAt: serializer.fromJson<DateTime>(json['takenAt']),
       takenBy: serializer.fromJson<String?>(json['takenBy']),
+      tillSessionId: serializer.fromJson<String?>(json['tillSessionId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       createdBy: serializer.fromJson<String?>(json['createdBy']),
@@ -7737,6 +7773,7 @@ class Payment extends DataClass implements Insertable<Payment> {
       'reference': serializer.toJson<String?>(reference),
       'takenAt': serializer.toJson<DateTime>(takenAt),
       'takenBy': serializer.toJson<String?>(takenBy),
+      'tillSessionId': serializer.toJson<String?>(tillSessionId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'createdBy': serializer.toJson<String?>(createdBy),
@@ -7755,6 +7792,7 @@ class Payment extends DataClass implements Insertable<Payment> {
     Value<String?> reference = const Value.absent(),
     DateTime? takenAt,
     Value<String?> takenBy = const Value.absent(),
+    Value<String?> tillSessionId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
     Value<String?> createdBy = const Value.absent(),
@@ -7770,6 +7808,9 @@ class Payment extends DataClass implements Insertable<Payment> {
     reference: reference.present ? reference.value : this.reference,
     takenAt: takenAt ?? this.takenAt,
     takenBy: takenBy.present ? takenBy.value : this.takenBy,
+    tillSessionId: tillSessionId.present
+        ? tillSessionId.value
+        : this.tillSessionId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     createdBy: createdBy.present ? createdBy.value : this.createdBy,
@@ -7789,6 +7830,9 @@ class Payment extends DataClass implements Insertable<Payment> {
       reference: data.reference.present ? data.reference.value : this.reference,
       takenAt: data.takenAt.present ? data.takenAt.value : this.takenAt,
       takenBy: data.takenBy.present ? data.takenBy.value : this.takenBy,
+      tillSessionId: data.tillSessionId.present
+          ? data.tillSessionId.value
+          : this.tillSessionId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       createdBy: data.createdBy.present ? data.createdBy.value : this.createdBy,
@@ -7809,6 +7853,7 @@ class Payment extends DataClass implements Insertable<Payment> {
           ..write('reference: $reference, ')
           ..write('takenAt: $takenAt, ')
           ..write('takenBy: $takenBy, ')
+          ..write('tillSessionId: $tillSessionId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('createdBy: $createdBy, ')
@@ -7829,6 +7874,7 @@ class Payment extends DataClass implements Insertable<Payment> {
     reference,
     takenAt,
     takenBy,
+    tillSessionId,
     createdAt,
     updatedAt,
     createdBy,
@@ -7848,6 +7894,7 @@ class Payment extends DataClass implements Insertable<Payment> {
           other.reference == this.reference &&
           other.takenAt == this.takenAt &&
           other.takenBy == this.takenBy &&
+          other.tillSessionId == this.tillSessionId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.createdBy == this.createdBy &&
@@ -7865,6 +7912,7 @@ class PaymentsCompanion extends UpdateCompanion<Payment> {
   final Value<String?> reference;
   final Value<DateTime> takenAt;
   final Value<String?> takenBy;
+  final Value<String?> tillSessionId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<String?> createdBy;
@@ -7881,6 +7929,7 @@ class PaymentsCompanion extends UpdateCompanion<Payment> {
     this.reference = const Value.absent(),
     this.takenAt = const Value.absent(),
     this.takenBy = const Value.absent(),
+    this.tillSessionId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.createdBy = const Value.absent(),
@@ -7898,6 +7947,7 @@ class PaymentsCompanion extends UpdateCompanion<Payment> {
     this.reference = const Value.absent(),
     required DateTime takenAt,
     this.takenBy = const Value.absent(),
+    this.tillSessionId = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.createdBy = const Value.absent(),
@@ -7922,6 +7972,7 @@ class PaymentsCompanion extends UpdateCompanion<Payment> {
     Expression<String>? reference,
     Expression<DateTime>? takenAt,
     Expression<String>? takenBy,
+    Expression<String>? tillSessionId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<String>? createdBy,
@@ -7939,6 +7990,7 @@ class PaymentsCompanion extends UpdateCompanion<Payment> {
       if (reference != null) 'reference': reference,
       if (takenAt != null) 'taken_at': takenAt,
       if (takenBy != null) 'taken_by': takenBy,
+      if (tillSessionId != null) 'till_session_id': tillSessionId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (createdBy != null) 'created_by': createdBy,
@@ -7958,6 +8010,7 @@ class PaymentsCompanion extends UpdateCompanion<Payment> {
     Value<String?>? reference,
     Value<DateTime>? takenAt,
     Value<String?>? takenBy,
+    Value<String?>? tillSessionId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<String?>? createdBy,
@@ -7975,6 +8028,7 @@ class PaymentsCompanion extends UpdateCompanion<Payment> {
       reference: reference ?? this.reference,
       takenAt: takenAt ?? this.takenAt,
       takenBy: takenBy ?? this.takenBy,
+      tillSessionId: tillSessionId ?? this.tillSessionId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       createdBy: createdBy ?? this.createdBy,
@@ -8014,6 +8068,9 @@ class PaymentsCompanion extends UpdateCompanion<Payment> {
     if (takenBy.present) {
       map['taken_by'] = Variable<String>(takenBy.value);
     }
+    if (tillSessionId.present) {
+      map['till_session_id'] = Variable<String>(tillSessionId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -8047,6 +8104,7 @@ class PaymentsCompanion extends UpdateCompanion<Payment> {
           ..write('reference: $reference, ')
           ..write('takenAt: $takenAt, ')
           ..write('takenBy: $takenBy, ')
+          ..write('tillSessionId: $tillSessionId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('createdBy: $createdBy, ')
@@ -9854,6 +9912,921 @@ class RefundsCompanion extends UpdateCompanion<Refund> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('createdBy: $createdBy, ')
+          ..write('version: $version, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $TillSessionsTable extends TillSessions
+    with TableInfo<$TillSessionsTable, TillSession> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TillSessionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tenantIdMeta = const VerificationMeta(
+    'tenantId',
+  );
+  @override
+  late final GeneratedColumn<String> tenantId = GeneratedColumn<String>(
+    'tenant_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _branchIdMeta = const VerificationMeta(
+    'branchId',
+  );
+  @override
+  late final GeneratedColumn<String> branchId = GeneratedColumn<String>(
+    'branch_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
+    'deviceId',
+  );
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+    'device_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _openedAtMeta = const VerificationMeta(
+    'openedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> openedAt = GeneratedColumn<DateTime>(
+    'opened_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _openingFloatFilsMeta = const VerificationMeta(
+    'openingFloatFils',
+  );
+  @override
+  late final GeneratedColumn<int> openingFloatFils = GeneratedColumn<int>(
+    'opening_float_fils',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _openedByMeta = const VerificationMeta(
+    'openedBy',
+  );
+  @override
+  late final GeneratedColumn<String> openedBy = GeneratedColumn<String>(
+    'opened_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _closedAtMeta = const VerificationMeta(
+    'closedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> closedAt = GeneratedColumn<DateTime>(
+    'closed_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _closedByMeta = const VerificationMeta(
+    'closedBy',
+  );
+  @override
+  late final GeneratedColumn<String> closedBy = GeneratedColumn<String>(
+    'closed_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _expectedFilsMeta = const VerificationMeta(
+    'expectedFils',
+  );
+  @override
+  late final GeneratedColumn<int> expectedFils = GeneratedColumn<int>(
+    'expected_fils',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _countedFilsMeta = const VerificationMeta(
+    'countedFils',
+  );
+  @override
+  late final GeneratedColumn<int> countedFils = GeneratedColumn<int>(
+    'counted_fils',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _varianceFilsMeta = const VerificationMeta(
+    'varianceFils',
+  );
+  @override
+  late final GeneratedColumn<int> varianceFils = GeneratedColumn<int>(
+    'variance_fils',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('open'),
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _versionMeta = const VerificationMeta(
+    'version',
+  );
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+    'version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    tenantId,
+    branchId,
+    deviceId,
+    openedAt,
+    openingFloatFils,
+    openedBy,
+    closedAt,
+    closedBy,
+    expectedFils,
+    countedFils,
+    varianceFils,
+    status,
+    notes,
+    version,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'till_sessions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TillSession> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('tenant_id')) {
+      context.handle(
+        _tenantIdMeta,
+        tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tenantIdMeta);
+    }
+    if (data.containsKey('branch_id')) {
+      context.handle(
+        _branchIdMeta,
+        branchId.isAcceptableOrUnknown(data['branch_id']!, _branchIdMeta),
+      );
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(
+        _deviceIdMeta,
+        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_deviceIdMeta);
+    }
+    if (data.containsKey('opened_at')) {
+      context.handle(
+        _openedAtMeta,
+        openedAt.isAcceptableOrUnknown(data['opened_at']!, _openedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_openedAtMeta);
+    }
+    if (data.containsKey('opening_float_fils')) {
+      context.handle(
+        _openingFloatFilsMeta,
+        openingFloatFils.isAcceptableOrUnknown(
+          data['opening_float_fils']!,
+          _openingFloatFilsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('opened_by')) {
+      context.handle(
+        _openedByMeta,
+        openedBy.isAcceptableOrUnknown(data['opened_by']!, _openedByMeta),
+      );
+    }
+    if (data.containsKey('closed_at')) {
+      context.handle(
+        _closedAtMeta,
+        closedAt.isAcceptableOrUnknown(data['closed_at']!, _closedAtMeta),
+      );
+    }
+    if (data.containsKey('closed_by')) {
+      context.handle(
+        _closedByMeta,
+        closedBy.isAcceptableOrUnknown(data['closed_by']!, _closedByMeta),
+      );
+    }
+    if (data.containsKey('expected_fils')) {
+      context.handle(
+        _expectedFilsMeta,
+        expectedFils.isAcceptableOrUnknown(
+          data['expected_fils']!,
+          _expectedFilsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('counted_fils')) {
+      context.handle(
+        _countedFilsMeta,
+        countedFils.isAcceptableOrUnknown(
+          data['counted_fils']!,
+          _countedFilsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('variance_fils')) {
+      context.handle(
+        _varianceFilsMeta,
+        varianceFils.isAcceptableOrUnknown(
+          data['variance_fils']!,
+          _varianceFilsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('version')) {
+      context.handle(
+        _versionMeta,
+        version.isAcceptableOrUnknown(data['version']!, _versionMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TillSession map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TillSession(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      tenantId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tenant_id'],
+      )!,
+      branchId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}branch_id'],
+      ),
+      deviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_id'],
+      )!,
+      openedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}opened_at'],
+      )!,
+      openingFloatFils: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}opening_float_fils'],
+      )!,
+      openedBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}opened_by'],
+      ),
+      closedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}closed_at'],
+      ),
+      closedBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}closed_by'],
+      ),
+      expectedFils: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}expected_fils'],
+      ),
+      countedFils: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}counted_fils'],
+      ),
+      varianceFils: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}variance_fils'],
+      ),
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      version: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}version'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $TillSessionsTable createAlias(String alias) {
+    return $TillSessionsTable(attachedDatabase, alias);
+  }
+}
+
+class TillSession extends DataClass implements Insertable<TillSession> {
+  final String id;
+  final String tenantId;
+  final String? branchId;
+  final String deviceId;
+  final DateTime openedAt;
+  final int openingFloatFils;
+  final String? openedBy;
+  final DateTime? closedAt;
+  final String? closedBy;
+  final int? expectedFils;
+  final int? countedFils;
+  final int? varianceFils;
+  final String status;
+  final String? notes;
+  final int version;
+  final DateTime? deletedAt;
+  const TillSession({
+    required this.id,
+    required this.tenantId,
+    this.branchId,
+    required this.deviceId,
+    required this.openedAt,
+    required this.openingFloatFils,
+    this.openedBy,
+    this.closedAt,
+    this.closedBy,
+    this.expectedFils,
+    this.countedFils,
+    this.varianceFils,
+    required this.status,
+    this.notes,
+    required this.version,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['tenant_id'] = Variable<String>(tenantId);
+    if (!nullToAbsent || branchId != null) {
+      map['branch_id'] = Variable<String>(branchId);
+    }
+    map['device_id'] = Variable<String>(deviceId);
+    map['opened_at'] = Variable<DateTime>(openedAt);
+    map['opening_float_fils'] = Variable<int>(openingFloatFils);
+    if (!nullToAbsent || openedBy != null) {
+      map['opened_by'] = Variable<String>(openedBy);
+    }
+    if (!nullToAbsent || closedAt != null) {
+      map['closed_at'] = Variable<DateTime>(closedAt);
+    }
+    if (!nullToAbsent || closedBy != null) {
+      map['closed_by'] = Variable<String>(closedBy);
+    }
+    if (!nullToAbsent || expectedFils != null) {
+      map['expected_fils'] = Variable<int>(expectedFils);
+    }
+    if (!nullToAbsent || countedFils != null) {
+      map['counted_fils'] = Variable<int>(countedFils);
+    }
+    if (!nullToAbsent || varianceFils != null) {
+      map['variance_fils'] = Variable<int>(varianceFils);
+    }
+    map['status'] = Variable<String>(status);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['version'] = Variable<int>(version);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  TillSessionsCompanion toCompanion(bool nullToAbsent) {
+    return TillSessionsCompanion(
+      id: Value(id),
+      tenantId: Value(tenantId),
+      branchId: branchId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(branchId),
+      deviceId: Value(deviceId),
+      openedAt: Value(openedAt),
+      openingFloatFils: Value(openingFloatFils),
+      openedBy: openedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(openedBy),
+      closedAt: closedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(closedAt),
+      closedBy: closedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(closedBy),
+      expectedFils: expectedFils == null && nullToAbsent
+          ? const Value.absent()
+          : Value(expectedFils),
+      countedFils: countedFils == null && nullToAbsent
+          ? const Value.absent()
+          : Value(countedFils),
+      varianceFils: varianceFils == null && nullToAbsent
+          ? const Value.absent()
+          : Value(varianceFils),
+      status: Value(status),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      version: Value(version),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory TillSession.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TillSession(
+      id: serializer.fromJson<String>(json['id']),
+      tenantId: serializer.fromJson<String>(json['tenantId']),
+      branchId: serializer.fromJson<String?>(json['branchId']),
+      deviceId: serializer.fromJson<String>(json['deviceId']),
+      openedAt: serializer.fromJson<DateTime>(json['openedAt']),
+      openingFloatFils: serializer.fromJson<int>(json['openingFloatFils']),
+      openedBy: serializer.fromJson<String?>(json['openedBy']),
+      closedAt: serializer.fromJson<DateTime?>(json['closedAt']),
+      closedBy: serializer.fromJson<String?>(json['closedBy']),
+      expectedFils: serializer.fromJson<int?>(json['expectedFils']),
+      countedFils: serializer.fromJson<int?>(json['countedFils']),
+      varianceFils: serializer.fromJson<int?>(json['varianceFils']),
+      status: serializer.fromJson<String>(json['status']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      version: serializer.fromJson<int>(json['version']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'tenantId': serializer.toJson<String>(tenantId),
+      'branchId': serializer.toJson<String?>(branchId),
+      'deviceId': serializer.toJson<String>(deviceId),
+      'openedAt': serializer.toJson<DateTime>(openedAt),
+      'openingFloatFils': serializer.toJson<int>(openingFloatFils),
+      'openedBy': serializer.toJson<String?>(openedBy),
+      'closedAt': serializer.toJson<DateTime?>(closedAt),
+      'closedBy': serializer.toJson<String?>(closedBy),
+      'expectedFils': serializer.toJson<int?>(expectedFils),
+      'countedFils': serializer.toJson<int?>(countedFils),
+      'varianceFils': serializer.toJson<int?>(varianceFils),
+      'status': serializer.toJson<String>(status),
+      'notes': serializer.toJson<String?>(notes),
+      'version': serializer.toJson<int>(version),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  TillSession copyWith({
+    String? id,
+    String? tenantId,
+    Value<String?> branchId = const Value.absent(),
+    String? deviceId,
+    DateTime? openedAt,
+    int? openingFloatFils,
+    Value<String?> openedBy = const Value.absent(),
+    Value<DateTime?> closedAt = const Value.absent(),
+    Value<String?> closedBy = const Value.absent(),
+    Value<int?> expectedFils = const Value.absent(),
+    Value<int?> countedFils = const Value.absent(),
+    Value<int?> varianceFils = const Value.absent(),
+    String? status,
+    Value<String?> notes = const Value.absent(),
+    int? version,
+    Value<DateTime?> deletedAt = const Value.absent(),
+  }) => TillSession(
+    id: id ?? this.id,
+    tenantId: tenantId ?? this.tenantId,
+    branchId: branchId.present ? branchId.value : this.branchId,
+    deviceId: deviceId ?? this.deviceId,
+    openedAt: openedAt ?? this.openedAt,
+    openingFloatFils: openingFloatFils ?? this.openingFloatFils,
+    openedBy: openedBy.present ? openedBy.value : this.openedBy,
+    closedAt: closedAt.present ? closedAt.value : this.closedAt,
+    closedBy: closedBy.present ? closedBy.value : this.closedBy,
+    expectedFils: expectedFils.present ? expectedFils.value : this.expectedFils,
+    countedFils: countedFils.present ? countedFils.value : this.countedFils,
+    varianceFils: varianceFils.present ? varianceFils.value : this.varianceFils,
+    status: status ?? this.status,
+    notes: notes.present ? notes.value : this.notes,
+    version: version ?? this.version,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  TillSession copyWithCompanion(TillSessionsCompanion data) {
+    return TillSession(
+      id: data.id.present ? data.id.value : this.id,
+      tenantId: data.tenantId.present ? data.tenantId.value : this.tenantId,
+      branchId: data.branchId.present ? data.branchId.value : this.branchId,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      openedAt: data.openedAt.present ? data.openedAt.value : this.openedAt,
+      openingFloatFils: data.openingFloatFils.present
+          ? data.openingFloatFils.value
+          : this.openingFloatFils,
+      openedBy: data.openedBy.present ? data.openedBy.value : this.openedBy,
+      closedAt: data.closedAt.present ? data.closedAt.value : this.closedAt,
+      closedBy: data.closedBy.present ? data.closedBy.value : this.closedBy,
+      expectedFils: data.expectedFils.present
+          ? data.expectedFils.value
+          : this.expectedFils,
+      countedFils: data.countedFils.present
+          ? data.countedFils.value
+          : this.countedFils,
+      varianceFils: data.varianceFils.present
+          ? data.varianceFils.value
+          : this.varianceFils,
+      status: data.status.present ? data.status.value : this.status,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      version: data.version.present ? data.version.value : this.version,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TillSession(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('branchId: $branchId, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('openedAt: $openedAt, ')
+          ..write('openingFloatFils: $openingFloatFils, ')
+          ..write('openedBy: $openedBy, ')
+          ..write('closedAt: $closedAt, ')
+          ..write('closedBy: $closedBy, ')
+          ..write('expectedFils: $expectedFils, ')
+          ..write('countedFils: $countedFils, ')
+          ..write('varianceFils: $varianceFils, ')
+          ..write('status: $status, ')
+          ..write('notes: $notes, ')
+          ..write('version: $version, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    tenantId,
+    branchId,
+    deviceId,
+    openedAt,
+    openingFloatFils,
+    openedBy,
+    closedAt,
+    closedBy,
+    expectedFils,
+    countedFils,
+    varianceFils,
+    status,
+    notes,
+    version,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TillSession &&
+          other.id == this.id &&
+          other.tenantId == this.tenantId &&
+          other.branchId == this.branchId &&
+          other.deviceId == this.deviceId &&
+          other.openedAt == this.openedAt &&
+          other.openingFloatFils == this.openingFloatFils &&
+          other.openedBy == this.openedBy &&
+          other.closedAt == this.closedAt &&
+          other.closedBy == this.closedBy &&
+          other.expectedFils == this.expectedFils &&
+          other.countedFils == this.countedFils &&
+          other.varianceFils == this.varianceFils &&
+          other.status == this.status &&
+          other.notes == this.notes &&
+          other.version == this.version &&
+          other.deletedAt == this.deletedAt);
+}
+
+class TillSessionsCompanion extends UpdateCompanion<TillSession> {
+  final Value<String> id;
+  final Value<String> tenantId;
+  final Value<String?> branchId;
+  final Value<String> deviceId;
+  final Value<DateTime> openedAt;
+  final Value<int> openingFloatFils;
+  final Value<String?> openedBy;
+  final Value<DateTime?> closedAt;
+  final Value<String?> closedBy;
+  final Value<int?> expectedFils;
+  final Value<int?> countedFils;
+  final Value<int?> varianceFils;
+  final Value<String> status;
+  final Value<String?> notes;
+  final Value<int> version;
+  final Value<DateTime?> deletedAt;
+  final Value<int> rowid;
+  const TillSessionsCompanion({
+    this.id = const Value.absent(),
+    this.tenantId = const Value.absent(),
+    this.branchId = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.openedAt = const Value.absent(),
+    this.openingFloatFils = const Value.absent(),
+    this.openedBy = const Value.absent(),
+    this.closedAt = const Value.absent(),
+    this.closedBy = const Value.absent(),
+    this.expectedFils = const Value.absent(),
+    this.countedFils = const Value.absent(),
+    this.varianceFils = const Value.absent(),
+    this.status = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.version = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TillSessionsCompanion.insert({
+    required String id,
+    required String tenantId,
+    this.branchId = const Value.absent(),
+    required String deviceId,
+    required DateTime openedAt,
+    this.openingFloatFils = const Value.absent(),
+    this.openedBy = const Value.absent(),
+    this.closedAt = const Value.absent(),
+    this.closedBy = const Value.absent(),
+    this.expectedFils = const Value.absent(),
+    this.countedFils = const Value.absent(),
+    this.varianceFils = const Value.absent(),
+    this.status = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.version = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       tenantId = Value(tenantId),
+       deviceId = Value(deviceId),
+       openedAt = Value(openedAt);
+  static Insertable<TillSession> custom({
+    Expression<String>? id,
+    Expression<String>? tenantId,
+    Expression<String>? branchId,
+    Expression<String>? deviceId,
+    Expression<DateTime>? openedAt,
+    Expression<int>? openingFloatFils,
+    Expression<String>? openedBy,
+    Expression<DateTime>? closedAt,
+    Expression<String>? closedBy,
+    Expression<int>? expectedFils,
+    Expression<int>? countedFils,
+    Expression<int>? varianceFils,
+    Expression<String>? status,
+    Expression<String>? notes,
+    Expression<int>? version,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (tenantId != null) 'tenant_id': tenantId,
+      if (branchId != null) 'branch_id': branchId,
+      if (deviceId != null) 'device_id': deviceId,
+      if (openedAt != null) 'opened_at': openedAt,
+      if (openingFloatFils != null) 'opening_float_fils': openingFloatFils,
+      if (openedBy != null) 'opened_by': openedBy,
+      if (closedAt != null) 'closed_at': closedAt,
+      if (closedBy != null) 'closed_by': closedBy,
+      if (expectedFils != null) 'expected_fils': expectedFils,
+      if (countedFils != null) 'counted_fils': countedFils,
+      if (varianceFils != null) 'variance_fils': varianceFils,
+      if (status != null) 'status': status,
+      if (notes != null) 'notes': notes,
+      if (version != null) 'version': version,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TillSessionsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? tenantId,
+    Value<String?>? branchId,
+    Value<String>? deviceId,
+    Value<DateTime>? openedAt,
+    Value<int>? openingFloatFils,
+    Value<String?>? openedBy,
+    Value<DateTime?>? closedAt,
+    Value<String?>? closedBy,
+    Value<int?>? expectedFils,
+    Value<int?>? countedFils,
+    Value<int?>? varianceFils,
+    Value<String>? status,
+    Value<String?>? notes,
+    Value<int>? version,
+    Value<DateTime?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return TillSessionsCompanion(
+      id: id ?? this.id,
+      tenantId: tenantId ?? this.tenantId,
+      branchId: branchId ?? this.branchId,
+      deviceId: deviceId ?? this.deviceId,
+      openedAt: openedAt ?? this.openedAt,
+      openingFloatFils: openingFloatFils ?? this.openingFloatFils,
+      openedBy: openedBy ?? this.openedBy,
+      closedAt: closedAt ?? this.closedAt,
+      closedBy: closedBy ?? this.closedBy,
+      expectedFils: expectedFils ?? this.expectedFils,
+      countedFils: countedFils ?? this.countedFils,
+      varianceFils: varianceFils ?? this.varianceFils,
+      status: status ?? this.status,
+      notes: notes ?? this.notes,
+      version: version ?? this.version,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (tenantId.present) {
+      map['tenant_id'] = Variable<String>(tenantId.value);
+    }
+    if (branchId.present) {
+      map['branch_id'] = Variable<String>(branchId.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (openedAt.present) {
+      map['opened_at'] = Variable<DateTime>(openedAt.value);
+    }
+    if (openingFloatFils.present) {
+      map['opening_float_fils'] = Variable<int>(openingFloatFils.value);
+    }
+    if (openedBy.present) {
+      map['opened_by'] = Variable<String>(openedBy.value);
+    }
+    if (closedAt.present) {
+      map['closed_at'] = Variable<DateTime>(closedAt.value);
+    }
+    if (closedBy.present) {
+      map['closed_by'] = Variable<String>(closedBy.value);
+    }
+    if (expectedFils.present) {
+      map['expected_fils'] = Variable<int>(expectedFils.value);
+    }
+    if (countedFils.present) {
+      map['counted_fils'] = Variable<int>(countedFils.value);
+    }
+    if (varianceFils.present) {
+      map['variance_fils'] = Variable<int>(varianceFils.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TillSessionsCompanion(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('branchId: $branchId, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('openedAt: $openedAt, ')
+          ..write('openingFloatFils: $openingFloatFils, ')
+          ..write('openedBy: $openedBy, ')
+          ..write('closedAt: $closedAt, ')
+          ..write('closedBy: $closedBy, ')
+          ..write('expectedFils: $expectedFils, ')
+          ..write('countedFils: $countedFils, ')
+          ..write('varianceFils: $varianceFils, ')
+          ..write('status: $status, ')
+          ..write('notes: $notes, ')
           ..write('version: $version, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('rowid: $rowid')
@@ -15581,6 +16554,7 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
   late final $PaymentsTable payments = $PaymentsTable(this);
   late final $CreditNotesTable creditNotes = $CreditNotesTable(this);
   late final $RefundsTable refunds = $RefundsTable(this);
+  late final $TillSessionsTable tillSessions = $TillSessionsTable(this);
   late final $ProductsTable products = $ProductsTable(this);
   late final $MaterialsTable materials = $MaterialsTable(this);
   late final $PriceRulesTable priceRules = $PriceRulesTable(this);
@@ -15606,6 +16580,7 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
     payments,
     creditNotes,
     refunds,
+    tillSessions,
     products,
     materials,
     priceRules,
@@ -19018,6 +19993,7 @@ typedef $$PaymentsTableCreateCompanionBuilder = PaymentsCompanion Function({
   Value<String?> reference,
   required DateTime takenAt,
   Value<String?> takenBy,
+  Value<String?> tillSessionId,
   required DateTime createdAt,
   required DateTime updatedAt,
   Value<String?> createdBy,
@@ -19035,6 +20011,7 @@ typedef $$PaymentsTableUpdateCompanionBuilder = PaymentsCompanion Function({
   Value<String?> reference,
   Value<DateTime> takenAt,
   Value<String?> takenBy,
+  Value<String?> tillSessionId,
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
   Value<String?> createdBy,
@@ -19094,6 +20071,11 @@ class $$PaymentsTableFilterComposer
 
   ColumnFilters<String> get takenBy => $composableBuilder(
     column: $table.takenBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tillSessionId => $composableBuilder(
+    column: $table.tillSessionId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -19177,6 +20159,11 @@ class $$PaymentsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get tillSessionId => $composableBuilder(
+    column: $table.tillSessionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -19241,6 +20228,11 @@ class $$PaymentsTableAnnotationComposer
   GeneratedColumn<String> get takenBy =>
       $composableBuilder(column: $table.takenBy, builder: (column) => column);
 
+  GeneratedColumn<String> get tillSessionId => $composableBuilder(
+    column: $table.tillSessionId,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -19294,6 +20286,7 @@ class $$PaymentsTableTableManager
                 Value<String?> reference = const Value.absent(),
                 Value<DateTime> takenAt = const Value.absent(),
                 Value<String?> takenBy = const Value.absent(),
+                Value<String?> tillSessionId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<String?> createdBy = const Value.absent(),
@@ -19310,6 +20303,7 @@ class $$PaymentsTableTableManager
                 reference: reference,
                 takenAt: takenAt,
                 takenBy: takenBy,
+                tillSessionId: tillSessionId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 createdBy: createdBy,
@@ -19328,6 +20322,7 @@ class $$PaymentsTableTableManager
                 Value<String?> reference = const Value.absent(),
                 required DateTime takenAt,
                 Value<String?> takenBy = const Value.absent(),
+                Value<String?> tillSessionId = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<String?> createdBy = const Value.absent(),
@@ -19344,6 +20339,7 @@ class $$PaymentsTableTableManager
                 reference: reference,
                 takenAt: takenAt,
                 takenBy: takenBy,
+                tillSessionId: tillSessionId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 createdBy: createdBy,
@@ -20220,6 +21216,432 @@ typedef $$RefundsTableProcessedTableManager =
       $$RefundsTableUpdateCompanionBuilder,
       (Refund, BaseReferences<_$LocalDatabase, $RefundsTable, Refund>),
       Refund,
+      PrefetchHooks Function()
+    >;
+typedef $$TillSessionsTableCreateCompanionBuilder =
+    TillSessionsCompanion Function({
+      required String id,
+      required String tenantId,
+      Value<String?> branchId,
+      required String deviceId,
+      required DateTime openedAt,
+      Value<int> openingFloatFils,
+      Value<String?> openedBy,
+      Value<DateTime?> closedAt,
+      Value<String?> closedBy,
+      Value<int?> expectedFils,
+      Value<int?> countedFils,
+      Value<int?> varianceFils,
+      Value<String> status,
+      Value<String?> notes,
+      Value<int> version,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+typedef $$TillSessionsTableUpdateCompanionBuilder =
+    TillSessionsCompanion Function({
+      Value<String> id,
+      Value<String> tenantId,
+      Value<String?> branchId,
+      Value<String> deviceId,
+      Value<DateTime> openedAt,
+      Value<int> openingFloatFils,
+      Value<String?> openedBy,
+      Value<DateTime?> closedAt,
+      Value<String?> closedBy,
+      Value<int?> expectedFils,
+      Value<int?> countedFils,
+      Value<int?> varianceFils,
+      Value<String> status,
+      Value<String?> notes,
+      Value<int> version,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+
+class $$TillSessionsTableFilterComposer
+    extends Composer<_$LocalDatabase, $TillSessionsTable> {
+  $$TillSessionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tenantId => $composableBuilder(
+    column: $table.tenantId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get branchId => $composableBuilder(
+    column: $table.branchId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get openedAt => $composableBuilder(
+    column: $table.openedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get openingFloatFils => $composableBuilder(
+    column: $table.openingFloatFils,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get openedBy => $composableBuilder(
+    column: $table.openedBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get closedAt => $composableBuilder(
+    column: $table.closedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get closedBy => $composableBuilder(
+    column: $table.closedBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get expectedFils => $composableBuilder(
+    column: $table.expectedFils,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get countedFils => $composableBuilder(
+    column: $table.countedFils,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get varianceFils => $composableBuilder(
+    column: $table.varianceFils,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$TillSessionsTableOrderingComposer
+    extends Composer<_$LocalDatabase, $TillSessionsTable> {
+  $$TillSessionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tenantId => $composableBuilder(
+    column: $table.tenantId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get branchId => $composableBuilder(
+    column: $table.branchId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get openedAt => $composableBuilder(
+    column: $table.openedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get openingFloatFils => $composableBuilder(
+    column: $table.openingFloatFils,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get openedBy => $composableBuilder(
+    column: $table.openedBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get closedAt => $composableBuilder(
+    column: $table.closedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get closedBy => $composableBuilder(
+    column: $table.closedBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get expectedFils => $composableBuilder(
+    column: $table.expectedFils,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get countedFils => $composableBuilder(
+    column: $table.countedFils,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get varianceFils => $composableBuilder(
+    column: $table.varianceFils,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TillSessionsTableAnnotationComposer
+    extends Composer<_$LocalDatabase, $TillSessionsTable> {
+  $$TillSessionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get tenantId =>
+      $composableBuilder(column: $table.tenantId, builder: (column) => column);
+
+  GeneratedColumn<String> get branchId =>
+      $composableBuilder(column: $table.branchId, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get openedAt =>
+      $composableBuilder(column: $table.openedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get openingFloatFils => $composableBuilder(
+    column: $table.openingFloatFils,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get openedBy =>
+      $composableBuilder(column: $table.openedBy, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get closedAt =>
+      $composableBuilder(column: $table.closedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get closedBy =>
+      $composableBuilder(column: $table.closedBy, builder: (column) => column);
+
+  GeneratedColumn<int> get expectedFils => $composableBuilder(
+    column: $table.expectedFils,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get countedFils => $composableBuilder(
+    column: $table.countedFils,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get varianceFils => $composableBuilder(
+    column: $table.varianceFils,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+}
+
+class $$TillSessionsTableTableManager
+    extends
+        RootTableManager<
+          _$LocalDatabase,
+          $TillSessionsTable,
+          TillSession,
+          $$TillSessionsTableFilterComposer,
+          $$TillSessionsTableOrderingComposer,
+          $$TillSessionsTableAnnotationComposer,
+          $$TillSessionsTableCreateCompanionBuilder,
+          $$TillSessionsTableUpdateCompanionBuilder,
+          (
+            TillSession,
+            BaseReferences<_$LocalDatabase, $TillSessionsTable, TillSession>,
+          ),
+          TillSession,
+          PrefetchHooks Function()
+        > {
+  $$TillSessionsTableTableManager(_$LocalDatabase db, $TillSessionsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TillSessionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TillSessionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TillSessionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> tenantId = const Value.absent(),
+                Value<String?> branchId = const Value.absent(),
+                Value<String> deviceId = const Value.absent(),
+                Value<DateTime> openedAt = const Value.absent(),
+                Value<int> openingFloatFils = const Value.absent(),
+                Value<String?> openedBy = const Value.absent(),
+                Value<DateTime?> closedAt = const Value.absent(),
+                Value<String?> closedBy = const Value.absent(),
+                Value<int?> expectedFils = const Value.absent(),
+                Value<int?> countedFils = const Value.absent(),
+                Value<int?> varianceFils = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<int> version = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TillSessionsCompanion(
+                id: id,
+                tenantId: tenantId,
+                branchId: branchId,
+                deviceId: deviceId,
+                openedAt: openedAt,
+                openingFloatFils: openingFloatFils,
+                openedBy: openedBy,
+                closedAt: closedAt,
+                closedBy: closedBy,
+                expectedFils: expectedFils,
+                countedFils: countedFils,
+                varianceFils: varianceFils,
+                status: status,
+                notes: notes,
+                version: version,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String tenantId,
+                Value<String?> branchId = const Value.absent(),
+                required String deviceId,
+                required DateTime openedAt,
+                Value<int> openingFloatFils = const Value.absent(),
+                Value<String?> openedBy = const Value.absent(),
+                Value<DateTime?> closedAt = const Value.absent(),
+                Value<String?> closedBy = const Value.absent(),
+                Value<int?> expectedFils = const Value.absent(),
+                Value<int?> countedFils = const Value.absent(),
+                Value<int?> varianceFils = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<int> version = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TillSessionsCompanion.insert(
+                id: id,
+                tenantId: tenantId,
+                branchId: branchId,
+                deviceId: deviceId,
+                openedAt: openedAt,
+                openingFloatFils: openingFloatFils,
+                openedBy: openedBy,
+                closedAt: closedAt,
+                closedBy: closedBy,
+                expectedFils: expectedFils,
+                countedFils: countedFils,
+                varianceFils: varianceFils,
+                status: status,
+                notes: notes,
+                version: version,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$TillSessionsTable, TillSession>(table),
+                  BaseReferences<
+                    _$LocalDatabase,
+                    $TillSessionsTable,
+                    TillSession
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$TillSessionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$LocalDatabase,
+      $TillSessionsTable,
+      TillSession,
+      $$TillSessionsTableFilterComposer,
+      $$TillSessionsTableOrderingComposer,
+      $$TillSessionsTableAnnotationComposer,
+      $$TillSessionsTableCreateCompanionBuilder,
+      $$TillSessionsTableUpdateCompanionBuilder,
+      (
+        TillSession,
+        BaseReferences<_$LocalDatabase, $TillSessionsTable, TillSession>,
+      ),
+      TillSession,
       PrefetchHooks Function()
     >;
 typedef $$ProductsTableCreateCompanionBuilder = ProductsCompanion Function({
@@ -22954,6 +24376,8 @@ class $LocalDatabaseManager {
       $$CreditNotesTableTableManager(_db, _db.creditNotes);
   $$RefundsTableTableManager get refunds =>
       $$RefundsTableTableManager(_db, _db.refunds);
+  $$TillSessionsTableTableManager get tillSessions =>
+      $$TillSessionsTableTableManager(_db, _db.tillSessions);
   $$ProductsTableTableManager get products =>
       $$ProductsTableTableManager(_db, _db.products);
   $$MaterialsTableTableManager get materials =>

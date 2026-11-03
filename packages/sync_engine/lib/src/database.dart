@@ -387,6 +387,9 @@ class Payments extends Table {
   TextColumn get reference => text().nullable()();
   DateTimeColumn get takenAt => dateTime()();
   TextColumn get takenBy => text().nullable()();
+
+  /// The till session this cash landed in, set by the server.
+  TextColumn get tillSessionId => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
   TextColumn get createdBy => text().nullable()();
@@ -443,6 +446,29 @@ class Refunds extends Table {
   Set<Column<Object>> get primaryKey => <Column<Object>>{id};
 }
 
+/// A shift at the counter: opening float in, counted cash out.
+class TillSessions extends Table {
+  TextColumn get id => text()();
+  TextColumn get tenantId => text()();
+  TextColumn get branchId => text().nullable()();
+  TextColumn get deviceId => text()();
+  DateTimeColumn get openedAt => dateTime()();
+  IntColumn get openingFloatFils => integer().withDefault(const Constant(0))();
+  TextColumn get openedBy => text().nullable()();
+  DateTimeColumn get closedAt => dateTime().nullable()();
+  TextColumn get closedBy => text().nullable()();
+  IntColumn get expectedFils => integer().nullable()();
+  IntColumn get countedFils => integer().nullable()();
+  IntColumn get varianceFils => integer().nullable()();
+  TextColumn get status => text().withDefault(const Constant('open'))();
+  TextColumn get notes => text().nullable()();
+  IntColumn get version => integer().withDefault(const Constant(0))();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
 /// Sync bookkeeping: cursor, last sync, last head.
 class SyncMeta extends Table {
   TextColumn get key => text()();
@@ -465,6 +491,7 @@ class SyncMeta extends Table {
     Payments,
     CreditNotes,
     Refunds,
+    TillSessions,
     Products,
     Materials,
     PriceRules,
@@ -478,7 +505,7 @@ class LocalDatabase extends _$LocalDatabase {
   LocalDatabase(super.executor);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -516,6 +543,12 @@ class LocalDatabase extends _$LocalDatabase {
         await m.createTable(refunds);
         if (from >= 5) {
           await m.addColumn(invoices, invoices.creditedFils);
+        }
+      }
+      if (from < 7) {
+        await m.createTable(tillSessions);
+        if (from >= 6) {
+          await m.addColumn(payments, payments.tillSessionId);
         }
       }
     },
@@ -739,9 +772,38 @@ class LocalDatabase extends _$LocalDatabase {
         await _upsertCreditNote(data);
       case 'refunds':
         await _upsertRefund(data);
+      case 'till_sessions':
+        await _upsertTill(data);
       default:
         break;
     }
+  }
+
+  Future<void> _upsertTill(Map<String, Object?> data) async {
+    final id = data['id'] as String?;
+    if (id == null) return;
+    await into(tillSessions).insertOnConflictUpdate(
+      TillSessionsCompanion(
+        id: Value(id),
+        tenantId: Value(data['tenant_id'] as String? ?? ''),
+        branchId: Value(data['branch_id'] as String?),
+        deviceId: Value(data['device_id'] as String? ?? ''),
+        openedAt: Value(_asDate(data['opened_at']) ?? DateTime.now().toUtc()),
+        openingFloatFils: Value(
+          (data['opening_float_fils'] as num?)?.toInt() ?? 0,
+        ),
+        openedBy: Value(data['opened_by'] as String?),
+        closedAt: Value(_asDate(data['closed_at'])),
+        closedBy: Value(data['closed_by'] as String?),
+        expectedFils: Value((data['expected_fils'] as num?)?.toInt()),
+        countedFils: Value((data['counted_fils'] as num?)?.toInt()),
+        varianceFils: Value((data['variance_fils'] as num?)?.toInt()),
+        status: Value(data['status'] as String? ?? 'open'),
+        notes: Value(data['notes'] as String?),
+        version: Value((data['version'] as num?)?.toInt() ?? 0),
+        deletedAt: Value(_asDate(data['deleted_at'])),
+      ),
+    );
   }
 
   Future<void> _upsertCreditNote(Map<String, Object?> data) async {
@@ -864,6 +926,7 @@ class LocalDatabase extends _$LocalDatabase {
         invoiceId: Value(data['invoice_id'] as String? ?? ''),
         amountFils: Value((data['amount_fils'] as num?)?.toInt() ?? 0),
         method: Value(data['method'] as String? ?? 'cash'),
+        tillSessionId: Value(data['till_session_id'] as String?),
         reference: Value(data['reference'] as String?),
         takenAt: Value(_asDate(data['taken_at']) ?? DateTime.now().toUtc()),
         takenBy: Value(data['taken_by'] as String?),
@@ -2369,6 +2432,130 @@ class LocalDatabase extends _$LocalDatabase {
           'reference': reference,
           'refunded_at': now.toIso8601String(),
           'refunded_by': userId,
+        },
+      );
+    });
+  }
+
+  Stream<TillSession?> watchOpenTill() {
+    return (select(tillSessions)
+          ..where((t) => t.status.equals('open') & t.deletedAt.isNull()))
+        .watchSingleOrNull();
+  }
+
+  Future<int> cashTakenSince(DateTime since) async {
+    final rows =
+        await (select(payments)..where(
+              (t) =>
+                  t.method.equals('cash') &
+                  t.deletedAt.isNull() &
+                  t.takenAt.isBiggerOrEqualValue(since),
+            ))
+            .get();
+    return rows.fold<int>(0, (sum, row) => sum + row.amountFils);
+  }
+
+  Future<int> cashRefundedSince(DateTime since) async {
+    final rows =
+        await (select(refunds)..where(
+              (t) =>
+                  t.method.equals('cash') &
+                  t.deletedAt.isNull() &
+                  t.refundedAt.isBiggerOrEqualValue(since),
+            ))
+            .get();
+    return rows.fold<int>(0, (sum, row) => sum + row.amountFils);
+  }
+
+  /// Opens the shift. The device id is the server's to confirm, so it is sent
+  /// only as a hint; the session id is generated here so the counter can work
+  /// before the network agrees.
+  Future<String> openTillLocal({
+    required String tenantId,
+    required String? branchId,
+    required String deviceId,
+    required String userId,
+    required int openingFloatFils,
+    String? notes,
+  }) async {
+    final open = await (select(
+      tillSessions,
+    )..where((t) => t.status.equals('open'))).getSingleOrNull();
+    if (open != null) {
+      throw StateError('The till is already open since ${open.openedAt}.');
+    }
+    if (openingFloatFils < 0) {
+      throw StateError('The float cannot be negative.');
+    }
+
+    final id = Uuid7.generate();
+    final now = DateTime.now().toUtc();
+
+    await transaction(() async {
+      await into(tillSessions).insert(
+        TillSessionsCompanion.insert(
+          id: id,
+          tenantId: tenantId,
+          branchId: Value(branchId),
+          deviceId: deviceId,
+          openedAt: now,
+          openingFloatFils: Value(openingFloatFils),
+          openedBy: Value(userId),
+          notes: Value(notes),
+        ),
+      );
+      await _enqueue(
+        entity: 'till_sessions',
+        rowId: id,
+        op: 'insert',
+        baseVersion: 0,
+        fields: <String, Object?>{
+          'opening_float_fils': openingFloatFils,
+          'notes': notes,
+        },
+      );
+    });
+
+    return id;
+  }
+
+  /// Closes the shift with the counted drawer. The expected amount and the
+  /// variance are the server's to compute — a device that reports its own
+  /// variance is a device that can report zero.
+  Future<void> closeTillLocal({
+    required TillSession session,
+    required int countedFils,
+    required String userId,
+    String? notes,
+  }) async {
+    if (session.status != 'open') {
+      throw StateError('This till is already closed.');
+    }
+    if (countedFils < 0) {
+      throw StateError('Enter the cash you counted.');
+    }
+
+    final now = DateTime.now().toUtc();
+    await transaction(() async {
+      await (update(tillSessions)..where((t) => t.id.equals(session.id))).write(
+        TillSessionsCompanion(
+          status: const Value('closed'),
+          countedFils: Value(countedFils),
+          closedAt: Value(now),
+          closedBy: Value(userId),
+          notes: Value(notes ?? session.notes),
+          version: Value(session.version + 1),
+        ),
+      );
+      await _enqueue(
+        entity: 'till_sessions',
+        rowId: session.id,
+        op: 'patch',
+        baseVersion: session.version,
+        fields: <String, Object?>{
+          'status': 'closed',
+          'counted_fils': countedFils,
+          'notes': ?notes,
         },
       );
     });
