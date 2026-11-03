@@ -497,6 +497,56 @@ class Expenses extends Table {
   Set<Column<Object>> get primaryKey => <Column<Object>>{id};
 }
 
+/// An outside shop the work is handed to.
+class Vendors extends Table {
+  TextColumn get id => text()();
+  TextColumn get tenantId => text()();
+  TextColumn get branchId => text().nullable()();
+  TextColumn get name => text()();
+  TextColumn get trade => text().nullable()();
+  TextColumn get phoneE164 => text().nullable()();
+  TextColumn get notes => text().nullable()();
+  BoolColumn get active => boolean().withDefault(const Constant(true))();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  TextColumn get createdBy => text().nullable()();
+  TextColumn get updatedBy => text().nullable()();
+  IntColumn get version => integer().withDefault(const Constant(0))();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
+/// Work handed out against an order, with what it costs.
+class VendorJobs extends Table {
+  TextColumn get id => text()();
+  TextColumn get tenantId => text()();
+  TextColumn get branchId => text().nullable()();
+  TextColumn get orderId => text()();
+  TextColumn get vendorId => text()();
+  TextColumn get description => text()();
+  IntColumn get qty => integer().withDefault(const Constant(0))();
+  IntColumn get costFils => integer().withDefault(const Constant(0))();
+  IntColumn get vatFils => integer().withDefault(const Constant(0))();
+
+  /// draft, sent, received, closed, cancelled
+  TextColumn get status => text().withDefault(const Constant('draft'))();
+  DateTimeColumn get promisedAt => dateTime().nullable()();
+  DateTimeColumn get sentAt => dateTime().nullable()();
+  DateTimeColumn get receivedAt => dateTime().nullable()();
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  TextColumn get createdBy => text().nullable()();
+  TextColumn get updatedBy => text().nullable()();
+  IntColumn get version => integer().withDefault(const Constant(0))();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
 /// Sync bookkeeping: cursor, last sync, last head.
 class SyncMeta extends Table {
   TextColumn get key => text()();
@@ -521,6 +571,8 @@ class SyncMeta extends Table {
     Refunds,
     TillSessions,
     Expenses,
+    Vendors,
+    VendorJobs,
     Products,
     Materials,
     PriceRules,
@@ -534,7 +586,7 @@ class LocalDatabase extends _$LocalDatabase {
   LocalDatabase(super.executor);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -576,6 +628,10 @@ class LocalDatabase extends _$LocalDatabase {
       }
       if (from < 8) {
         await m.createTable(expenses);
+      }
+      if (from < 9) {
+        await m.createTable(vendors);
+        await m.createTable(vendorJobs);
       }
       if (from < 7) {
         await m.createTable(tillSessions);
@@ -852,9 +908,67 @@ class LocalDatabase extends _$LocalDatabase {
         await _upsertTill(data);
       case 'expenses':
         await _upsertExpense(data);
+      case 'vendors':
+        await _upsertVendor(data);
+      case 'vendor_jobs':
+        await _upsertVendorJob(data);
       default:
         break;
     }
+  }
+
+  Future<void> _upsertVendor(Map<String, Object?> data) async {
+    final id = data['id'] as String?;
+    if (id == null) return;
+    final now = DateTime.now().toUtc();
+    await into(vendors).insertOnConflictUpdate(
+      VendorsCompanion(
+        id: Value(id),
+        tenantId: Value(data['tenant_id'] as String? ?? ''),
+        branchId: Value(data['branch_id'] as String?),
+        name: Value(data['name'] as String? ?? ''),
+        trade: Value(data['trade'] as String?),
+        phoneE164: Value(data['phone_e164'] as String?),
+        notes: Value(data['notes'] as String?),
+        active: Value((data['active'] as num?)?.toInt() != 0),
+        createdAt: Value(_asDate(data['created_at']) ?? now),
+        updatedAt: Value(_asDate(data['updated_at']) ?? now),
+        createdBy: Value(data['created_by'] as String?),
+        updatedBy: Value(data['updated_by'] as String?),
+        version: Value((data['version'] as num?)?.toInt() ?? 0),
+        deletedAt: Value(_asDate(data['deleted_at'])),
+      ),
+    );
+  }
+
+  Future<void> _upsertVendorJob(Map<String, Object?> data) async {
+    final id = data['id'] as String?;
+    if (id == null) return;
+    final now = DateTime.now().toUtc();
+    await into(vendorJobs).insertOnConflictUpdate(
+      VendorJobsCompanion(
+        id: Value(id),
+        tenantId: Value(data['tenant_id'] as String? ?? ''),
+        branchId: Value(data['branch_id'] as String?),
+        orderId: Value(data['order_id'] as String? ?? ''),
+        vendorId: Value(data['vendor_id'] as String? ?? ''),
+        description: Value(data['description'] as String? ?? ''),
+        qty: Value((data['qty'] as num?)?.toInt() ?? 0),
+        costFils: Value((data['cost_fils'] as num?)?.toInt() ?? 0),
+        vatFils: Value((data['vat_fils'] as num?)?.toInt() ?? 0),
+        status: Value(data['status'] as String? ?? 'draft'),
+        promisedAt: Value(_asDate(data['promised_at'])),
+        sentAt: Value(_asDate(data['sent_at'])),
+        receivedAt: Value(_asDate(data['received_at'])),
+        notes: Value(data['notes'] as String?),
+        createdAt: Value(_asDate(data['created_at']) ?? now),
+        updatedAt: Value(_asDate(data['updated_at']) ?? now),
+        createdBy: Value(data['created_by'] as String?),
+        updatedBy: Value(data['updated_by'] as String?),
+        version: Value((data['version'] as num?)?.toInt() ?? 0),
+        deletedAt: Value(_asDate(data['deleted_at'])),
+      ),
+    );
   }
 
   Future<void> _upsertExpense(Map<String, Object?> data) async {
@@ -2749,6 +2863,176 @@ class LocalDatabase extends _$LocalDatabase {
             (t) => OrderingTerm.desc(t.spentAt),
           ]))
         .watch();
+  }
+
+  Stream<List<Vendor>> watchVendors() {
+    return (select(vendors)
+          ..where((t) => t.deletedAt.isNull())
+          ..orderBy(<OrderClauseGenerator<$VendorsTable>>[
+            (t) => OrderingTerm(expression: t.name),
+          ]))
+        .watch();
+  }
+
+  /// Vendor jobs that are out or waiting to go, oldest promise first: the ones
+  /// somebody has to chase.
+  Stream<List<VendorJob>> watchOpenVendorJobs() {
+    return (select(vendorJobs)
+          ..where(
+            (t) =>
+                t.deletedAt.isNull() &
+                t.status.isIn(const <String>['draft', 'sent', 'received']),
+          )
+          ..orderBy(<OrderClauseGenerator<$VendorJobsTable>>[
+            (t) => OrderingTerm(expression: t.promisedAt),
+          ]))
+        .watch();
+  }
+
+  Future<String> createVendorLocal({
+    required String tenantId,
+    required String? branchId,
+    required String userId,
+    required String name,
+    String? trade,
+    String? phone,
+    String? notes,
+  }) async {
+    if (name.trim().length < 2) {
+      throw StateError('Give the vendor a name.');
+    }
+    final id = Uuid7.generate();
+    final now = DateTime.now().toUtc();
+
+    await transaction(() async {
+      await into(vendors).insert(
+        VendorsCompanion.insert(
+          id: id,
+          tenantId: tenantId,
+          branchId: Value(branchId),
+          name: name.trim(),
+          trade: Value(trade?.trim()),
+          phoneE164: Value(phone?.trim()),
+          notes: Value(notes?.trim()),
+          createdAt: now,
+          updatedAt: now,
+          createdBy: Value(userId),
+          version: const Value(1),
+        ),
+      );
+      await _enqueue(
+        entity: 'vendors',
+        rowId: id,
+        op: 'insert',
+        baseVersion: 0,
+        fields: <String, Object?>{
+          'name': name.trim(),
+          'trade': trade?.trim(),
+          'phone_e164': phone?.trim(),
+          'notes': notes?.trim(),
+          'branch_id': branchId,
+        },
+      );
+    });
+
+    return id;
+  }
+
+  /// Hands work to a vendor. The cost is what the shop pays, so the job's margin
+  /// is the order total minus this — which is why it is asked for here and not
+  /// discovered at month end.
+  Future<String> createVendorJobLocal({
+    required String tenantId,
+    required String? branchId,
+    required String userId,
+    required String orderId,
+    required String vendorId,
+    required String description,
+    required int costFils,
+    int qty = 0,
+    DateTime? promisedAt,
+  }) async {
+    if (description.trim().isEmpty) {
+      throw StateError('Say what the vendor is doing.');
+    }
+    if (costFils < 0) {
+      throw StateError('A cost cannot be negative.');
+    }
+
+    final id = Uuid7.generate();
+    final now = DateTime.now().toUtc();
+
+    await transaction(() async {
+      await into(vendorJobs).insert(
+        VendorJobsCompanion.insert(
+          id: id,
+          tenantId: tenantId,
+          branchId: Value(branchId),
+          orderId: orderId,
+          vendorId: vendorId,
+          description: description.trim(),
+          qty: Value(qty),
+          costFils: Value(costFils),
+          promisedAt: Value(promisedAt),
+          createdAt: now,
+          updatedAt: now,
+          createdBy: Value(userId),
+          version: const Value(1),
+        ),
+      );
+      await _enqueue(
+        entity: 'vendor_jobs',
+        rowId: id,
+        op: 'insert',
+        baseVersion: 0,
+        fields: <String, Object?>{
+          'order_id': orderId,
+          'vendor_id': vendorId,
+          'description': description.trim(),
+          'qty': qty,
+          'cost_fils': costFils,
+          'promised_at': promisedAt?.toUtc().toIso8601String(),
+          'branch_id': branchId,
+        },
+      );
+    });
+
+    return id;
+  }
+
+  /// Moves a vendor job along. The same transitions the server enforces are
+  /// offered here, so the button a user can press never gets refused.
+  Future<void> transitionVendorJob({required VendorJob job, required String to}) async {
+    const allowed = <String, List<String>>{
+      'draft': <String>['sent', 'cancelled'],
+      'sent': <String>['received', 'cancelled'],
+      'received': <String>['closed', 'sent', 'cancelled'],
+      'closed': <String>[],
+      'cancelled': <String>[],
+    };
+    if (!(allowed[job.status] ?? const <String>[]).contains(to)) {
+      throw StateError('A vendor job cannot go from ${job.status} to $to.');
+    }
+
+    final now = DateTime.now().toUtc();
+    await transaction(() async {
+      await (update(vendorJobs)..where((t) => t.id.equals(job.id))).write(
+        VendorJobsCompanion(
+          status: Value(to),
+          sentAt: Value(to == 'sent' ? now : job.sentAt),
+          receivedAt: Value(to == 'received' ? now : job.receivedAt),
+          updatedAt: Value(now),
+          version: Value(job.version + 1),
+        ),
+      );
+      await _enqueue(
+        entity: 'vendor_jobs',
+        rowId: job.id,
+        op: 'patch',
+        baseVersion: job.version,
+        fields: <String, Object?>{'status': to},
+      );
+    });
   }
 
   Stream<List<Order>> watchOrders({int limit = 200}) {

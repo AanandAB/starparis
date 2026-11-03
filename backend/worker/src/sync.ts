@@ -18,6 +18,7 @@
  */
 
 import type { AuthContext, Env, Mutation, MutationResult } from './types';
+import { prepareVendorJobPatch } from './vendors';
 import { can, permits, redactCosts, type Permission, type RoleKey } from './policy';
 import { cascadeStage, prepareTaskPatch, taskEventStatement } from './tasks';
 import { prepareProofPatch, recordTimeEntry } from './proofs';
@@ -253,6 +254,42 @@ export const ENTITIES: Record<string, EntityDef> = {
         message: 'A payment cannot be edited or removed. Record a refund when that exists.',
       },
     }),
+  },
+  vendors: {
+    table: 'vendors',
+    columns: new Set(['name', 'trade', 'phone_e164', 'notes', 'active', 'branch_id']),
+    required: ['name'],
+    permission: 'vendor.manage',
+    mergeable: true,
+    branchScoped: true,
+    softDelete: true,
+  },
+  vendor_jobs: {
+    table: 'vendor_jobs',
+    columns: new Set([
+      'order_id',
+      'vendor_id',
+      'description',
+      'qty',
+      'cost_fils',
+      'vat_fils',
+      'status',
+      'promised_at',
+      'notes',
+      'branch_id',
+    ]),
+    required: ['order_id', 'vendor_id', 'description'],
+    permission: 'vendor.manage',
+    mergeable: false,
+    branchScoped: true,
+    softDelete: false,
+    mutate: ({ fields, existing, ctx }) =>
+      prepareVendorJobPatch({
+        fields,
+        existing,
+        now: nowIso(),
+        userId: ctx.userId,
+      }),
   },
   credit_notes: {
     table: 'credit_notes',

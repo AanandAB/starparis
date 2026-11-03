@@ -37,6 +37,7 @@ import {
   updateStaff,
   updateStaffSchema,
 } from './staff';
+import { prepareVendorJobPatch } from './vendors';
 import { currentHead, pullChanges, pushMutations } from './sync';
 import type { AuthContext, Env, Mutation } from './types';
 

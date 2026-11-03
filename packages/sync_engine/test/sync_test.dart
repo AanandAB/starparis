@@ -952,6 +952,53 @@ void main() {
       );
     });
 
+    test('vendor work is queued with its cost and moves only where allowed', () async {
+      final vendorId = await db.createVendorLocal(
+        tenantId: 't1',
+        branchId: 'b1',
+        userId: 'u1',
+        name: 'Al Nahda Embroidery',
+        trade: 'embroidery',
+      );
+
+      final placed = await order();
+      final jobId = await db.createVendorJobLocal(
+        tenantId: 't1',
+        branchId: 'b1',
+        userId: 'u1',
+        orderId: placed.id,
+        vendorId: vendorId,
+        description: 'Embroidered logos',
+        costFils: 45000,
+        qty: 50,
+      );
+
+      final job = await (db.select(
+        db.vendorJobs,
+      )..where((t) => t.id.equals(jobId))).getSingle();
+      expect(job.status, 'draft');
+      expect(job.costFils, 45000);
+
+      final batch = await db.nextBatch();
+      expect(batch.where((m) => m.entity == 'vendors'), hasLength(1));
+      expect(batch.where((m) => m.entity == 'vendor_jobs'), hasLength(1));
+
+      await db.markApplied(<String>[for (final mutation in batch) mutation.mutationId]);
+
+      await db.transitionVendorJob(job: job, to: 'sent');
+      final sent = await (db.select(
+        db.vendorJobs,
+      )..where((t) => t.id.equals(jobId))).getSingle();
+      expect(sent.status, 'sent');
+      expect(sent.sentAt, isNotNull);
+
+      await expectLater(
+        db.transitionVendorJob(job: sent, to: 'closed'),
+        throwsA(isA<StateError>()),
+        reason: 'work that has not come back cannot be costed',
+      );
+    });
+
     test('a job is found by its number and an invoice by its own', () async {
       final placed = await order();
       await db.issueInvoiceLocal(

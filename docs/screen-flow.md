@@ -176,10 +176,12 @@ Two rules the server enforces: nobody can change their own role or deactivate th
 active owner cannot be demoted or switched off — a shop with no owner cannot be recovered from inside
 the app. Roles are created on first use, so a designer can be added before anyone thinks about seeding.
 
-### 4.15 Vendors — **TO BUILD**
-A vendor record (name, trade, phone, terms). A vendor job against an order: what is outsourced, the
-cost, the promised date, the commission or markup. Vendor work appears as its own stage so it cannot
-be forgotten, and its cost lands in the job's margin.
+### 4.15 Vendors — BUILT
+A vendor record (name, trade, phone) and **vendor jobs**: work handed out against an order, with what
+the vendor charges, the promised date and a four-state flow — draft → sent → back → closed. The margin
+is the order total less the cost, which is why the cost is asked for when the work goes out rather than
+discovered at month end. `sent_at` and `received_at` are stamped by the server, so a device with a
+wrong clock cannot claim a job came back on time.
 
 ### 4.16 Track — BUILT
 `Ctrl K`, or the box in the top bar: job number, invoice number, phone number or customer name.
@@ -205,7 +207,7 @@ Company profile for documents (name, TRN, address), VAT rate, number series, bac
 | Track by job id or phone | BUILT | Track (`Ctrl K`) |
 | Quotes and invoices | BUILT | Documents, order sheet |
 | WhatsApp messages | PARTIAL | Click-to-chat on quote/invoice/proof; no templates |
-| Vendor / commission work | TO BUILD | — |
+| Vendor / commission work | BUILT | Vendors screen, vendor jobs |
 | Cloudflare Workers + D1, offline first | BUILT | Worker, sync engine |
 | Windows + Android | BUILT | Release builds |
 | Bilingual EN/AR with RTL | TO BUILD | Documents are English-only for now |

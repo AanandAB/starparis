@@ -17,6 +17,7 @@ import 'price_book_screen.dart';
 import 'reports_screen.dart';
 import 'staff_screen.dart';
 import 'track_sheet.dart';
+import 'vendors_screen.dart';
 
 /// One place to go, and which page it shows.
 class _Dest {
@@ -85,29 +86,56 @@ class _AppShellState extends ConsumerState<AppShell> {
         Icons.people,
         HomeTabs.customers,
       ),
-      if (ref.watch(canManageStaffProvider))
-        const _Dest('Staff', Icons.badge_outlined, Icons.badge, 6),
     ];
-    final business = <_Dest>[
-      if (ref.watch(canEditPricesProvider))
-        const _Dest(
+
+    // The pages after Production are optional, one per role, so their indices
+    // are counted rather than hard-coded: a manager has no Prices screen, and a
+    // fixed index would then point at the wrong page.
+    var nextPage = 4;
+    final business = <_Dest>[];
+    final optionalPages = <Widget>[];
+
+    if (ref.watch(canEditPricesProvider)) {
+      business.add(
+        _Dest(
           'Prices',
           Icons.price_change_outlined,
           Icons.price_change,
-          4,
+          nextPage++,
         ),
-      if (ref.watch(canViewReportsProvider))
-        const _Dest('Reports', Icons.insights_outlined, Icons.insights, 5),
-    ];
+      );
+      optionalPages.add(const PriceBookScreen());
+    }
+    if (ref.watch(canViewReportsProvider)) {
+      business.add(
+        _Dest('Reports', Icons.insights_outlined, Icons.insights, nextPage++),
+      );
+      optionalPages.add(const ReportsScreen());
+    }
+    if (ref.watch(canManageStaffProvider)) {
+      business.add(
+        _Dest('Staff', Icons.badge_outlined, Icons.badge, nextPage++),
+      );
+      optionalPages.add(const StaffScreen());
+    }
+    if (ref.watch(canManageVendorsProvider)) {
+      business.add(
+        _Dest(
+          'Vendors',
+          Icons.storefront_outlined,
+          Icons.storefront,
+          nextPage++,
+        ),
+      );
+      optionalPages.add(const VendorsScreen());
+    }
 
     final pages = <Widget>[
       const HomeScreen(),
       const CustomersScreen(),
       const OrdersScreen(),
       const ProductionScreen(),
-      if (ref.watch(canEditPricesProvider)) const PriceBookScreen(),
-      if (ref.watch(canViewReportsProvider)) const ReportsScreen(),
-      if (ref.watch(canManageStaffProvider)) const StaffScreen(),
+      ...optionalPages,
     ];
 
     final all = <_Dest>[...work, ...people, ...business];

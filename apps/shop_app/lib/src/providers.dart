@@ -107,6 +107,13 @@ final Provider<bool> canManageStaffProvider = Provider<bool>((ref) {
   return ref.watch(sessionProvider)?.role == 'owner';
 });
 
+/// Vendor work belongs to the owner, a manager and whoever coordinates vendors:
+/// `vendor.manage` in the matrix.
+final Provider<bool> canManageVendorsProvider = Provider<bool>((ref) {
+  final role = ref.watch(sessionProvider)?.role;
+  return role == 'owner' || role == 'manager' || role == 'vendor_coordinator';
+});
+
 /// Which shell tab is open. A provider rather than local state so a card on the
 /// home screen can send the user to the customers tab with one tap.
 class ShellTab extends Notifier<int> {

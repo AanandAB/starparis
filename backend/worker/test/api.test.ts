@@ -1751,6 +1751,136 @@ describe('staff', () => {
   });
 });
 
+describe('vendor jobs', () => {
+  const vendorId = '0193f0b1-0000-7000-8000-0000000000e7';
+  const jobId = '0193f0b1-0000-7000-8000-0000000000e8';
+  const ORDER = '0193f0b1-0000-7000-8000-0000000000aa';
+
+  function push(token: string, device: string, mutations: Array<Record<string, unknown>>) {
+    return api('/v1/push', authed(token, { device_id: device, mutations }));
+  }
+
+  it('records a vendor, sends a job out, brings it back and costs it', async () => {
+    const vendor = await push(owner.access_token, owner.device_id, [
+      mutation({
+        mutation_id: 'm-vendor-1',
+        entity: 'vendors',
+        row_id: vendorId,
+        fields: { name: 'Al Nahda Embroidery', trade: 'embroidery', phone_e164: '+971****8888' },
+      }),
+    ]);
+    expect(((await vendor.json()) as { results: Array<{ status: string }> }).results[0]!.status).toBe(
+      'applied',
+    );
+
+    const job = await push(owner.access_token, owner.device_id, [
+      mutation({
+        mutation_id: 'm-vendor-job-1',
+        entity: 'vendor_jobs',
+        row_id: jobId,
+        fields: {
+          order_id: ORDER,
+          vendor_id: vendorId,
+          description: 'Embroidered logos, 50 shirts',
+          qty: 50,
+          cost_fils: 45000,
+        },
+      }),
+    ]);
+    expect(((await job.json()) as { results: Array<{ status: string }> }).results[0]!.status).toBe(
+      'applied',
+    );
+
+    const sent = await push(owner.access_token, owner.device_id, [
+      mutation({
+        mutation_id: 'm-vendor-job-sent',
+        entity: 'vendor_jobs',
+        op: 'patch',
+        row_id: jobId,
+        base_version: 1,
+        fields: { status: 'sent' },
+      }),
+    ]);
+    expect(((await sent.json()) as { results: Array<{ status: string }> }).results[0]!.status).toBe(
+      'applied',
+    );
+
+    let row = (await env.DB.prepare('SELECT * FROM vendor_jobs WHERE id = ?')
+      .bind(jobId)
+      .first()) as Record<string, unknown>;
+    expect(row['status']).toBe('sent');
+    expect(row['sent_at']).toBeTruthy();
+    expect(row['received_at']).toBeNull();
+
+    const received = await push(owner.access_token, owner.device_id, [
+      mutation({
+        mutation_id: 'm-vendor-job-received',
+        entity: 'vendor_jobs',
+        op: 'patch',
+        row_id: jobId,
+        base_version: 2,
+        fields: { status: 'received' },
+      }),
+    ]);
+    expect(
+      ((await received.json()) as { results: Array<{ status: string }> }).results[0]!.status,
+    ).toBe('applied');
+
+    const closed = await push(owner.access_token, owner.device_id, [
+      mutation({
+        mutation_id: 'm-vendor-job-closed',
+        entity: 'vendor_jobs',
+        op: 'patch',
+        row_id: jobId,
+        base_version: 3,
+        fields: { status: 'closed' },
+      }),
+    ]);
+    expect(
+      ((await closed.json()) as { results: Array<{ status: string }> }).results[0]!.status,
+    ).toBe('applied');
+
+    row = (await env.DB.prepare('SELECT * FROM vendor_jobs WHERE id = ?')
+      .bind(jobId)
+      .first()) as Record<string, unknown>;
+    expect(row['status']).toBe('closed');
+    expect(row['received_at']).toBeTruthy();
+
+    // Closed is final: reopening is a new job, not an edit.
+    const reopen = await push(owner.access_token, owner.device_id, [
+      mutation({
+        mutation_id: 'm-vendor-job-reopen',
+        entity: 'vendor_jobs',
+        op: 'patch',
+        row_id: jobId,
+        base_version: 4,
+        fields: { status: 'sent' },
+      }),
+    ]);
+    const body = (await reopen.json()) as {
+      results: Array<{ status: string; error?: { code: string } }>;
+    };
+    expect(body.results[0]!.status).toBe('rejected');
+    expect(body.results[0]!.error!.code).toBe('ILLEGAL_TRANSITION');
+  });
+
+  it('keeps vendor work away from a counter clerk', async () => {
+    const response = await push(counter.access_token, counter.device_id, [
+      mutation({
+        mutation_id: 'm-vendor-nope',
+        entity: 'vendor_jobs',
+        row_id: '0193f0b1-0000-7000-8000-0000000000e9',
+        fields: { order_id: ORDER, vendor_id: vendorId, description: 'Sneaky', cost_fils: 1 },
+      }),
+    ]);
+    const body = (await response.json()) as {
+      results: Array<{ status: string; error?: { code: string } }>;
+    };
+    expect(body.results[0]!.status).toBe('rejected');
+    expect(body.results[0]!.error!.code).toBe('PERMISSION_DENIED');
+  });
+});
+
 describe('price book editing', () => {
   it('lets the owner change a rate and the catalogue reflects it', async () => {
     const response = await api(
