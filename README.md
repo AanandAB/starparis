@@ -336,6 +336,25 @@ credits) before printing OK.
 
 Now left in money: till sessions and cash-up, expenses, and the VAT export file for the accountant.
 
+### Phase 4D — till sessions and cash-up
+
+| Piece | State |
+|---|---|
+| Session | `till_sessions`: device, who opened, opening float, opened_at; one **open** session per device (partial unique index) |
+| Attachment | every payment and refund is stamped with the open session's id **by the server** — cash-up counts what is attached, not what fell inside a time window |
+| Close | the device enters the counted amount; the server computes `expected = float + cash taken − cash refunded` and the variance, in the same batch |
+| Refusals | a second open till (`TILL_ALREADY_OPEN`), a second close (`TILL_ALREADY_CLOSED`), a close with no count (`INVALID_AMOUNT`) |
+| Who | `payment.take` (counter, manager, owner, accountant); card/transfer/cheque never touch the drawer and are excluded from expected cash |
+
+Live on the deployed Worker, real D1 — open 200.00, take 105.00 cash against an invoice, count the
+drawer:
+
+    applied  applied  applied
+    till: closed  float 20000  expected 30500  counted 30500  variance 0
+
+Still to come: the Till screen in the app (open, see today's cash, close with a count), expenses, and
+the VAT export file.
+
 ## Commands
 ```bash
 # Dart workspace

@@ -297,3 +297,26 @@ export function preparePayment(
     },
   };
 }
+
+/**
+ * What should be in the drawer at close: the float, plus cash taken, minus cash
+ * refunded, all attached to this session. Card, transfer and cheque never touch
+ * the drawer, so they are excluded by design.
+ */
+export async function expectedCash(
+  env: Env,
+  sessionId: string,
+  openingFloatFils: number,
+): Promise<number> {
+  const row = await env.DB.prepare(
+    `SELECT
+        COALESCE((SELECT SUM(amount_fils) FROM payments
+                   WHERE till_session_id = ? AND method = 'cash' AND deleted_at IS NULL), 0) AS taken,
+        COALESCE((SELECT SUM(amount_fils) FROM refunds
+                   WHERE till_session_id = ? AND method = 'cash' AND deleted_at IS NULL), 0) AS refunded`,
+  )
+    .bind(sessionId, sessionId)
+    .first<{ taken: number; refunded: number }>();
+
+  return openingFloatFils + Number(row?.taken ?? 0) - Number(row?.refunded ?? 0);
+}

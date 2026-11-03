@@ -1321,6 +1321,164 @@ describe('reports', () => {
   });
 });
 
+describe('till', () => {
+  const tillId = '0193f0b1-0000-7000-8000-0000000000fa';
+  const invoiceForTill = '0193f0b1-0000-7000-8000-0000000000fc';
+
+  async function tillRow(): Promise<Record<string, unknown>> {
+    return (await env.DB.prepare('SELECT * FROM till_sessions WHERE id = ?')
+      .bind(tillId)
+      .first()) as Record<string, unknown>;
+  }
+
+  it('opens a till with a float and refuses a second open one on the same device', async () => {
+    const open = await api(
+      '/v1/push',
+      authed(counter.access_token, {
+        device_id: counter.device_id,
+        mutations: [
+          mutation({
+            mutation_id: 'm-till-open',
+            entity: 'till_sessions',
+            row_id: tillId,
+            fields: { opening_float_fils: 20000, notes: 'Morning shift' },
+          }),
+        ],
+      }),
+    );
+    expect(((await open.json()) as { results: Array<{ status: string }> }).results[0]!.status).toBe(
+      'applied',
+    );
+
+    const row = await tillRow();
+    expect(row['status']).toBe('open');
+    expect(row['device_id']).toBe(counter.device_id);
+    expect(row['opened_by']).toBe(USER_COUNTER);
+
+    const second = await api(
+      '/v1/push',
+      authed(counter.access_token, {
+        device_id: counter.device_id,
+        mutations: [
+          mutation({
+            mutation_id: 'm-till-open-2',
+            entity: 'till_sessions',
+            row_id: '0193f0b1-0000-7000-8000-0000000000f9',
+            fields: { opening_float_fils: 1000 },
+          }),
+        ],
+      }),
+    );
+    const body = (await second.json()) as {
+      results: Array<{ status: string; error?: { code: string } }>;
+    };
+    expect(body.results[0]!.status).toBe('rejected');
+    expect(body.results[0]!.error!.code).toBe('TILL_ALREADY_OPEN');
+  });
+
+  it('attaches a cash payment to the open till and closes on the count', async () => {
+    // An invoice with something outstanding to pay.
+    await api(
+      '/v1/push',
+      authed(counter.access_token, {
+        device_id: counter.device_id,
+        mutations: [
+          mutation({
+            mutation_id: 'm-till-invoice',
+            entity: 'invoices',
+            row_id: invoiceForTill,
+            fields: {
+              order_id: '0193f0b1-0000-7000-8000-0000000000ad',
+              number: 'INV-SHJ1-PC1-00050',
+              customer_id: '0193f0b1-0000-7000-8000-0000000000e1',
+              customer_name: 'Ahmed Traders',
+              subtotal_fils: 4762,
+              vat_fils: 238,
+              total_fils: 5000,
+            },
+          }),
+        ],
+      }),
+    );
+
+    const pay = await api(
+      '/v1/push',
+      authed(counter.access_token, {
+        device_id: counter.device_id,
+        mutations: [
+          mutation({
+            mutation_id: 'm-till-pay',
+            entity: 'payments',
+            row_id: crypto.randomUUID(),
+            fields: { invoice_id: invoiceForTill, amount_fils: 5000, method: 'cash' },
+          }),
+        ],
+      }),
+    );
+    expect(((await pay.json()) as { results: Array<{ status: string }> }).results[0]!.status).toBe(
+      'applied',
+    );
+
+    const payment = (await env.DB.prepare(
+      'SELECT till_session_id FROM payments WHERE invoice_id = ?',
+    )
+      .bind(invoiceForTill)
+      .first()) as { till_session_id: string | null };
+    expect(payment.till_session_id).toBe(tillId);
+
+    // 200.00 float + 50.00 cash = 250.00 expected; counted 250.00.
+    const close = await api(
+      '/v1/push',
+      authed(counter.access_token, {
+        device_id: counter.device_id,
+        mutations: [
+          mutation({
+            mutation_id: 'm-till-close',
+            entity: 'till_sessions',
+            op: 'patch',
+            row_id: tillId,
+            base_version: 1,
+            fields: { status: 'closed', counted_fils: 25000 },
+          }),
+        ],
+      }),
+    );
+    expect(((await close.json()) as { results: Array<{ status: string }> }).results[0]!.status).toBe(
+      'applied',
+    );
+
+    const row = await tillRow();
+    expect(row['status']).toBe('closed');
+    expect(row['expected_fils']).toBe(25000);
+    expect(row['variance_fils']).toBe(0);
+    expect(row['closed_at']).toBeTruthy();
+  });
+
+  it('records a short drawer as a variance and refuses a second close', async () => {
+    const again = await api(
+      '/v1/push',
+      authed(counter.access_token, {
+        device_id: counter.device_id,
+        mutations: [
+          mutation({
+            mutation_id: 'm-till-close-2',
+            entity: 'till_sessions',
+            op: 'patch',
+            row_id: tillId,
+            base_version: 2,
+            fields: { status: 'closed', counted_fils: 24000 },
+          }),
+        ],
+      }),
+    );
+    const body = (await again.json()) as {
+      results: Array<{ status: string; error?: { code: string } }>;
+    };
+    expect(body.results[0]!.status).toBe('rejected');
+    expect(body.results[0]!.error!.code).toBe('TILL_ALREADY_CLOSED');
+  });
+});
+
 describe('price book editing', () => {
   it('lets the owner change a rate and the catalogue reflects it', async () => {
     const response = await api(

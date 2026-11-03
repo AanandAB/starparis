@@ -22,6 +22,7 @@ import { can, permits, redactCosts, type Permission, type RoleKey } from './poli
 import { cascadeStage, prepareTaskPatch, taskEventStatement } from './tasks';
 import { prepareProofPatch, recordTimeEntry } from './proofs';
 import {
+  expectedCash,
   prepareCreditNote,
   prepareInvoicePatch,
   preparePayment,
@@ -301,6 +302,43 @@ export const ENTITIES: Record<string, EntityDef> = {
       },
     }),
   },
+  till_sessions: {
+    table: 'till_sessions',
+    columns: new Set([
+      'opening_float_fils',
+      'counted_fils',
+      'notes',
+      'status',
+      'branch_id',
+    ]),
+    // The device id, the opening time and the person are set by the server.
+    required: [],
+    permission: 'payment.take',
+    mergeable: false,
+    branchScoped: true,
+    softDelete: false,
+    mutate: ({ fields, existing }) => {
+      const to = String(fields['status'] ?? existing['status']);
+      if (to !== 'closed' || String(existing['status']) === 'closed') {
+        return {
+          error: {
+            code: 'TILL_ALREADY_CLOSED',
+            message: 'This till is already closed.',
+          },
+        };
+      }
+      const counted = Number(fields['counted_fils'] ?? NaN);
+      if (!Number.isInteger(counted) || counted < 0) {
+        return {
+          error: {
+            code: 'INVALID_AMOUNT',
+            message: 'Count the drawer and enter the amount.',
+          },
+        };
+      }
+      return { fields };
+    },
+  },
 };
 
 type Row = Record<string, unknown>;
@@ -421,6 +459,22 @@ async function insertRow(
       (fields as Record<string, unknown>)['issued_at'] ?? nowIso();
   }
 
+  if (mutation.entity === 'till_sessions') {
+    const open = await env.DB.prepare(
+      "SELECT 1 AS present FROM till_sessions WHERE tenant_id = ? AND device_id = ? AND status = 'open'",
+    )
+      .bind(ctx.tenantId, ctx.deviceId)
+      .first<{ present: number }>();
+    if (open) {
+      return reject(mutation, 'TILL_ALREADY_OPEN', 'This device already has an open till.');
+    }
+    const now = nowIso();
+    fields['device_id'] = ctx.deviceId;
+    fields['opened_at'] = now;
+    fields['opened_by'] = ctx.userId;
+    fields['status'] = 'open';
+  }
+
   const row: Row = { ...fields };
   for (const required of def.required) {
     if (row[required] === undefined || row[required] === null) {
@@ -504,6 +558,23 @@ async function patchRow(
       return reject(mutation, outcome.error.code, outcome.error.message);
     }
     working = outcome.fields;
+  }
+
+  // Closing a till is the one patch the server completes itself: what should be
+  // in the drawer is a fact about the session, not something the device asserts.
+  if (
+    mutation.entity === 'till_sessions' &&
+    String(working['status'] ?? '') === 'closed'
+  ) {
+    const expected = await expectedCash(
+      env,
+      String(existing['id']),
+      Number(existing['opening_float_fils'] ?? 0),
+    );
+    working['expected_fils'] = expected;
+    working['variance_fils'] = Number(working['counted_fils'] ?? 0) - expected;
+    working['closed_at'] = nowIso();
+    working['closed_by'] = ctx.userId;
   }
 
   const currentVersion = Number(existing['version'] ?? 0);
@@ -766,6 +837,20 @@ function reject(mutation: Mutation, code: string, message: string): MutationResu
 }
 
 /**
+ * The session a payment or refund belongs to: whatever is open on this device.
+ * Null when the till was never opened — better an unattributed payment than a
+ * refused sale.
+ */
+async function openTillId(env: Env, ctx: AuthContext): Promise<string | null> {
+  const row = await env.DB.prepare(
+    "SELECT id FROM till_sessions WHERE tenant_id = ? AND device_id = ? AND status = 'open'",
+  )
+    .bind(ctx.tenantId, ctx.deviceId)
+    .first<{ id: string }>();
+  return row?.id ?? null;
+}
+
+/**
  * Taking money is its own transaction: the payment row, the invoice balance and
  * both change-log rows are written in one D1 batch, so a device can never see
  * cash that the invoice does not know about (or the reverse).
@@ -810,6 +895,8 @@ async function insertPayment(
     id: mutation.row_id,
     tenant_id: ctx.tenantId,
     branch_id: (invoice['branch_id'] as string | null) ?? ctx.branchId,
+    // The drawer this cash lands in, chosen by the server from the open session.
+    till_session_id: await openTillId(env, ctx),
     created_at: now,
     updated_at: now,
     created_by: ctx.userId,
@@ -1011,6 +1098,8 @@ async function insertRefund(
     version: 1,
     deleted_at: null,
   };
+
+  row['till_session_id'] = await openTillId(env, ctx);
 
   const noteRow: Row = {
     ...note,
