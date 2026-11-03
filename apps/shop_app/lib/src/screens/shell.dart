@@ -9,6 +9,7 @@ import 'package:starparis_sync/starparis_sync.dart';
 import '../providers.dart';
 import '../theme_provider.dart';
 import '../sales/till_sheet.dart';
+import 'audit_screen.dart';
 import 'board_screen.dart';
 import 'catalogue_screen.dart';
 import 'customers_screen.dart';
@@ -303,6 +304,10 @@ class _AppShellState extends ConsumerState<AppShell> {
                     await showLogSheet(context);
                     return;
                   }
+                  if (value == 'audit') {
+                    await openAuditLog(context);
+                    return;
+                  }
                   if (value == 'diagnostics') {
                     await showDiagnosticsSheet(context);
                     return;
@@ -336,6 +341,14 @@ class _AppShellState extends ConsumerState<AppShell> {
                     value: 'log',
                     child: Text(t('menu.log')),
                   ),
+                  // The strings table is shared and this change does not own
+                  // it, so the label stays a literal until `menu.audit` exists
+                  // there; an untranslated key would render as the key itself.
+                  if (ref.watch(canViewAuditProvider))
+                    const PopupMenuItem<String>(
+                      value: 'audit',
+                      child: Text('Audit log'),
+                    ),
                   PopupMenuItem<String>(
                     value: 'diagnostics',
                     child: Text(t('menu.diagnostics')),

@@ -2339,3 +2339,101 @@ describe('conflicts inbox', () => {
     expect(body.conflicts.some((row) => row.id === conflictId)).toBe(false);
   });
 });
+
+describe('audit log', () => {
+  // A person who exists only for this block. A failed sign-in is written
+  // against the account it was attempted on, so using the counter's phone here
+  // would spend part of the lockout budget the authentication tests rely on.
+  const THROWAWAY_USER = '0193f0b1-0000-7000-8000-0000000000d9';
+  const THROWAWAY_PHONE = '+971500000777';
+
+  beforeAll(async () => {
+    const now = new Date().toISOString();
+    await env.DB.prepare(
+      `INSERT INTO users (id, tenant_id, branch_id, role_id, name, phone_e164, password_hash, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+      .bind(
+        THROWAWAY_USER,
+        TENANT,
+        BRANCH_SHJ,
+        ROLE_COUNTER,
+        'Old Tablet',
+        THROWAWAY_PHONE,
+        await hashPassword(PASSWORD, 1000),
+        now,
+        now,
+      )
+      .run();
+  });
+
+  it('shows the owner who signed in, with a name', async () => {
+    const response = await api('/v1/audit', authed(owner.access_token));
+    expect(response.status).toBe(200);
+
+    const body = (await response.json()) as {
+      entries: Array<{
+        id: string;
+        at: string;
+        actor_id: string;
+        actor_name: string | null;
+        device_id: string | null;
+        action: string;
+        entity: string | null;
+        row_id: string | null;
+      }>;
+    };
+
+    // The setup signs three people in, so the trail already has an event that
+    // predates any test in this block.
+    const signIn = body.entries.find(
+      (entry) => entry.action === 'auth.login' && entry.actor_id === USER_OWNER,
+    );
+    expect(signIn).toBeDefined();
+    // The join, checked from the outside: a manager reading this sees "Owner",
+    // not a uuid they would have to look up somewhere else.
+    expect(signIn!.actor_name).toBe('Owner');
+    expect(signIn!.device_id).toBeTruthy();
+    expect(Number.isNaN(Date.parse(signIn!.at))).toBe(false);
+
+    // Newest first. Compared pairwise rather than sorted, because two events in
+    // the same millisecond share a stamp and a sort would argue about them.
+    for (let i = 1; i < body.entries.length; i++) {
+      expect(body.entries[i - 1]!.at >= body.entries[i]!.at).toBe(true);
+    }
+  });
+
+  it('keeps the counter out', async () => {
+    const response = await api('/v1/audit', authed(counter.access_token));
+    expect(response.status).toBe(403);
+
+    const body = (await response.json()) as { error: { code: string } };
+    expect(body.error.code).toBe('FORBIDDEN');
+  });
+
+  it('filters to one action', async () => {
+    // One wrong password first, so the filter has a row that only it can see.
+    const failed = await api(
+      '/v1/auth/login',
+      loginRequest(THROWAWAY_PHONE, 'not-the-password'),
+    );
+    expect(failed.status).toBe(401);
+
+    const response = await api(
+      '/v1/audit?action=auth.login_failed',
+      authed(owner.access_token),
+    );
+    expect(response.status).toBe(200);
+
+    const body = (await response.json()) as {
+      entries: Array<{ action: string; actor_id: string; actor_name: string | null }>;
+    };
+    expect(body.entries.length).toBeGreaterThan(0);
+    expect(body.entries.every((entry) => entry.action === 'auth.login_failed')).toBe(true);
+    expect(
+      body.entries.some(
+        (entry) => entry.actor_id === THROWAWAY_USER && entry.actor_name === 'Old Tablet',
+      ),
+    ).toBe(true);
+  });
+});

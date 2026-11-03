@@ -13,6 +13,7 @@ import { conflictForbidden, listConflicts, resolveConflict } from './conflicts';
 import { z } from 'zod';
 
 import { error, loadSession, login, loginSchema, refreshSchema, refreshSession, revokeDevice } from './auth';
+import { canReadAudit, listAudit } from './audit';
 import { loadCatalogue } from './catalogue';
 import {
   bulkAdjust,
@@ -474,6 +475,27 @@ app.get('/v1/reports/ageing', async (c) => {
   return c.json(report);
 });
 
+// --- audit trail -----------------------------------------------------------
+// The same gate reports use, because the people who ask "who changed this
+// price" are the people who ask for the VAT return. The filters ride straight
+// through to the query; only the limit is clamped, inside listAudit.
+app.get('/v1/audit', async (c) => {
+  const ctx = c.get('auth');
+  const session = await loadSession(c.env, ctx);
+  if (!session.ok) return c.json(error(session.code, session.message), 401);
+  if (!canReadAudit(ctx.role)) {
+    return c.json(error('FORBIDDEN', 'Only a manager or the owner can read the audit trail.'), 403);
+  }
+
+  const entries = await listAudit(c.env, ctx, {
+    action: c.req.query('action'),
+    from: c.req.query('from'),
+    to: c.req.query('to'),
+    limit: c.req.query('limit'),
+  });
+  return c.json(entries);
+});
+
 app.get('/v1/pull', async (c) => {
   const ctx = c.get('auth');
   const since = Number(c.req.query('since') ?? '0');
@@ -525,7 +547,10 @@ app.post('/v1/number-blocks/lease', async (c) => {
     parsed.data.series,
     parsed.data.size,
   );
-  return c.json({ series: parsed.data.series, start: block.start, end: block.end });
+  // Return the *resolved* series, not the one the device asked for: the device
+  // may still be on a stale settings payload, and it should print the prefix
+  // the shop actually uses now.
+  return c.json({ series: block.series, start: block.start, end: block.end });
 });
 
 // ---------------------------------------------------------------------------

@@ -8,6 +8,7 @@ import 'auth/session.dart';
 import 'bootstrap.dart';
 import 'app_config.dart';
 import 'l10n/strings.dart';
+import 'sales/audit_service.dart';
 import 'sales/settings_service.dart';
 
 /// Overridden in `main()` with the real object; a missing override is a
@@ -136,6 +137,14 @@ final Provider<bool> canManageVendorsProvider = Provider<bool>((ref) {
   return role == 'owner' || role == 'manager' || role == 'vendor_coordinator';
 });
 
+/// The audit trail is read by the people who ask who changed a price: the same
+/// three roles the reports screen serves. The Worker enforces the same rule, so
+/// this only decides whether the menu item is worth showing.
+final Provider<bool> canViewAuditProvider = Provider<bool>((ref) {
+  final role = ref.watch(sessionProvider)?.role;
+  return role == 'owner' || role == 'manager' || role == 'accountant';
+});
+
 /// Which language the interface is drawn in. Null follows the device.
 class LocaleChoice extends Notifier<Locale?> {
   @override
@@ -188,6 +197,29 @@ final Provider<CompanyProfile> companyProvider = Provider<CompanyProfile>((
 ) {
   return ref.watch(shopSettingsProvider).value?.company ?? AppConfig.company;
 });
+
+/// The newest page of the audit trail.
+///
+/// Not a Stream and not cached on disk: the server caps the page at 500 rows,
+/// and a trail that could be replayed from the device after being edited would
+/// no longer be the record anyone opened it for. Invalidating this provider is
+/// what the screen's Refresh and "Try again" both call.
+final FutureProvider<List<AuditEntry>> auditEntriesProvider =
+    FutureProvider<List<AuditEntry>>((ref) async {
+      final bootstrap = ref.watch(bootstrapProvider);
+      final service = AuditService(
+        baseUrl: AppConfig.apiBaseUrl,
+        tokenProvider: bootstrap.auth.accessToken,
+      );
+      try {
+        // The hard cap the Worker enforces, asked for on purpose: the screen
+        // filters a whole page in memory, so a smaller page would hide rows
+        // behind a chip rather than behind a scroll.
+        return await service.recent(limit: 500);
+      } finally {
+        service.dispose();
+      }
+    });
 
 /// Which shell tab is open. A provider rather than local state so a card on the
 /// home screen can send the user to the customers tab with one tap.
