@@ -78,6 +78,7 @@ class DocumentsService {
         priority: order.priority,
         notes: order.notes ?? '',
         isQuote: order.isQuote,
+        trackUrl: '${AppConfig.jobQrPrefix}${order.numberDisplay}',
       ),
       AppConfig.company,
     );

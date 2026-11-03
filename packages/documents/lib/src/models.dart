@@ -55,7 +55,8 @@ class QuoteDocument {
     this.customerPhone,
     this.customerTrn,
     this.notes = '',
-    this.terms = 'Prices are valid until the date shown. '
+    this.terms =
+        'Prices are valid until the date shown. '
         'Artwork must be supplied print-ready; changes after proof approval '
         'may be charged.',
   });
@@ -87,6 +88,7 @@ class JobTicketDocument {
     this.priority = 'normal',
     this.notes = '',
     this.isQuote = false,
+    this.trackUrl,
   });
 
   final String number;
@@ -101,4 +103,9 @@ class JobTicketDocument {
   final String priority;
   final String notes;
   final bool isQuote;
+
+  /// What the printed QR code carries. A ticket that has already been printed
+  /// must keep working, so this is stored on the document rather than built
+  /// here: the shop can change tracking URLs without reprinting old tickets.
+  final String? trackUrl;
 }

@@ -45,7 +45,10 @@ Future<Uint8List> buildQuotePdf(
           pw.SizedBox(height: 16),
           pw.Text('Notes', style: _labelStyle),
           pw.SizedBox(height: 4),
-          pw.Text(asciiText(quote.notes.trim()), style: const pw.TextStyle(fontSize: 9)),
+          pw.Text(
+            asciiText(quote.notes.trim()),
+            style: const pw.TextStyle(fontSize: 9),
+          ),
         ],
         pw.SizedBox(height: 18),
         pw.Container(
@@ -59,7 +62,10 @@ Future<Uint8List> buildQuotePdf(
             children: <pw.Widget>[
               pw.Text('Terms', style: _labelStyle),
               pw.SizedBox(height: 3),
-              pw.Text(asciiText(quote.terms), style: const pw.TextStyle(fontSize: 8, color: muted)),
+              pw.Text(
+                asciiText(quote.terms),
+                style: const pw.TextStyle(fontSize: 8, color: muted),
+              ),
             ],
           ),
         ),
@@ -117,7 +123,10 @@ pw.Widget _header(CompanyProfile company) {
               pw.SizedBox(height: 3),
               pw.Text(
                 asciiText('TRN ${company.trn}'),
-                style: const pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+                style: const pw.TextStyle(
+                  fontSize: 8,
+                  fontWeight: pw.FontWeight.bold,
+                ),
               ),
             ],
           ),
@@ -166,8 +175,17 @@ pw.Widget _titleRow(QuoteDocument quote) {
       pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: <pw.Widget>[
-          pw.Text('Quotation', style: const pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold)),
-          pw.Text(asciiText(quote.number), style: const pw.TextStyle(fontSize: 11, color: brandPetrol)),
+          pw.Text(
+            'Quotation',
+            style: const pw.TextStyle(
+              fontSize: 22,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+          pw.Text(
+            asciiText(quote.number),
+            style: const pw.TextStyle(fontSize: 11, color: brandPetrol),
+          ),
         ],
       ),
       pw.Column(
@@ -198,14 +216,27 @@ pw.Widget _parties(QuoteDocument quote) {
         child: pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: <pw.Widget>[
-            pw.Text('QUOTATION FOR', style: const pw.TextStyle(fontSize: 7, color: muted, letterSpacing: 1)),
+            pw.Text(
+              'QUOTATION FOR',
+              style: const pw.TextStyle(
+                fontSize: 7,
+                color: muted,
+                letterSpacing: 1,
+              ),
+            ),
             pw.SizedBox(height: 3),
             pw.Text(
               asciiText(quote.customerCompany ?? quote.customerName),
-              style: const pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold),
+              style: const pw.TextStyle(
+                fontSize: 11,
+                fontWeight: pw.FontWeight.bold,
+              ),
             ),
             if (quote.customerCompany != null)
-              pw.Text(asciiText(quote.customerName), style: const pw.TextStyle(fontSize: 9)),
+              pw.Text(
+                asciiText(quote.customerName),
+                style: const pw.TextStyle(fontSize: 9),
+              ),
             if (quote.customerPhone != null)
               pw.Text(
                 asciiText(quote.customerPhone!),
@@ -224,10 +255,20 @@ pw.Widget _parties(QuoteDocument quote) {
         child: pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: <pw.Widget>[
-            pw.Text('PREPARED BY', style: const pw.TextStyle(fontSize: 7, color: muted, letterSpacing: 1)),
+            pw.Text(
+              'PREPARED BY',
+              style: const pw.TextStyle(
+                fontSize: 7,
+                color: muted,
+                letterSpacing: 1,
+              ),
+            ),
             pw.SizedBox(height: 3),
             pw.Text('Counter sales', style: const pw.TextStyle(fontSize: 9)),
-            pw.Text('Star Paris Graphic LLC', style: const pw.TextStyle(fontSize: 9, color: muted)),
+            pw.Text(
+              'Star Paris Graphic LLC',
+              style: const pw.TextStyle(fontSize: 9, color: muted),
+            ),
           ],
         ),
       ),
@@ -247,7 +288,11 @@ pw.Widget _items(QuoteDocument quote) {
           Fils(line.amountFils).aedText,
         ],
     ],
-    headerStyle: const pw.TextStyle(fontSize: 8, color: PdfColors.white, fontWeight: pw.FontWeight.bold),
+    headerStyle: const pw.TextStyle(
+      fontSize: 8,
+      color: PdfColors.white,
+      fontWeight: pw.FontWeight.bold,
+    ),
     headerDecoration: const pw.BoxDecoration(color: brandPetrol),
     cellStyle: const pw.TextStyle(fontSize: 8.5),
     cellPadding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 6),
@@ -273,7 +318,10 @@ pw.Widget _totals(QuoteDocument quote) {
         child: pw.Column(
           children: <pw.Widget>[
             _totalRow('Subtotal', Fils(quote.subtotalFils)),
-            _totalRow('VAT ${(quote.vatBps / 100).toStringAsFixed(0)}%', Fils(quote.vatFils)),
+            _totalRow(
+              'VAT ${(quote.vatBps / 100).toStringAsFixed(0)}%',
+              Fils(quote.vatFils),
+            ),
             pw.Divider(height: 6, color: ruleLine),
             _totalRow('Total', Fils(quote.totalFils), emphatic: true),
           ],
@@ -322,9 +370,12 @@ pw.Widget _signatureBox(String label) {
   return pw.Column(
     crossAxisAlignment: pw.CrossAxisAlignment.start,
     children: <pw.Widget>[
-      pw.Container(height: 28, decoration: const pw.BoxDecoration(
-        border: pw.Border(bottom: pw.BorderSide(color: ruleLine, width: 1)),
-      )),
+      pw.Container(
+        height: 28,
+        decoration: const pw.BoxDecoration(
+          border: pw.Border(bottom: pw.BorderSide(color: ruleLine, width: 1)),
+        ),
+      ),
       pw.SizedBox(height: 4),
       pw.Text(label, style: const pw.TextStyle(fontSize: 7, color: muted)),
     ],
@@ -334,8 +385,18 @@ pw.Widget _signatureBox(String label) {
 String _date(DateTime value) {
   final local = value.toLocal();
   const months = <String>[
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
   return '${local.day} ${months[local.month - 1]} ${local.year}';
 }

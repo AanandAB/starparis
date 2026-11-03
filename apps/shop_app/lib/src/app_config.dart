@@ -29,4 +29,10 @@ abstract final class AppConfig {
     email: 'hello@starparis.example',
     branchName: 'Sharjah — Industrial Area',
   );
+
+  /// What the QR on a job ticket encodes. A custom scheme rather than a web URL
+  /// on purpose: pointing the code at a page that does not exist yet would be a
+  /// promise the ticket cannot keep. The handler is registered with the public
+  /// tracking page in Phase 5; until then a scanner shows the job number.
+  static const String jobQrPrefix = 'starparis://job/';
 }

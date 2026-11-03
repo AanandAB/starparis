@@ -1541,6 +1541,17 @@ class LocalDatabase extends _$LocalDatabase {
         .watch();
   }
 
+  /// Proofs the customer has but has not answered yet — the queue someone has
+  /// to chase, and the one thing that silently stalls a job.
+  Stream<List<Proof>> watchProofsAwaitingDecision() {
+    return (select(proofs)
+          ..where((t) => t.status.equals('sent') & t.deletedAt.isNull())
+          ..orderBy(<OrderClauseGenerator<$ProofsTable>>[
+            (t) => OrderingTerm(expression: t.updatedAt),
+          ]))
+        .watch();
+  }
+
   /// Adds the next version of the proof for an order. The link is the proof —
   /// the file stays wherever the shop already keeps it.
   Future<String> addProofLocal({

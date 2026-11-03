@@ -170,6 +170,29 @@ Time is deliberately server-side. The device sets `started_at` so the board show
 the Worker overwrites it, and the minutes in `time_entries` come from the Worker's clock and the
 Worker's `started_at`. Each stretch of work is its own row, so pause → resume does not double-count.
 
+### Phase 3C — QR, role-shaped home
+
+| Piece | State |
+|---|---|
+| QR on the job ticket | encodes `starparis://job/<number>`; verified by rendering the PDF and decoding it with a real QR detector: `starparis://job/10452` |
+| Role-shaped home | live counts per role — open tasks, due today, overdue, proofs waiting, ready to collect, sent back — plus a role-specific primary action |
+| Honesty | every number comes from the local database, updates as work moves, and is correct offline |
+
+    QR decode        starparis://job/10452
+    home (designer)  Due today 2 · Proofs waiting 1 · Sent back 1 · All changes sent
+
+The QR uses a custom scheme rather than a web address on purpose: pointing a printed ticket at a page
+that does not exist yet is a promise the paper cannot keep. A scanner shows the job number today; the
+scheme handler ships with the customer tracking page in Phase 5. See
+`docs/samples/job-ticket-render.png` for the rendered ticket.
+
+Windows toast notifications and the FCM path for Android are **not** in this phase. The board and the
+home counts answer "what needs me now" inside the app, which is what was blocking staff use; OS-level
+notifications need a signed installer to test properly and belong with the pilot hardening.
+
+Phase 3 is now closed: tasks, board, proofs, approvals, time, documents and the role-shaped home are
+all working and proven. Phase 4 is money — invoices, payments, credit accounts and the VAT report.
+
 ## Commands
 ```bash
 # Dart workspace

@@ -62,6 +62,35 @@ void main() {
   });
 
   group('job ticket PDF', () {
+    test('carries a QR code when given a tracking link', () async {
+      final plain = await buildJobTicketPdf(
+        JobTicketDocument(
+          number: '10452',
+          createdAt: DateTime(2026, 11, 3, 9),
+          customerName: 'Ahmed Traders',
+          specifications: const <String>['Business cards · 500'],
+          quantity: 500,
+        ),
+        _company,
+      );
+      final tagged = await buildJobTicketPdf(
+        JobTicketDocument(
+          number: '10452',
+          createdAt: DateTime(2026, 11, 3, 9),
+          customerName: 'Ahmed Traders',
+          specifications: const <String>['Business cards · 500'],
+          quantity: 500,
+          trackUrl: 'starparis://job/10452',
+        ),
+        _company,
+      );
+
+      // The QR is drawn as vector modules, so the honest assertion is that the
+      // page gained content — the decode itself is proven by the smoke run,
+      // which reads the rendered page back with an actual QR detector.
+      expect(tagged.length, greaterThan(plain.length));
+    });
+
     test('renders on A5 with the job number and specification', () async {
       final bytes = await buildJobTicketPdf(
         JobTicketDocument(

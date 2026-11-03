@@ -48,10 +48,16 @@ Future<Uint8List> buildJobTicketPdf(
                     width: 3,
                     height: 3,
                     margin: const pw.EdgeInsets.only(top: 5, right: 6),
-                    decoration: const pw.BoxDecoration(color: brandPetrol, shape: pw.BoxShape.circle),
+                    decoration: const pw.BoxDecoration(
+                      color: brandPetrol,
+                      shape: pw.BoxShape.circle,
+                    ),
                   ),
                   pw.Expanded(
-                    child: pw.Text(asciiText(line), style: const pw.TextStyle(fontSize: 10)),
+                    child: pw.Text(
+                      asciiText(line),
+                      style: const pw.TextStyle(fontSize: 10),
+                    ),
                   ),
                 ],
               ),
@@ -62,7 +68,10 @@ Future<Uint8List> buildJobTicketPdf(
             pw.SizedBox(height: 10),
             pw.Text('NOTES', style: _tinyLabel),
             pw.SizedBox(height: 3),
-            pw.Text(asciiText(ticket.notes.trim()), style: const pw.TextStyle(fontSize: 9)),
+            pw.Text(
+              asciiText(ticket.notes.trim()),
+              style: const pw.TextStyle(fontSize: 9),
+            ),
           ],
           pw.Spacer(),
           pw.Text('STAGES', style: _tinyLabel),
@@ -70,21 +79,47 @@ Future<Uint8List> buildJobTicketPdf(
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: <pw.Widget>[
-              for (final stage in <String>['Design', 'Prepress', 'Print', 'Finish', 'QC'])
+              for (final stage in <String>[
+                'Design',
+                'Prepress',
+                'Print',
+                'Finish',
+                'QC',
+              ])
                 _stageBox(stage),
             ],
           ),
           pw.SizedBox(height: 14),
           pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: pw.CrossAxisAlignment.end,
             children: <pw.Widget>[
-              pw.Text(
-                asciiText('${company.name} | ${company.phone}'),
-                style: const pw.TextStyle(fontSize: 7, color: muted),
-              ),
-              pw.Text(
-                ticket.isQuote ? 'QUOTATION COPY' : 'Job ticket',
-                style: const pw.TextStyle(fontSize: 7, color: muted),
+              // The ticket on the press is the one place a QR earns its keep:
+              // scan it and the job number is already right, with no typing.
+              if (ticket.trackUrl != null) ...<pw.Widget>[
+                pw.BarcodeWidget(
+                  barcode: pw.Barcode.qrCode(),
+                  data: ticket.trackUrl!,
+                  width: 46,
+                  height: 46,
+                  drawText: false,
+                ),
+                pw.SizedBox(width: 8),
+              ],
+              pw.Expanded(
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: <pw.Widget>[
+                    pw.Text(
+                      asciiText('${company.name} | ${company.phone}'),
+                      style: const pw.TextStyle(fontSize: 7, color: muted),
+                    ),
+                    pw.SizedBox(height: 2),
+                    pw.Text(
+                      ticket.isQuote ? 'QUOTATION COPY' : 'Job ticket',
+                      style: const pw.TextStyle(fontSize: 7, color: muted),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -115,7 +150,11 @@ pw.Widget _topBand(JobTicketDocument ticket) {
           children: <pw.Widget>[
             pw.Text(
               ticket.isQuote ? 'QUOTE' : 'JOB',
-              style: const pw.TextStyle(fontSize: 8, color: brandSand, letterSpacing: 2),
+              style: const pw.TextStyle(
+                fontSize: 8,
+                color: brandSand,
+                letterSpacing: 2,
+              ),
             ),
             pw.Text(
               asciiText(ticket.number),
@@ -132,7 +171,11 @@ pw.Widget _topBand(JobTicketDocument ticket) {
           children: <pw.Widget>[
             pw.Text(
               'DUE',
-              style: const pw.TextStyle(fontSize: 7, color: brandSand, letterSpacing: 1.5),
+              style: const pw.TextStyle(
+                fontSize: 7,
+                color: brandSand,
+                letterSpacing: 1.5,
+              ),
             ),
             pw.Text(
               ticket.dueAt == null ? '-' : _date(ticket.dueAt!),
@@ -169,7 +212,10 @@ pw.Widget _customerRow(JobTicketDocument ticket) {
             pw.Text('CUSTOMER', style: _tinyLabel),
             pw.Text(
               asciiText(ticket.customerName),
-              style: const pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
+              style: const pw.TextStyle(
+                fontSize: 12,
+                fontWeight: pw.FontWeight.bold,
+              ),
             ),
           ],
         ),
@@ -180,7 +226,10 @@ pw.Widget _customerRow(JobTicketDocument ticket) {
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: <pw.Widget>[
             pw.Text('RECEIVED', style: _tinyLabel),
-            pw.Text(_date(ticket.createdAt), style: const pw.TextStyle(fontSize: 10)),
+            pw.Text(
+              _date(ticket.createdAt),
+              style: const pw.TextStyle(fontSize: 10),
+            ),
           ],
         ),
       ),
@@ -201,7 +250,10 @@ pw.Widget _quantityBand(JobTicketDocument ticket) {
         pw.Text('QUANTITY', style: _tinyLabel),
         pw.Text(
           '${ticket.quantity}',
-          style: const pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+          style: const pw.TextStyle(
+            fontSize: 18,
+            fontWeight: pw.FontWeight.bold,
+          ),
         ),
       ],
     ),
@@ -214,7 +266,9 @@ pw.Widget _stageBox(String label) {
       pw.Container(
         width: 14,
         height: 14,
-        decoration: pw.BoxDecoration(border: pw.Border.all(color: ink, width: 0.8)),
+        decoration: pw.BoxDecoration(
+          border: pw.Border.all(color: ink, width: 0.8),
+        ),
       ),
       pw.SizedBox(height: 3),
       pw.Text(label, style: const pw.TextStyle(fontSize: 7)),
@@ -225,8 +279,18 @@ pw.Widget _stageBox(String label) {
 String _date(DateTime value) {
   final local = value.toLocal();
   const months = <String>[
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
   return '${local.day} ${months[local.month - 1]} ${local.year}';
 }

@@ -64,6 +64,7 @@ Future<void> main() async {
       dueAt: DateTime(2026, 11, 5, 16),
       priority: 'urgent',
       notes: 'Customer approved proof v2 at 09:40.',
+      trackUrl: 'starparis://job/10452',
     ),
     company,
   );
