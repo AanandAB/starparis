@@ -38,6 +38,36 @@ void main() {
     );
   });
 
+  test('a trade customer pays a different price for the same work', () {
+    final retail = PricingEngine.price(
+      product,
+      contextWith(const <QuantityBreak>[QuantityBreak(quantity: 500, amountFils: 12200)]),
+    );
+
+    final trade = PricingEngine.price(
+      product,
+      PricingContext(
+        priceBookVersion: 1,
+        mode: PricingMode.priceTable,
+        priceBreaks: const <QuantityBreak>[QuantityBreak(quantity: 500, amountFils: 12200)],
+        tierAdjustmentBps: -1000, // 10% off for trade
+        roundingStepFils: 100,
+        vatBps: 500,
+      ),
+    );
+
+    expect(retail.total.raw, 12200);
+    // 122.00 less 10% is 109.80, which the shop rounds to 110.00 — the same one
+    // rounding rule as every other price, applied after the tier.
+    expect(trade.total.raw, 11000);
+    expect(
+      trade.lines.any((line) => line.code == 'tier_adjustment'),
+      isTrue,
+      reason: 'the trade discount must appear in the breakdown',
+    );
+    expect(trade.grandTotal.raw, 11550);
+  });
+
   test('a quantity with no break falls back to the table tier', () {
     final priced = PricingEngine.price(
       product,

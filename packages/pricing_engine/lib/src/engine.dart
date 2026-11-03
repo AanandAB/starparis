@@ -344,7 +344,7 @@ final class PricingEngine {
       costSubtotal += Fils(vendorCost);
     }
 
-    final Fils priceBeforeSurcharges;
+    late Fils priceBeforeSurcharges;
     switch (context.mode) {
       case PricingMode.costPlus:
         priceBeforeSurcharges =
@@ -396,6 +396,26 @@ final class PricingEngine {
     }
 
     // --- 7. Surcharges (rush, same day, delivery) ------------------------
+    // --- 7b. Customer tier ------------------------------------------------
+    // A trade customer pays a different price for the same work. The adjustment
+    // lands before surcharges, so a rush job stays a rush job for everyone.
+    if (context.tierAdjustmentBps != 0) {
+      final adjustment = priceBeforeSurcharges.timesBps(context.tierAdjustmentBps);
+      lines.add(
+        PriceLine(
+          code: 'tier_adjustment',
+          label: context.tierAdjustmentBps < 0 ? 'Trade discount' : 'Tier adjustment',
+          kind: PriceLineKind.addOn,
+          quantity: 1,
+          rateFils: context.tierAdjustmentBps,
+          amount: adjustment,
+          explain:
+              '${(context.tierAdjustmentBps / 100).toStringAsFixed(1)}% on the selling price',
+        ),
+      );
+      priceBeforeSurcharges = priceBeforeSurcharges + adjustment;
+    }
+
     var running = priceBeforeSurcharges;
     var surcharges = Fils.zero;
     for (final rule in sortedRules) {

@@ -493,6 +493,7 @@ final class PricingContext {
     this.machine,
     this.operations = const <FinishingOperation>[],
     this.priceBreaks = const <QuantityBreak>[],
+    this.tierAdjustmentBps = 0,
     this.areaRateFilsPerSqm,
     this.vendorCostFils,
     this.tiers = const <PriceTier>[],
@@ -527,6 +528,11 @@ final class PricingContext {
 
   /// Sell prices at quantity, from the catalogue.
   final List<QuantityBreak> priceBreaks;
+
+  /// The customer's tier as a percentage on the selling price: trade customers
+  /// pay less than retail for the same job. Negative is a discount (-1000 = 10%
+  /// off). Per-tier tables replace this when a shop needs them.
+  final int tierAdjustmentBps;
 
   /// For [ProductKind.area].
   final int? areaRateFilsPerSqm;
