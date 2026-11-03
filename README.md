@@ -369,7 +369,27 @@ the session, and that a difference is the variance. The device is a preview; the
 State: `schemaVersion 7` locally (`till_sessions` plus `payments.till_session_id`), 26 sync tests, 6
 app tests, analyzer clean, Windows release build green.
 
-Not yet done: expenses, the VAT export file, and the till history/month-end list.
+### Phase 4E — expenses and the accountant's file
+
+| Piece | State |
+|---|---|
+| `expenses` (0009) | category, supplier, description, amount, VAT on the receipt, method, optional receipt link; `amount > 0` enforced |
+| Cash out | a **cash** expense is stamped with the open session and is subtracted from `expectedCash()` — the cash-up only reconciles if money leaving the drawer is recorded |
+| Refusals | an expense of nothing (`INVALID_AMOUNT`); card/transfer/cheque never touch the drawer |
+| Export | `GET /v1/reports/vat.csv?from&to` — one row per invoice and credit note with the number, date, customer, net, VAT and gross in AED, credits signed negative, a TOTAL row and "VAT due", behind `report.view` |
+
+Live on the deployed Worker, real D1:
+
+    till_sessions  applied      float 300.00
+    expenses       applied      courier 45.00 cash
+    till_sessions  applied      counted 255.00
+    till float 30000 expected 25500 counted 25500 variance 0
+    csv rows: 7   TOTAL 174.38 net / 8.72 VAT / 183.10 gross
+
+61 worker tests (4 new), typecheck clean, migration 0009 applied remotely.
+
+Still to do: the **expense entry sheet in the app** (the backend path is live, the counter has no
+button yet), till history/month-end, and the Arabic UI pass.
 
 ## Commands
 ```bash

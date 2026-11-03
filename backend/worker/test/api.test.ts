@@ -1479,6 +1479,115 @@ describe('till', () => {
   });
 });
 
+describe('expenses and the VAT export', () => {
+  const tillId = '0193f0b1-0000-7000-8000-0000000000fe';
+
+  async function push(session: Session, mutations: Array<Record<string, unknown>>) {
+    const response = await api(
+      '/v1/push',
+      authed(session.access_token, { device_id: session.device_id, mutations }),
+    );
+    return (await response.json()) as {
+      results: Array<{ status: string; error?: { code: string } }>;
+    };
+  }
+
+  function expense(
+    id: string,
+    amountFils: number,
+    method = 'cash',
+    extra: Record<string, unknown> = {},
+  ) {
+    return mutation({
+      mutation_id: `m-exp-${id.slice(-6)}`,
+      entity: 'expenses',
+      row_id: id,
+      fields: {
+        category: 'Courier',
+        description: 'Delivery to Al Nahda',
+        amount_fils: amountFils,
+        method,
+        ...extra,
+      },
+    });
+  }
+
+  it('takes a cash expense out of the drawer and leaves card expenses out', async () => {
+    const opened = await push(counter, [
+      mutation({
+        mutation_id: 'm-exp-till-open',
+        entity: 'till_sessions',
+        row_id: tillId,
+        fields: { opening_float_fils: 10000 },
+      }),
+    ]);
+    expect(opened.results[0]!.status).toBe('applied');
+
+    const cash = await push(counter, [
+      expense('0193f0b1-0000-7000-8000-0000000000f1', 2500, 'cash'),
+      expense('0193f0b1-0000-7000-8000-0000000000f2', 4000, 'card'),
+    ]);
+    expect(cash.results.map((result) => result.status)).toEqual(['applied', 'applied']);
+
+    const rows = await env.DB.prepare(
+      'SELECT id, till_session_id FROM expenses WHERE tenant_id = ? ORDER BY id',
+    )
+      .bind(TENANT)
+      .all<{ id: string; till_session_id: string | null }>();
+    const byId = new Map(rows.results.map((row) => [row.id, row.till_session_id]));
+    expect(byId.get('0193f0b1-0000-7000-8000-0000000000f1')).toBe(tillId);
+    expect(byId.get('0193f0b1-0000-7000-8000-0000000000f2')).toBeNull();
+
+    // 100.00 float - 25.00 cash courier = 75.00 expected.
+    const close = await push(counter, [
+      mutation({
+        mutation_id: 'm-exp-till-close',
+        entity: 'till_sessions',
+        op: 'patch',
+        row_id: tillId,
+        base_version: 1,
+        fields: { status: 'closed', counted_fils: 7500 },
+      }),
+    ]);
+    expect(close.results[0]!.status).toBe('applied');
+
+    const till = (await env.DB.prepare('SELECT expected_fils, variance_fils FROM till_sessions WHERE id = ?')
+      .bind(tillId)
+      .first()) as { expected_fils: number; variance_fils: number };
+    expect(till.expected_fils).toBe(7500);
+    expect(till.variance_fils).toBe(0);
+  });
+
+  it('refuses an expense of nothing', async () => {
+    const body = await push(counter, [
+      expense('0193f0b1-0000-7000-8000-0000000000f3', 0),
+    ]);
+    expect(body.results[0]!.status).toBe('rejected');
+    expect(body.results[0]!.error!.code).toBe('INVALID_AMOUNT');
+  });
+
+  it('exports the period as CSV with credits signed negative', async () => {
+    const response = await api(
+      '/v1/reports/vat.csv?from=2020-01-01&to=2030-01-01',
+      authed(owner.access_token),
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toContain('text/csv');
+
+    const csv = await response.text();
+    expect(csv.split('\n')[0]).toContain('type,number,issued_at,customer');
+    expect(csv).toContain('TOTAL');
+    expect(csv).toContain('credit_note');
+    expect(csv).toContain('-2.38'); // the credit note's VAT, signed
+    expect(csv).toContain('VAT due (AED)');
+  });
+
+  it('keeps the counter out of the export', async () => {
+    const response = await api('/v1/reports/vat.csv', authed(counter.access_token));
+    expect(response.status).toBe(403);
+  });
+});
+
 describe('price book editing', () => {
   it('lets the owner change a rate and the catalogue reflects it', async () => {
     const response = await api(

@@ -313,10 +313,17 @@ export async function expectedCash(
         COALESCE((SELECT SUM(amount_fils) FROM payments
                    WHERE till_session_id = ? AND method = 'cash' AND deleted_at IS NULL), 0) AS taken,
         COALESCE((SELECT SUM(amount_fils) FROM refunds
-                   WHERE till_session_id = ? AND method = 'cash' AND deleted_at IS NULL), 0) AS refunded`,
+                   WHERE till_session_id = ? AND method = 'cash' AND deleted_at IS NULL), 0) AS refunded,
+        COALESCE((SELECT SUM(amount_fils) FROM expenses
+                   WHERE till_session_id = ? AND method = 'cash' AND deleted_at IS NULL), 0) AS spent`,
   )
-    .bind(sessionId, sessionId)
-    .first<{ taken: number; refunded: number }>();
+    .bind(sessionId, sessionId, sessionId)
+    .first<{ taken: number; refunded: number; spent: number }>();
 
-  return openingFloatFils + Number(row?.taken ?? 0) - Number(row?.refunded ?? 0);
+  return (
+    openingFloatFils +
+    Number(row?.taken ?? 0) -
+    Number(row?.refunded ?? 0) -
+    Number(row?.spent ?? 0)
+  );
 }

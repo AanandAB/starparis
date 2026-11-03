@@ -302,6 +302,26 @@ export const ENTITIES: Record<string, EntityDef> = {
       },
     }),
   },
+  expenses: {
+    table: 'expenses',
+    columns: new Set([
+      'spent_at',
+      'category',
+      'supplier',
+      'description',
+      'amount_fils',
+      'vat_fils',
+      'method',
+      'receipt_url',
+      'paid_by',
+      'branch_id',
+    ]),
+    required: ['category', 'description', 'amount_fils', 'method'],
+    permission: 'payment.take',
+    mergeable: false,
+    branchScoped: true,
+    softDelete: true,
+  },
   till_sessions: {
     table: 'till_sessions',
     columns: new Set([
@@ -457,6 +477,19 @@ async function insertRow(
     // An invoice is issued now, whatever the device's clock says.
     (fields as Record<string, unknown>)['issued_at'] =
       (fields as Record<string, unknown>)['issued_at'] ?? nowIso();
+  }
+
+  if (mutation.entity === 'expenses') {
+    const amount = Number(fields['amount_fils'] ?? 0);
+    if (!Number.isInteger(amount) || amount <= 0) {
+      return reject(mutation, 'INVALID_AMOUNT', 'An expense must be more than zero.');
+    }
+    fields['spent_at'] = fields['spent_at'] ?? nowIso();
+    fields['paid_by'] = fields['paid_by'] ?? ctx.userId;
+    // Only cash leaves the drawer, so only cash is tied to the till.
+    if (String(fields['method']) === 'cash') {
+      fields['till_session_id'] = await openTillId(env, ctx);
+    }
   }
 
   if (mutation.entity === 'till_sessions') {
