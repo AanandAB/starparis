@@ -404,6 +404,73 @@ final class PriceRequest {
 
 /// The price book snapshot the engine works against. Versioned and immutable:
 /// an old quote must be reproducible from the version it was priced with.
+/// How a finishing step is charged. These are the trade's own units: lamination
+/// is per side, creasing per thousand, banners per square metre, binding per copy.
+enum OperationBasis { perPiece, per1000, perSide, perSqm, perCopy, perHour }
+
+/// One press or finishing machine, with the numbers its time is bought at.
+final class MachineSpec {
+  const MachineSpec({
+    required this.name,
+    this.hourlyRateFils = 0,
+    this.setupMinutes = 0,
+    this.sheetsPerHour = 0,
+    this.clickFils = 0,
+  });
+
+  final String name;
+  final int hourlyRateFils;
+  final int setupMinutes;
+  final int sheetsPerHour;
+
+  /// Digital click charge per impression; when set it replaces the hourly run.
+  final int clickFils;
+}
+
+/// A finishing or prepress step with its own setup, minimum and waste.
+final class FinishingOperation {
+  const FinishingOperation({
+    required this.code,
+    required this.name,
+    required this.basis,
+    required this.rateFils,
+    this.setupFils = 0,
+    this.minChargeFils = 0,
+  });
+
+  final String code;
+  final String name;
+  final OperationBasis basis;
+  final int rateFils;
+  final int setupFils;
+  final int minChargeFils;
+
+  /// What this operation costs for the job in front of it.
+  Fils costFor({
+    required int quantity,
+    required int sides,
+    required int areaMilliSqm,
+  }) {
+    final units = switch (basis) {
+      OperationBasis.perPiece || OperationBasis.perCopy => quantity,
+      OperationBasis.perSide => quantity * sides,
+      OperationBasis.per1000 => quantity,
+      OperationBasis.perSqm => areaMilliSqm,
+      OperationBasis.perHour => 1,
+    };
+
+    final run = switch (basis) {
+      OperationBasis.per1000 => mulDivRoundHalfUp(rateFils, units, 1000),
+      OperationBasis.perSqm => mulDivRoundHalfUp(rateFils, areaMilliSqm, 1000),
+      OperationBasis.perHour => rateFils,
+      _ => rateFils * units,
+    };
+
+    final total = run + setupFils;
+    return Fils(total < minChargeFils ? minChargeFils : total);
+  }
+}
+
 final class PricingContext {
   const PricingContext({
     required this.priceBookVersion,
@@ -414,6 +481,8 @@ final class PricingContext {
     this.spoilageBps = 500,
     this.materialCostPerSheetFils,
     this.printRatePerSheetSideFils,
+    this.machine,
+    this.operations = const <FinishingOperation>[],
     this.areaRateFilsPerSqm,
     this.vendorCostFils,
     this.tiers = const <PriceTier>[],
@@ -438,6 +507,13 @@ final class PricingContext {
 
   /// From the machines table: cost per sheet per side, colour or mono.
   final int? printRatePerSheetSideFils;
+
+  /// The press this job runs on. When present its time is priced from the
+  /// machine's own rate, setup and speed instead of a per-sheet guess.
+  final MachineSpec? machine;
+
+  /// Finishing steps chosen for this job, priced at their own basis.
+  final List<FinishingOperation> operations;
 
   /// For [ProductKind.area].
   final int? areaRateFilsPerSqm;

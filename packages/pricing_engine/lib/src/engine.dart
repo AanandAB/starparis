@@ -160,6 +160,101 @@ final class PricingEngine {
       }
     }
 
+
+    // --- 3b. Machine time ------------------------------------------------
+    // Press time is bought by the hour, so it is priced from the machine's own
+    // rate, make-ready time and run speed. A digital machine with a click charge
+    // is priced per impression instead: that is how its cost actually arrives.
+    final machine = context.machine;
+    if (machine != null && request.kind == ProductKind.sheet) {
+      if (machine.setupMinutes > 0 && machine.hourlyRateFils > 0) {
+        final setup = Fils(
+          mulDivRoundHalfUp(machine.hourlyRateFils, machine.setupMinutes, 60),
+        );
+        if (setup.raw > 0) {
+          costSubtotal += setup;
+          lines.add(
+            PriceLine(
+              code: 'machine_setup',
+              label: 'Make-ready — ${machine.name}',
+              kind: PriceLineKind.cost,
+              quantity: machine.setupMinutes,
+              rateFils: machine.hourlyRateFils,
+              amount: setup,
+              explain:
+                  '${machine.setupMinutes} min at '
+                  '${Fils(machine.hourlyRateFils).aedLabel} an hour',
+            ),
+          );
+        }
+      }
+
+      final impressions = sheets * request.sides;
+      if (machine.clickFils > 0 && impressions > 0) {
+        final amount = Fils(machine.clickFils * impressions);
+        costSubtotal += amount;
+        lines.add(
+          PriceLine(
+            code: 'machine_clicks',
+            label: 'Clicks — ${machine.name}',
+            kind: PriceLineKind.cost,
+            quantity: impressions,
+            rateFils: machine.clickFils,
+            amount: amount,
+            explain:
+                '$impressions impressions × ${Fils(machine.clickFils).aedLabel}',
+          ),
+        );
+      } else if (machine.sheetsPerHour > 0 &&
+          machine.hourlyRateFils > 0 &&
+          sheets > 0) {
+        final amount = Fils(
+          mulDivRoundHalfUp(machine.hourlyRateFils, sheets, machine.sheetsPerHour),
+        );
+        costSubtotal += amount;
+        lines.add(
+          PriceLine(
+            code: 'machine_run',
+            label: 'Press run — ${machine.name}',
+            kind: PriceLineKind.cost,
+            quantity: sheets,
+            rateFils: machine.hourlyRateFils,
+            amount: amount,
+            explain:
+                '$sheets sheets at ${machine.sheetsPerHour} an hour × '
+                '${Fils(machine.hourlyRateFils).aedLabel}',
+          ),
+        );
+      }
+    }
+
+    // --- 3c. Finishing operations ----------------------------------------
+    // Each operation is a row in the shop's catalogue, priced at its own basis
+    // and never below its own minimum. Adding foil stamping is a data change.
+    for (final operation in context.operations) {
+      final amount = operation.costFor(
+        quantity: request.quantity,
+        sides: request.sides,
+        areaMilliSqm: areaMilliSqm,
+      );
+      if (amount.raw <= 0) continue;
+      costSubtotal += amount;
+      lines.add(
+        PriceLine(
+          code: 'op_${operation.code}',
+          label: operation.name,
+          kind: PriceLineKind.cost,
+          quantity: request.quantity,
+          rateFils: operation.rateFils,
+          amount: amount,
+          explain: operation.setupFils > 0
+              ? 'rate ${Fils(operation.rateFils).aedLabel} plus '
+                  '${Fils(operation.setupFils).aedLabel} setup'
+              : 'rate ${Fils(operation.rateFils).aedLabel}',
+        ),
+      );
+    }
+
     // --- 4. Area material ------------------------------------------------
     final areaRate = context.areaRateFilsPerSqm;
     if (request.kind == ProductKind.area && areaRate != null && areaRate > 0) {
