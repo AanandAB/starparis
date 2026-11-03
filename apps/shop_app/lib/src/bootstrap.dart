@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:starparis_sync/starparis_sync.dart';
@@ -6,6 +7,7 @@ import 'app_config.dart';
 import 'auth/auth_repository.dart';
 import 'auth/session.dart';
 import 'db/open_database.dart';
+import 'sales/catalogue_service.dart';
 
 /// Everything the app needs before the first frame: secure storage, the
 /// encrypted database, and — if a session exists — a running sync loop.
@@ -24,9 +26,20 @@ class Bootstrap {
   final LocalDatabase db;
   final Session? initialSession;
 
+  late final CatalogueService catalogue = CatalogueService(
+    baseUrl: AppConfig.apiBaseUrl,
+    db: db,
+    tokenProvider: auth.accessToken,
+  );
+
   SyncEngine? _engine;
+  SyncApi? _api;
 
   SyncEngine? get engine => _engine;
+
+  /// The same API client the sync loop uses. Exposed because number leasing is
+  /// a separate, synchronous need: the counter needs a job number now.
+  SyncApi? get api => _api;
 
   bool _cipherVerified = false;
   bool get isEncrypted => _cipherVerified;
@@ -70,11 +83,15 @@ class Bootstrap {
     );
 
     _engine = SyncEngine(db: db, api: api);
+    _api = api;
     _engine!.start(
       interval: Platform.isWindows
           ? AppConfig.windowsPollInterval
           : AppConfig.androidPollInterval,
     );
+
+    // The price book is needed before the first order, and it is small.
+    unawaited(catalogue.refresh());
   }
 
   Future<void> signOut() async {

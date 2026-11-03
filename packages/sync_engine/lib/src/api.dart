@@ -105,6 +105,16 @@ abstract interface class SyncApi {
   Future<PushResult> push({required List<OutboxMutation> mutations});
 
   Future<PullResult> pull({required int since, int limit = 200});
+
+  /// Leases a contiguous range of human-friendly numbers for one series.
+  Future<NumberRange> leaseNumbers({required String series, int size = 100});
+}
+
+class NumberRange {
+  const NumberRange({required this.start, required this.end});
+
+  final int start;
+  final int end;
 }
 
 /// Real implementation against the Worker.
@@ -222,6 +232,22 @@ class HttpSyncApi implements SyncApi {
             errorMessage: (result['error'] as Map?)?['message'] as String?,
           ),
       ],
+    );
+  }
+
+  @override
+  Future<NumberRange> leaseNumbers({
+    required String series,
+    int size = 100,
+  }) async {
+    final body = await _send(
+      'POST',
+      '/v1/number-blocks/lease',
+      body: <String, Object?>{'series': series, 'size': size},
+    );
+    return NumberRange(
+      start: (body['start']! as num).toInt(),
+      end: (body['end']! as num).toInt(),
     );
   }
 

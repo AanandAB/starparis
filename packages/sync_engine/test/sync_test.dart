@@ -73,6 +73,19 @@ class FakeApi implements SyncApi {
     return PushResult(head: headValue, outcomes: outcomes);
   }
 
+  int _nextNumber = 1;
+  bool failLeases = false;
+
+  @override
+  Future<NumberRange> leaseNumbers({required String series, int size = 100}) async {
+    if (failEverything || failLeases) {
+      throw const SyncException('OFFLINE', 'No network');
+    }
+    final start = _nextNumber;
+    _nextNumber += size;
+    return NumberRange(start: start, end: start + size - 1);
+  }
+
   @override
   Future<PullResult> pull({required int since, int limit = 200}) async {
     if (failEverything) {
@@ -317,6 +330,127 @@ void main() {
         expect(matches.single.name, 'Ahmed Traders');
       },
     );
+  });
+
+  group('number series', () {
+    test('leases a block and spends it in order', () async {
+      final series = NumberSeries(db: db, api: api, series: 'JOB', blockSize: 100);
+      final first = await series.next();
+      final second = await series.next();
+      expect(first.display, '1');
+      expect(second.display, '2');
+      expect(await series.remaining(), 98);
+    });
+
+    test('falls back to a temporary number when there is no connection', () async {
+      api.failLeases = true;
+      final series = NumberSeries(db: db, api: api, series: 'JOB');
+      final issued = await series.next();
+      expect(issued.isTemporary, isTrue);
+      expect(issued.number, isNull);
+      expect(issued.display, 'T-0001');
+    });
+  });
+
+  group('catalogue', () {
+    test('replaces the price book atomically and exposes product rules', () async {
+      await db.replaceCatalogue(
+        productRows: <Map<String, Object?>>[
+          <String, Object?>{
+            'id': 'prod_cards',
+            'tenant_id': 't1',
+            'code': 'business_cards',
+            'name_en': 'Business cards',
+            'kind': 'sheet',
+            'pricing_mode': 'cost_plus',
+            'sheet_width_mm': 320,
+            'sheet_height_mm': 450,
+            'material_code': 'art_card_350',
+            'print_rate_fils': 35,
+            'markup_bps': 6500,
+            'sizes_json': '[]',
+            'finishes_json': '[]',
+            'quantity_presets_json': '[100,500]',
+            'active': 1,
+          },
+        ],
+        materialRows: <Map<String, Object?>>[
+          <String, Object?>{
+            'id': 'mat1',
+            'tenant_id': 't1',
+            'code': 'art_card_350',
+            'name': 'Art card 350',
+            'cost_per_sheet_fils': 60,
+            'active': 1,
+          },
+        ],
+        ruleRows: <Map<String, Object?>>[
+          <String, Object?>{
+            'id': 'rule1',
+            'tenant_id': 't1',
+            'price_book_version': 1,
+            'label': 'Cutting',
+            'phase': 'finishing',
+            'basis': 'flat',
+            'rate_fils': 500,
+            'priority': 60,
+            'when_json': '[]',
+            'active': 1,
+          },
+        ],
+        priceBookVersion: 1,
+        vatBps: 500,
+      );
+
+      final products = await db.watchProducts().first;
+      expect(products, hasLength(1));
+      expect(await db.materialByCode('art_card_350'), isNotNull);
+      expect(await db.rulesForProduct('prod_cards', 1), hasLength(1));
+      expect(await db.vatBps(), 500);
+    });
+  });
+
+  group('orders', () {
+    test('writes the order, its lines and the outbox in one go', () async {
+      final orderId = await db.createOrderLocal(
+        tenantId: 't1',
+        branchId: 'b1',
+        customerId: 'c1',
+        customerName: 'Ahmed Traders',
+        userId: 'u1',
+        numberDisplay: '10452',
+        number: 10452,
+        lines: <OrderLineDraft>[
+          const OrderLineDraft(
+            productId: 'prod_cards',
+            description: 'Business cards · 500 · 90×55 mm · matt lamination',
+            optionsJson: '{"quantity":500}',
+            quantity: 500,
+            priceBookVersion: 7,
+            breakdownJson: '{"total_fils":12200,"vat_fils":610,"grand_total_fils":12810}',
+            subtotalFils: 12200,
+            vatFils: 610,
+            totalFils: 12810,
+          ),
+        ],
+      );
+
+      final order = await db.orderById(orderId);
+      expect(order, isNotNull);
+      expect(order!.totalFils, 12810);
+      expect(order.numberDisplay, '10452');
+      expect(order.itemCount, 1);
+
+      final items = await db.itemsFor(orderId);
+      expect(items, hasLength(1));
+      expect(items.single.breakdownJson, contains('grand_total_fils'));
+
+      final batch = await db.nextBatch();
+      expect(
+        batch.map((mutation) => mutation.entity),
+        containsAll(<String>['orders', 'order_items']),
+      );
+    });
   });
 
   group('state', () {

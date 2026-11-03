@@ -62,6 +62,52 @@ export const ENTITIES: Record<string, EntityDef> = {
     branchScoped: false,
     softDelete: true,
   },
+  orders: {
+    table: 'orders',
+    columns: new Set([
+      'number',
+      'number_display',
+      'is_quote',
+      'customer_id',
+      'customer_name',
+      'status',
+      'priority',
+      'due_at',
+      'delivery_method',
+      'notes',
+      'subtotal_fils',
+      'vat_fils',
+      'total_fils',
+      'item_count',
+      'branch_id',
+    ]),
+    required: ['customer_id', 'number_display'],
+    permission: 'order.create',
+    mergeable: false,
+    branchScoped: true,
+    softDelete: true,
+  },
+  order_items: {
+    table: 'order_items',
+    columns: new Set([
+      'order_id',
+      'product_id',
+      'description',
+      'options_json',
+      'quantity',
+      'price_book_version',
+      'breakdown_json',
+      'subtotal_fils',
+      'vat_fils',
+      'total_fils',
+      'status',
+    ]),
+    required: ['order_id', 'product_id', 'description', 'quantity', 'breakdown_json'],
+    permission: 'order.create',
+    mergeable: false,
+    branchScoped: true,
+    softDelete: true,
+  },
 };
 
 type Row = Record<string, unknown>;
@@ -169,7 +215,11 @@ async function insertRow(
   const now = nowIso();
   row['id'] = mutation.row_id;
   row['tenant_id'] = ctx.tenantId;
-  row['branch_id'] = def.branchScoped ? (row['branch_id'] ?? ctx.branchId) : null;
+  // Only tables that actually carry a branch get one. Setting it blindly broke
+  // customer_phones, which has no such column — caught by the live smoke test.
+  if (def.branchScoped) {
+    row['branch_id'] = row['branch_id'] ?? ctx.branchId;
+  }
   row['created_at'] = now;
   row['updated_at'] = now;
   row['created_by'] = ctx.userId;

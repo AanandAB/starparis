@@ -115,6 +115,45 @@ beforeAll(async () => {
       `INSERT INTO users (id, tenant_id, branch_id, role_id, name, phone_e164, password_hash, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).bind(USER_DESIGNER, TENANT, BRANCH_SHJ, ROLE_DESIGNER, 'Designer', '+971500000003', passwordHash, now, now),
+
+    // --- catalogue -----------------------------------------------------
+    env.DB.prepare(
+      `INSERT INTO products (id, tenant_id, code, name_en, kind, pricing_mode,
+                             sheet_width_mm, sheet_height_mm, material_code, print_rate_fils,
+                             markup_bps, sizes_json, finishes_json, quantity_presets_json,
+                             created_at, updated_at)
+       VALUES (?, ?, ?, ?, 'sheet', 'cost_plus', 320, 450, 'art_card_350', 35, 6500,
+               ?, ?, ?, ?, ?)`,
+    ).bind(
+      'prod_cards',
+      TENANT,
+      'business_cards',
+      'Business cards',
+      '[{"code":"90x55","label":"90 × 55 mm","width_mm":90,"height_mm":55}]',
+      '[{"code":"matt_lamination","label":"Matt lamination"}]',
+      '[100,250,500,1000]',
+      now,
+      now,
+    ),
+
+    env.DB.prepare(
+      `INSERT INTO materials (id, tenant_id, code, name, type, gsm, sheet_width_mm, sheet_height_mm,
+                              cost_per_sheet_fils, created_at, updated_at)
+       VALUES (?, ?, ?, ?, 'card', 350, 320, 450, 60, ?, ?)`,
+    ).bind('mat_art_card_350', TENANT, 'art_card_350', 'Art card 350 gsm', now, now),
+
+    env.DB.prepare(
+      `INSERT INTO price_rules (id, tenant_id, price_book_version, product_id, label, phase, basis,
+                                rate_fils, min_charge_fils, priority, when_json, created_at, updated_at)
+       VALUES (?, ?, 1, NULL, ?, 'finishing', 'per_sheet', 80, 0, 40, ?, ?, ?)`,
+    ).bind(
+      'rule_lamination_matt',
+      TENANT,
+      'Matt lamination (both sides)',
+      '[{"field":"finish","op":"contains","value":"matt_lamination"}]',
+      now,
+      now,
+    ),
   ]);
 
   owner = await loginAs('+971500000001', 'Owner PC');
@@ -313,6 +352,33 @@ describe('push and pull', () => {
     expect(body.results[0]!.error.code).toBe('UNKNOWN_FIELD');
   });
 
+  it('accepts a phone number row for a table without a branch column', async () => {
+    const response = await api(
+      '/v1/push',
+      authed(counter.access_token, {
+        device_id: counter.device_id,
+        mutations: [
+          mutation({
+            mutation_id: 'm-phone-1',
+            entity: 'customer_phones',
+            row_id: '0193f0b1-0000-7000-8000-0000000000e9',
+            fields: {
+              customer_id: customerId,
+              e164: '+971501234567',
+              phone_last9: '501234567',
+              is_primary: 1,
+            },
+          }),
+        ],
+      }),
+    );
+    const body = (await response.json()) as {
+      results: Array<{ status: string; error?: { code: string; message: string } }>;
+    };
+    expect(body.results[0]!.error?.message ?? '').toBe('');
+    expect(body.results[0]!.status).toBe('applied');
+  });
+
   it('rejects a device that is not the token holder', async () => {
     const response = await api(
       '/v1/push',
@@ -373,6 +439,113 @@ describe('permissions', () => {
     const ownerPull = await api('/v1/pull?since=0&limit=200', authed(owner.access_token));
     const ownerBody = (await ownerPull.json()) as { rows: Array<{ row_id: string }> };
     expect(ownerBody.rows.some((row) => row.row_id === dubaiCustomer)).toBe(true);
+  });
+});
+
+describe('catalogue', () => {
+  it('returns the products, materials, rules and VAT rate', async () => {
+    const response = await api('/v1/catalogue', authed(counter.access_token));
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      price_book_version: number;
+      products: Array<{ code: string; kind: string }>;
+      materials: Array<{ code: string; cost_per_sheet_fils: number }>;
+      rules: Array<{ label: string; basis: string; rate_fils: number }>;
+      tax: { vat_bps: number };
+    };
+
+    expect(body.price_book_version).toBe(1);
+    expect(body.tax.vat_bps).toBe(500);
+    expect(body.products.map((product) => product.code)).toContain('business_cards');
+    expect(body.materials[0]!.cost_per_sheet_fils).toBe(60);
+    expect(body.rules.some((rule) => rule.label === 'Matt lamination (both sides)')).toBe(true);
+  });
+});
+
+describe('orders', () => {
+  const orderId = '0193f0b1-0000-7000-8000-0000000000aa';
+  const itemId = '0193f0b1-0000-7000-8000-0000000000ab';
+
+  it('accepts an order and its item from the counter', async () => {
+    const response = await api(
+      '/v1/push',
+      authed(counter.access_token, {
+        device_id: counter.device_id,
+        mutations: [
+          mutation({
+            mutation_id: 'm-order-1',
+            entity: 'orders',
+            row_id: orderId,
+            fields: {
+              'number': 10452,
+              'number_display': '10452',
+              'customer_id': '0193f0b1-0000-7000-8000-0000000000e1',
+              'customer_name': 'Ahmed Traders',
+              'status': 'confirmed',
+              'priority': 'normal',
+              'subtotal_fils': 12200,
+              'vat_fils': 610,
+              'total_fils': 12810,
+              'item_count': 1,
+            },
+          }),
+          mutation({
+            mutation_id: 'm-order-item-1',
+            entity: 'order_items',
+            row_id: itemId,
+            fields: {
+              'order_id': orderId,
+              'product_id': 'prod_cards',
+              'description': 'Business cards · 500 · 90×55 · matt',
+              'options_json': '{"quantity":500}',
+              'quantity': 500,
+              'price_book_version': 1,
+              'breakdown_json': '{"total_fils":12200,"vat_fils":610,"grand_total_fils":12810}',
+              'subtotal_fils': 12200,
+              'vat_fils': 610,
+              'total_fils': 12810,
+            },
+          }),
+        ],
+      }),
+    );
+
+    const body = (await response.json()) as { results: Array<{ status: string }> };
+    expect(body.results.map((result) => result.status)).toEqual(['applied', 'applied']);
+  });
+
+  it('pulls the order back with its branch assigned by the server', async () => {
+    const response = await api('/v1/pull?since=0&limit=200', authed(counter.access_token));
+    const body = (await response.json()) as {
+      rows: Array<{ entity: string; row_id: string; data: { branch_id: string } }>;
+    };
+    const order = body.rows.find((row) => row.entity === 'orders' && row.row_id === orderId);
+    expect(order).toBeDefined();
+    expect(order!.data.branch_id).toBe(BRANCH_SHJ);
+  });
+
+  it('refuses an order missing its display number', async () => {
+    const response = await api(
+      '/v1/push',
+      authed(counter.access_token, {
+        device_id: counter.device_id,
+        mutations: [
+          mutation({
+            mutation_id: 'm-order-bad',
+            entity: 'orders',
+            row_id: '0193f0b1-0000-7000-8000-0000000000ac',
+            fields: {
+              'customer_id': '0193f0b1-0000-7000-8000-0000000000e1',
+            },
+          }),
+        ],
+      }),
+    );
+    const body = (await response.json()) as {
+      results: Array<{ status: string; error: { code: string } }>;
+    };
+    expect(body.results[0]!.status).toBe('rejected');
+    expect(body.results[0]!.error.code).toBe('MISSING_FIELD');
   });
 });
 

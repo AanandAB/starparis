@@ -65,6 +65,15 @@ final StreamProvider<List<Customer>> allCustomersProvider =
       (ref) => ref.watch(bootstrapProvider).db.watchCustomers(),
     );
 
+final StreamProvider<List<Product>> productsProvider =
+    StreamProvider<List<Product>>(
+      (ref) => ref.watch(bootstrapProvider).db.watchProducts(),
+    );
+
+final StreamProvider<List<Order>> ordersProvider = StreamProvider<List<Order>>(
+  (ref) => ref.watch(bootstrapProvider).db.watchOrders(),
+);
+
 /// Which shell tab is open. A provider rather than local state so a card on the
 /// home screen can send the user to the customers tab with one tap.
 class ShellTab extends Notifier<int> {

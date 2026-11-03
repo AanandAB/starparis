@@ -4,6 +4,7 @@ import 'package:starparis_design/starparis_design.dart';
 import 'package:starparis_sync/starparis_sync.dart';
 
 import '../providers.dart';
+import 'orders_screen.dart';
 
 /// The role-shaped home screen.
 ///
@@ -76,12 +77,11 @@ class HomeScreen extends ConsumerWidget {
           onTap: () => ref.read(shellTabProvider.notifier).select(1),
         ),
         const SizedBox(height: StarSpace.md),
-        const _ActionCard(
+        _ActionCard(
           icon: Icons.receipt_long_outlined,
           title: 'New order',
-          subtitle:
-              'Arrives in Phase 2 with the price book and the order builder.',
-          enabled: false,
+          subtitle: 'Pick a product, see the price, confirm. Works offline.',
+          onTap: () => openOrderBuilder(context),
         ),
         const SizedBox(height: StarSpace.md),
         const _ActionCard(

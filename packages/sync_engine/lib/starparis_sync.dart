@@ -3,4 +3,5 @@ library;
 
 export 'src/api.dart';
 export 'src/database.dart';
+export 'src/numbers.dart';
 export 'src/sync_engine.dart';

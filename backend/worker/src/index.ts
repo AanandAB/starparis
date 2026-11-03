@@ -11,6 +11,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 
 import { error, loadSession, login, loginSchema, refreshSchema, refreshSession, revokeDevice } from './auth';
+import { loadCatalogue } from './catalogue';
 import { verifyAccessToken } from './crypto';
 import { leaseBlock } from './numbers';
 import { currentHead, pullChanges, pushMutations } from './sync';
@@ -161,6 +162,12 @@ app.post('/v1/push', async (c) => {
     parsed.data.mutations as unknown as Mutation[],
   );
   return c.json(response);
+});
+
+app.get('/v1/catalogue', async (c) => {
+  const ctx = c.get('auth');
+  const catalogue = await loadCatalogue(c.env, ctx.tenantId);
+  return c.json(catalogue);
 });
 
 app.get('/v1/pull', async (c) => {
