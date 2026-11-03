@@ -5,6 +5,7 @@ import 'package:starparis_sync/starparis_sync.dart';
 
 import 'auth/session.dart';
 import 'bootstrap.dart';
+import 'l10n/strings.dart';
 
 /// Overridden in `main()` with the real object; a missing override is a
 /// programming error, not a runtime condition.
@@ -130,6 +131,11 @@ class LocaleChoice extends Notifier<Locale?> {
 
 final NotifierProvider<LocaleChoice, Locale?> localeProvider =
     NotifierProvider<LocaleChoice, Locale?>(LocaleChoice.new);
+
+/// The words for the current locale. A widget reads `ref.watch(stringsProvider)`.
+final Provider<AppStrings> stringsProvider = Provider<AppStrings>((ref) {
+  return AppStrings.of(ref.watch(localeProvider));
+});
 
 /// Which shell tab is open. A provider rather than local state so a card on the
 /// home screen can send the user to the customers tab with one tap.

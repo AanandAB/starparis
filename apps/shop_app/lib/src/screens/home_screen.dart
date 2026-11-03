@@ -32,6 +32,7 @@ class HomeScreen extends ConsumerWidget {
     if (session == null) return const SizedBox.shrink();
 
     final db = ref.watch(bootstrapProvider).db;
+    final t = ref.watch(stringsProvider);
     final now = DateTime.now();
     final startOfToday = DateTime(now.year, now.month, now.day);
     final endOfToday = startOfToday.add(const Duration(days: 1));
@@ -104,6 +105,7 @@ class HomeScreen extends ConsumerWidget {
                   onNewOrder: session.canCreateOrders
                       ? () => openOrderBuilder(context)
                       : null,
+                  newOrderLabel: t('today.newOrder'),
                 ),
                 const SizedBox(height: StarSpace.lg),
                 if (loading)
@@ -112,22 +114,22 @@ class HomeScreen extends ConsumerWidget {
                   _StatGrid(
                     stats: <Widget>[
                       StarStat(
-                        label: 'In production',
+                        label: t('today.inProduction'),
                         value: '${inProgress.length}',
                         hint: inProgress.isEmpty
-                            ? 'nothing on a machine'
-                            : 'running right now',
+                            ? t('today.nothingOnMachine')
+                            : t('today.onMachine'),
                         icon: Icons.precision_manufacturing_outlined,
                         onTap: () => ref
                             .read(shellTabProvider.notifier)
                             .select(HomeTabs.production),
                       ),
                       StarStat(
-                        label: 'Overdue',
+                        label: t('today.overdue'),
                         value: '${overdue.length}',
                         hint: overdue.isEmpty
-                            ? 'nothing late'
-                            : 'past its date',
+                            ? t('today.nothingLate')
+                            : t('today.overdueHint'),
                         icon: Icons.warning_amber_outlined,
                         tone: overdue.isEmpty
                             ? StarStatTone.positive
@@ -137,11 +139,11 @@ class HomeScreen extends ConsumerWidget {
                             .select(HomeTabs.production),
                       ),
                       StarStat(
-                        label: 'Due today',
+                        label: t('today.dueToday'),
                         value: '${ordersDueToday.length}',
                         hint: ordersDueToday.isEmpty
-                            ? 'no jobs promised today'
-                            : 'jobs promised today',
+                            ? t('today.noPromiseToday')
+                            : t('today.promisedToday'),
                         icon: Icons.event_available_outlined,
                         tone: ordersDueToday.isEmpty
                             ? StarStatTone.neutral
@@ -151,11 +153,11 @@ class HomeScreen extends ConsumerWidget {
                             .select(HomeTabs.orders),
                       ),
                       StarStat(
-                        label: 'Waiting for you',
+                        label: t('today.waitingForYou'),
                         value: '${unclaimed.length}',
                         hint: unclaimed.isEmpty
-                            ? 'your queue is clear'
-                            : 'unclaimed in your role',
+                            ? t('today.queueClear')
+                            : t('today.unclaimed'),
                         icon: Icons.pan_tool_outlined,
                         onTap: () => ref
                             .read(shellTabProvider.notifier)
@@ -166,12 +168,11 @@ class HomeScreen extends ConsumerWidget {
                 const SizedBox(height: StarSpace.xl),
                 if (overdue.isNotEmpty) ...<Widget>[
                   StarSectionHeader(
-                    title: 'Overdue',
-                    subtitle:
-                        'Past its promised date. Call the customer today.',
+                    title: t('today.overdueTitle'),
+                    subtitle: t('today.overdueSubtitle'),
                     count: overdue.length,
                     trailing: _seeAll(
-                      'Board',
+                      t('common.board'),
                       () => ref
                           .read(shellTabProvider.notifier)
                           .select(HomeTabs.production),
@@ -182,7 +183,7 @@ class HomeScreen extends ConsumerWidget {
                 ],
                 if (dueToday.isNotEmpty) ...<Widget>[
                   StarSectionHeader(
-                    title: 'Due today',
+                    title: t('today.dueTodayTitle'),
                     count: dueToday.length,
                     trailing: _seeAll(
                       'Board',
@@ -196,13 +197,13 @@ class HomeScreen extends ConsumerWidget {
                 ],
                 if (unclaimed.isNotEmpty) ...<Widget>[
                   StarSectionHeader(
-                    title: 'Waiting to be picked up',
+                    title: t('today.waitingTitle'),
                     subtitle: session.isOwner || session.role == 'manager'
-                        ? 'Available work across every role.'
-                        : 'Available work for your role.',
+                        ? t('today.waitingSubtitleAll')
+                        : t('today.waitingSubtitle'),
                     count: unclaimed.length,
                     trailing: _seeAll(
-                      'My work',
+                      t('common.myWork'),
                       () => ref
                           .read(shellTabProvider.notifier)
                           .select(HomeTabs.production),
@@ -219,12 +220,10 @@ class HomeScreen extends ConsumerWidget {
                     dueToday.isEmpty &&
                     unclaimed.isEmpty &&
                     inProgress.isEmpty)
-                  const EmptyState(
+                  EmptyState(
                     icon: Icons.check_circle_outline,
-                    title: 'Nothing needs you right now',
-                    message:
-                        'New orders, due dates and unclaimed work appear here as '
-                        'they arrive — on this device, even with no connection.',
+                    title: t('today.nothingNeedsYou'),
+                    message: t('today.nothingNeedsYouBody'),
                   ),
                 const SizedBox(height: StarSpace.xxl),
               ],
@@ -255,10 +254,16 @@ class HomeScreen extends ConsumerWidget {
 }
 
 class _Greeting extends StatelessWidget {
-  const _Greeting({required this.name, required this.role, this.onNewOrder});
+  const _Greeting({
+    required this.name,
+    required this.role,
+    required this.newOrderLabel,
+    this.onNewOrder,
+  });
 
   final String name;
   final String role;
+  final String newOrderLabel;
   final VoidCallback? onNewOrder;
 
   @override
@@ -298,7 +303,7 @@ class _Greeting extends StatelessWidget {
           FilledButton.icon(
             onPressed: onNewOrder,
             icon: const Icon(Icons.add, size: 18),
-            label: const Text('New order'),
+            label: Text(newOrderLabel),
           ),
       ],
     );
@@ -450,6 +455,7 @@ class _ProofsWaiting extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final db = ref.watch(bootstrapProvider).db;
+    final t = ref.watch(stringsProvider);
 
     return StreamBuilder<List<Proof>>(
       stream: db.watchProofsAwaitingDecision(),
@@ -464,10 +470,8 @@ class _ProofsWaiting extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               StarSectionHeader(
-                title: 'Waiting on the customer',
-                subtitle:
-                    'A proof went out and has not come back. Nothing moves on '
-                    'these jobs until it does.',
+                title: t('today.onCustomer'),
+                subtitle: t('today.onCustomerSubtitle'),
                 count: proofs.length,
               ),
               Card(
@@ -530,6 +534,7 @@ class _CashToday extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final db = ref.watch(bootstrapProvider).db;
+    final t = ref.watch(stringsProvider);
 
     return StreamBuilder<TillSession?>(
       stream: db.watchOpenTill(),
@@ -544,7 +549,7 @@ class _CashToday extends ConsumerWidget {
             builder: (context, cashSnapshot) {
               final cash = cashSnapshot.data ?? 0;
               return StarStat(
-                label: 'Cash today',
+                label: t('today.cashToday'),
                 value: Fils(cash).aedLabel,
                 hint:
                     'in the drawer since the shift opened · should be '

@@ -53,6 +53,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     }
 
     final index = ref.watch(shellTabProvider);
+    final t = ref.watch(stringsProvider);
     final theme = Theme.of(context);
     final width = MediaQuery.sizeOf(context).width;
     final useRail =
@@ -64,24 +65,29 @@ class _AppShellState extends ConsumerState<AppShell> {
 
     // One list, grouped for the eye, keeping the page indices the rest of the
     // app already uses: Today 0, Customers 1, Orders 2, Production 3.
-    const work = <_Dest>[
-      _Dest('Today', Icons.dashboard_outlined, Icons.dashboard, HomeTabs.home),
+    final work = <_Dest>[
       _Dest(
-        'Orders',
+        t('nav.today'),
+        Icons.dashboard_outlined,
+        Icons.dashboard,
+        HomeTabs.home,
+      ),
+      _Dest(
+        t('nav.orders'),
         Icons.receipt_long_outlined,
         Icons.receipt_long,
         HomeTabs.orders,
       ),
       _Dest(
-        'Production',
+        t('nav.production'),
         Icons.view_kanban_outlined,
         Icons.view_kanban,
         HomeTabs.production,
       ),
     ];
     final people = <_Dest>[
-      const _Dest(
-        'Customers',
+      _Dest(
+        t('nav.customers'),
         Icons.people_outline,
         Icons.people,
         HomeTabs.customers,
@@ -98,7 +104,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     if (ref.watch(canEditPricesProvider)) {
       business.add(
         _Dest(
-          'Prices',
+          t('nav.prices'),
           Icons.price_change_outlined,
           Icons.price_change,
           nextPage++,
@@ -108,20 +114,25 @@ class _AppShellState extends ConsumerState<AppShell> {
     }
     if (ref.watch(canViewReportsProvider)) {
       business.add(
-        _Dest('Reports', Icons.insights_outlined, Icons.insights, nextPage++),
+        _Dest(
+          t('nav.reports'),
+          Icons.insights_outlined,
+          Icons.insights,
+          nextPage++,
+        ),
       );
       optionalPages.add(const ReportsScreen());
     }
     if (ref.watch(canManageStaffProvider)) {
       business.add(
-        _Dest('Staff', Icons.badge_outlined, Icons.badge, nextPage++),
+        _Dest(t('nav.staff'), Icons.badge_outlined, Icons.badge, nextPage++),
       );
       optionalPages.add(const StaffScreen());
     }
     if (ref.watch(canManageVendorsProvider)) {
       business.add(
         _Dest(
-          'Vendors',
+          t('nav.vendors'),
           Icons.storefront_outlined,
           Icons.storefront,
           nextPage++,
@@ -274,13 +285,13 @@ class _AppShellState extends ConsumerState<AppShell> {
                     child: Text('${session.name} · ${session.role}'),
                   ),
                   const PopupMenuDivider(),
-                  const PopupMenuItem<String>(
+                  PopupMenuItem<String>(
                     value: 'till',
-                    child: Text('Cash drawer'),
+                    child: Text(t('menu.till')),
                   ),
-                  const PopupMenuItem<String>(
+                  PopupMenuItem<String>(
                     value: 'diagnostics',
-                    child: Text('Sync diagnostics'),
+                    child: Text(t('menu.diagnostics')),
                   ),
                   const PopupMenuDivider(),
                   PopupMenuItem<String>(
@@ -292,9 +303,9 @@ class _AppShellState extends ConsumerState<AppShell> {
                     ),
                   ),
                   const PopupMenuDivider(),
-                  const PopupMenuItem<String>(
+                  PopupMenuItem<String>(
                     value: 'signout',
-                    child: Text('Sign out'),
+                    child: Text(t('menu.signout')),
                   ),
                 ],
               ),

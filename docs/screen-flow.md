@@ -251,12 +251,16 @@ waiting. Every number is a link to the list behind it.
 The two missing modules, in that order: staff first because every stage already names a role, then
 vendors because the schema needs a table before the screens can exist.
 
-**Phase E — Arabic and RTL** — *started*
-`flutter_localizations` is wired, `en` and `ar-AE` are declared, and the user menu has a language
-switch. Choosing Arabic mirrors the whole layout — rail on the right, padding from the right, rows
-reversed — because the screens use directional padding rather than hard-coded left/right. What is not
-done: the labels are still English, and Arabic PDFs need a shaping-capable font. The switch proves the
-layout, not the language, and the app says so in the menu ("عربي — Arabic layout").
+**Phase E — Arabic and RTL** — *under way*
+Locale switch wired (`en`, `ar-AE`), layout mirrors in Arabic, and the first screens are translated:
+navigation, the user menu, and every figure and heading on Today. Strings live in
+`lib/src/l10n/strings.dart` as plain en/ar pairs — not generated ARB — because the shop's Arabic is the
+owner's Arabic (عميل or زبون, وديعة or دفعة مقدمة) and that conversation is cheaper when the pairs sit
+in one file. A missing key falls back to English, never to a blank.
+
+Not done: the rest of the screens (Orders, Customers, Board, Prices, Reports, Staff, Vendors, the
+sheets), and Arabic PDFs — `package:pdf` shapes nothing, so documents need either an embedded Arabic
+font with a shaping text engine or HTML rendering. That decision is still open.
 
 **Cross-screen consistency** — *in progress*
 `ScreenHeader` is now the one header for a list screen (title, subtitle, actions), applied to Orders
