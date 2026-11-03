@@ -314,6 +314,28 @@ proven against D1, not only in unit tests.
 Still to come in money: the Reports screen in the app (the endpoints are in place), till sessions and
 cash-up, expenses, and the VAT export file for the accountant.
 
+### Phase 4C — the Reports screen
+
+Owner, manager and accountant get a **Reports** tab: the month's VAT on one row of cards (sales,
+output VAT, credits, **VAT due**, cash collected with its method breakdown, refunds) and the ageing
+table underneath (current · 31–60 · 61–90 · 90+ · total, with a totals row, 90+ in red).
+
+It is the one screen that says out loud that it needs the network: a VAT return and an ageing list
+span every branch, so they cannot come from this tablet's database. The failure state says exactly
+that — "these figures come from the server, everything else still works offline" — rather than
+showing an empty table that looks like zero sales.
+
+Checked through the app's own client, against the deployed API:
+
+    vat        AED 122.00 sales · AED 6.10 output · AED 2.38 credited · AED 3.72 due · AED 128.10 collected
+    ageing     AED 105.00 outstanding across 1 customer (31-60: 105.00)
+               Ageing Probe LLC · AED 105.00
+
+`tool/reports_smoke.dart` is the gate; it also asserts the client's own arithmetic (due = output −
+credits) before printing OK.
+
+Now left in money: till sessions and cash-up, expenses, and the VAT export file for the accountant.
+
 ## Commands
 ```bash
 # Dart workspace

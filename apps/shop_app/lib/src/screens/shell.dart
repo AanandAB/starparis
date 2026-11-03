@@ -12,6 +12,7 @@ import 'diagnostics_sheet.dart';
 import 'home_screen.dart';
 import 'orders_screen.dart';
 import 'price_book_screen.dart';
+import 'reports_screen.dart';
 
 /// The frame every screen lives in: navigation, the sync chip, and the user
 /// menu. Three layouts — bottom bar on a phone, rail on a tablet, labelled rail
@@ -35,6 +36,7 @@ class AppShell extends ConsumerWidget {
       const OrdersScreen(),
       const ProductionScreen(),
       if (ref.watch(canEditPricesProvider)) const PriceBookScreen(),
+      if (ref.watch(canViewReportsProvider)) const ReportsScreen(),
     ];
 
     final destinations = <NavigationDestination>[
@@ -63,6 +65,12 @@ class AppShell extends ConsumerWidget {
           icon: Icon(Icons.price_change_outlined),
           selectedIcon: Icon(Icons.price_change),
           label: 'Prices',
+        ),
+      if (ref.watch(canViewReportsProvider))
+        const NavigationDestination(
+          icon: Icon(Icons.insights_outlined),
+          selectedIcon: Icon(Icons.insights),
+          label: 'Reports',
         ),
     ];
 

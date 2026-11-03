@@ -94,6 +94,13 @@ final Provider<bool> canEditPricesProvider = Provider<bool>((ref) {
   return session?.role == 'owner';
 });
 
+/// Reports are whole-shop figures served by the API, and the permission matrix
+/// gives `report.view` to owner, manager and accountant only.
+final Provider<bool> canViewReportsProvider = Provider<bool>((ref) {
+  final role = ref.watch(sessionProvider)?.role;
+  return role == 'owner' || role == 'manager' || role == 'accountant';
+});
+
 /// Which shell tab is open. A provider rather than local state so a card on the
 /// home screen can send the user to the customers tab with one tap.
 class ShellTab extends Notifier<int> {
