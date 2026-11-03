@@ -25,6 +25,17 @@ class IssuedNumber {
   final bool isTemporary;
 }
 
+/// The number a customer sees, e.g. `INV-SHJ1-PC1-00123`.
+///
+/// The series carries the branch and the device (see [seriesKey] in
+/// backend/worker/src/numbers.ts), so two counters in one branch cannot both
+/// issue 00123. A bare series such as `JOB` keeps the plain number, which is
+/// what the pilot used before series codes existed.
+String formatNumber(String series, int number) {
+  if (!series.contains('-')) return '$number';
+  return '$series-${number.toString().padLeft(5, '0')}';
+}
+
 class NumberSeries {
   NumberSeries({
     required this.db,

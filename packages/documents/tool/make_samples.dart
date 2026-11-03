@@ -70,6 +70,32 @@ Future<void> main() async {
   );
   await File('${directory.path}/sample-job-ticket.pdf').writeAsBytes(ticket);
 
+  final invoiceBytes = await buildInvoicePdf(
+    InvoiceDocument(
+      number: 'INV-SHJ1-PC1-00001',
+      issuedAt: DateTime(2026, 11, 3, 11),
+      dueAt: DateTime(2026, 12, 3),
+      customerName: 'Ahmed Traders LLC',
+      customerTrn: '100123456700003',
+      customerAddress: 'Al Nahda, Sharjah',
+      lines: const <DocumentLine>[
+        DocumentLine(
+          description: 'Business cards | 500 | 90 x 55 mm | double sided | matt lamination',
+          quantity: 500,
+          unitFils: 244,
+          amountFils: 12200,
+        ),
+      ],
+      subtotalFils: 12200,
+      vatFils: 610,
+      totalFils: 12810,
+      paidFils: 5000,
+      notes: 'Payment by transfer only.',
+    ),
+    company,
+  );
+  await File('${directory.path}/sample-invoice.pdf').writeAsBytes(invoiceBytes);
+
   stdout.writeln('quote      ${quote.length} bytes');
   stdout.writeln('job ticket ${ticket.length} bytes');
   stdout.writeln('written to ${directory.absolute.path}');

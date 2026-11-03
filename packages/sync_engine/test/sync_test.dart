@@ -821,6 +821,124 @@ void main() {
     });
   });
 
+  group('money', () {
+    Future<Order> order() async {
+      final id = await db.createOrderLocal(
+        tenantId: 't1',
+        branchId: 'b1',
+        customerId: 'c1',
+        customerName: 'Ahmed Traders',
+        userId: 'u1',
+        numberDisplay: '10452',
+        lines: const <OrderLineDraft>[
+          OrderLineDraft(
+            productId: 'prod_cards',
+            description: 'Business cards - 500',
+            optionsJson: '{"quantity":500}',
+            quantity: 500,
+            priceBookVersion: 7,
+            breakdownJson: '{"total_fils":12200}',
+            subtotalFils: 12200,
+            vatFils: 610,
+            totalFils: 12810,
+          ),
+        ],
+      );
+      return (await db.orderById(id))!;
+    }
+
+    test('an invoice snapshots the order and refuses a second one', () async {
+      final placed = await order();
+      final invoiceId = await db.issueInvoiceLocal(
+        order: placed,
+        tenantId: 't1',
+        branchId: 'b1',
+        userId: 'u1',
+        number: 'INV-SHJ1-PC1-00001',
+      );
+
+      final invoice = await db.invoiceForOrder(placed.id);
+      expect(invoice, isNotNull);
+      expect(invoice!.number, 'INV-SHJ1-PC1-00001');
+      expect(invoice.subtotalFils, 12200);
+      expect(invoice.vatFils, 610);
+      expect(invoice.totalFils, 12810);
+      expect(invoice.paidFils, 0);
+      expect(invoice.status, 'issued');
+
+      final lines = await db.linesFor(invoiceId);
+      expect(lines, hasLength(1));
+      expect(lines.single.amountFils, 12200);
+      expect(lines.single.unitFils, 24);
+
+      await expectLater(
+        db.issueInvoiceLocal(
+          order: placed,
+          tenantId: 't1',
+          branchId: 'b1',
+          userId: 'u1',
+          number: 'INV-SHJ1-PC1-00002',
+        ),
+        throwsA(isA<StateError>()),
+      );
+    });
+
+    test('a payment moves the balance but only the payment is queued', () async {
+      final placed = await order();
+      await db.issueInvoiceLocal(
+        order: placed,
+        tenantId: 't1',
+        branchId: 'b1',
+        userId: 'u1',
+        number: 'INV-SHJ1-PC1-00003',
+      );
+      await db.markApplied(<String>[
+        for (final mutation in await db.nextBatch()) mutation.mutationId,
+      ]);
+
+      var invoice = (await db.invoiceForOrder(placed.id))!;
+      await db.takePaymentLocal(
+        invoice: invoice,
+        amountFils: 5000,
+        method: 'cash',
+        userId: 'u1',
+      );
+
+      invoice = (await db.invoiceForOrder(placed.id))!;
+      expect(invoice.paidFils, 5000);
+      expect(invoice.status, 'part_paid');
+
+      final batch = await db.nextBatch();
+      expect(batch.where((m) => m.entity == 'payments'), hasLength(1));
+      expect(
+        batch.where((m) => m.entity == 'invoices' && m.op == 'patch'),
+        isEmpty,
+        reason: 'the paid cache belongs to the server',
+      );
+
+      await expectLater(
+        db.takePaymentLocal(
+          invoice: invoice,
+          amountFils: 99999,
+          method: 'cash',
+          userId: 'u1',
+        ),
+        throwsA(isA<StateError>()),
+      );
+
+      await db.takePaymentLocal(
+        invoice: invoice,
+        amountFils: 7810,
+        method: 'transfer',
+        userId: 'u1',
+        reference: 'TT-7788',
+      );
+      invoice = (await db.invoiceForOrder(placed.id))!;
+      expect(invoice.paidFils, 12810);
+      expect(invoice.status, 'paid');
+    });
+  });
+
   group('state', () {
     test('emits syncing then synced', () async {
       final phases = <SyncPhase>[];

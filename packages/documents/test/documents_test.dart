@@ -61,6 +61,49 @@ void main() {
     });
   });
 
+  group('tax invoice PDF', () {
+    InvoiceDocument invoice({int paidFils = 0}) => InvoiceDocument(
+      number: 'INV-SHJ1-PC1-00001',
+      issuedAt: DateTime(2026, 11, 3, 11),
+      dueAt: DateTime(2026, 12, 3),
+      customerName: 'Ahmed Traders LLC',
+      customerTrn: '100123456700003',
+      customerAddress: 'Al Nahda, Sharjah',
+      lines: const <DocumentLine>[_cards],
+      subtotalFils: 12200,
+      vatFils: 610,
+      totalFils: 12810,
+      paidFils: paidFils,
+      notes: 'Payment by transfer only.',
+    );
+
+    test('renders a tax invoice with the money on the page', () async {
+      final bytes = await buildInvoicePdf(invoice(), _company, compress: false);
+      final text = String.fromCharCodes(bytes);
+
+      expect(String.fromCharCodes(bytes.sublist(0, 5)), '%PDF-');
+      // Word strings are kerned into separate runs, so the honest assertion is
+      // on the figures; the wording is checked by extracting the rendered page
+      // (see README).
+      expect(text.contains('128.10'), isTrue, reason: 'total');
+      expect(text.contains('6.10'), isTrue, reason: 'VAT');
+      expect(text.contains('122.00'), isTrue, reason: 'subtotal');
+      expect(text.contains('100000000000003'), isTrue, reason: 'supplier TRN');
+    });
+
+    test('shows the balance when money has been taken', () async {
+      final bytes = await buildInvoicePdf(
+        invoice(paidFils: 5000),
+        _company,
+        compress: false,
+      );
+      final text = String.fromCharCodes(bytes);
+
+      expect(text.contains('50.00'), isTrue, reason: 'paid');
+      expect(text.contains('78.10'), isTrue, reason: '128.10 - 50.00');
+    });
+  });
+
   group('job ticket PDF', () {
     test('carries a QR code when given a tracking link', () async {
       final plain = await buildJobTicketPdf(

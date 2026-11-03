@@ -11,6 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../app_config.dart';
 import '../providers.dart';
 import '../sales/documents_service.dart';
+import '../sales/invoice_section.dart';
 import '../sales/proofs_section.dart';
 import '../sales/whatsapp.dart';
 import 'order_builder_screen.dart';
@@ -306,7 +307,7 @@ class _OrderSheetState extends ConsumerState<_OrderSheet> {
       final issued = await NumberSeries(
         db: bootstrap.db,
         api: bootstrap.api,
-        series: 'JOB',
+        series: 'JOB-${AppConfig.branchCode}-${AppConfig.deviceCode}',
       ).next();
 
       await bootstrap.db.convertQuoteToOrder(
@@ -413,6 +414,8 @@ class _OrderSheetState extends ConsumerState<_OrderSheet> {
             value: Fils(order.totalFils).aedLabel,
             emphatic: true,
           ),
+          const Divider(height: StarSpace.lg),
+          InvoiceSection(order: order),
           const Divider(height: StarSpace.lg),
           ProofsSection(order: order),
           const Divider(height: StarSpace.lg),

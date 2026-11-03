@@ -193,6 +193,40 @@ notifications need a signed installer to test properly and belong with the pilot
 Phase 3 is now closed: tasks, board, proofs, approvals, time, documents and the role-shaped home are
 all working and proven. Phase 4 is money — invoices, payments, credit accounts and the VAT report.
 
+### Phase 4A — invoices and payments
+
+| Piece | State |
+|---|---|
+| Invoices | `invoices` + `invoice_lines`, snapshotting customer, TRN, totals and VAT at issue |
+| Numbering | `INV-SHJ1-PC1-00101` — branch and device in the series, so two counters cannot both issue 00101 |
+| Immutability | an issued invoice cannot be edited; the server refuses any field change (`INVOICE_IMMUTABLE`) |
+| One per order | a second invoice for the same order is refused (`DUPLICATE_INVOICE`), enforced by a unique index |
+| Payments | cash, card, transfer, cheque; `paid_fils` and paid/part-paid are computed **by the server** in the same D1 batch as the payment |
+| Guardrails | overpayment refused with the exact outstanding amount; payments cannot be edited; void is manager-only, needs a reason, and is refused once money is taken |
+| Document | A4 tax invoice with supplier TRN, billed-to TRN, VAT line, paid and balance due |
+| In the app | order sheet → issue invoice (with a warning that it locks), take payment, invoice PDF, send on WhatsApp |
+
+Live proof from the smoke run — an invoice issued on the device, settled with two payments:
+
+    invoice          INV-SHJ1-PC1-00101  paid=12810  status=paid  payments=2  pending=0
+    time             1 entries, 1m total
+    proof            rejected  note=Trim is too tight on the back  pending=0
+
+Two things the live run caught and this phase fixed:
+
+1. **Order numbering was unique on the bare integer.** Once numbering carries the device
+   (`JOB-SHJ1-PC1-00001`), two devices' 00001 collide on `(tenant, branch, number)`. Uniqueness now
+   sits on `number_display`, which is what the customer reads and what the sequence guarantees
+   (migration 0006).
+2. **Printed unit prices did not reconcile.** AED 122.00 ÷ 500 is 0.244 per card, not 2.44; a unit
+   column that multiplies to the wrong total is the first thing a buyer checks. `unitPriceText()`
+   now derives the unit from the line amount, showing 3 decimals only when 2 would not reconcile.
+
+Not in 4A, deliberately: credit notes, payments against credit accounts, ageing, till sessions,
+expenses and the VAT report. A void is only possible before money is taken, and a refunded payment
+does not exist yet — 4B adds both, and invoices stay immutable so nothing already issued has to be
+rewritten when it lands.
+
 ## Commands
 ```bash
 # Dart workspace

@@ -284,7 +284,7 @@ pw.Widget _items(QuoteDocument quote) {
         <String>[
           asciiText(line.description),
           '${line.quantity}',
-          Fils(line.unitFils).aedText,
+          unitPriceText(line.amountFils, line.quantity),
           Fils(line.amountFils).aedText,
         ],
     ],

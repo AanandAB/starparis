@@ -1,4 +1,16 @@
 import 'package:pdf/pdf.dart';
+import 'package:starparis_domain/starparis_domain.dart';
+
+/// Unit price for one line, computed from the line amount so the printed
+/// numbers reconcile: 2 decimals when the division is exact, 3 when a print
+/// unit is a fraction of a fils (AED 122.00 for 500 cards is 0.244 each).
+String unitPriceText(int amountFils, int quantity) {
+  if (quantity <= 0) return Fils(amountFils).aedText;
+  final exactFils = amountFils / quantity;
+  final rounded = (exactFils * 100).round();
+  if (rounded * quantity == amountFils) return Fils(rounded).aedText;
+  return (exactFils / 100).toStringAsFixed(3);
+}
 
 /// Shared document styling. Colours match the app's brand tokens, duplicated as
 /// integers because this package must not depend on Flutter's `Color`.

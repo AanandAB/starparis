@@ -911,6 +911,239 @@ describe('time tracking', () => {
   });
 });
 
+describe('invoices and payments', () => {
+  const invoiceId = '0193f0b1-0000-7000-8000-0000000000da';
+  const lineId = '0193f0b1-0000-7000-8000-0000000000db';
+  const ORDER = '0193f0b1-0000-7000-8000-0000000000aa';
+
+  async function invoiceRow(): Promise<Record<string, unknown>> {
+    return (await env.DB.prepare('SELECT * FROM invoices WHERE id = ?')
+      .bind(invoiceId)
+      .first()) as Record<string, unknown>;
+  }
+
+  async function push(session: Session, mutations: Array<Record<string, unknown>>) {
+    const response = await api(
+      '/v1/push',
+      authed(session.access_token, {
+        device_id: session.device_id,
+        mutations,
+      }),
+    );
+    return (await response.json()) as {
+      results: Array<{ status: string; error?: { code: string; message?: string } }>;
+    };
+  }
+
+  function pay(mutationId: string, amountFils: number, method = 'cash') {
+    return mutation({
+      mutation_id: mutationId,
+      entity: 'payments',
+      row_id: crypto.randomUUID(),
+      fields: { invoice_id: invoiceId, amount_fils: amountFils, method },
+    });
+  }
+
+  it('issues one invoice for the order and refuses a second', async () => {
+    const first = await push(counter, [
+      mutation({
+        mutation_id: 'm-invoice-1',
+        entity: 'invoices',
+        row_id: invoiceId,
+        fields: {
+          order_id: ORDER,
+          number: 'INV-SHJ1-PC1-00001',
+          issued_at: new Date().toISOString(),
+          customer_id: '0193f0b1-0000-7000-8000-0000000000e1',
+          customer_name: 'Ahmed Traders',
+          subtotal_fils: 12200,
+          vat_bps: 500,
+          vat_fils: 610,
+          total_fils: 12810,
+        },
+      }),
+      mutation({
+        mutation_id: 'm-invoice-line-1',
+        entity: 'invoice_lines',
+        row_id: lineId,
+        fields: {
+          invoice_id: invoiceId,
+          line_no: 1,
+          description: 'Business cards - 500 - matt lamination',
+          quantity: 500,
+          unit_fils: 244,
+          amount_fils: 12200,
+          vat_bps: 500,
+        },
+      }),
+    ]);
+    expect(first.results.map((result) => result.status)).toEqual(['applied', 'applied']);
+
+    const row = await invoiceRow();
+    expect(row['status']).toBe('issued');
+    expect(row['paid_fils']).toBe(0);
+    expect(row['branch_id']).toBe(BRANCH_SHJ);
+
+    const second = await push(counter, [
+      mutation({
+        mutation_id: 'm-invoice-2',
+        entity: 'invoices',
+        row_id: '0193f0b1-0000-7000-8000-0000000000dc',
+        fields: {
+          order_id: ORDER,
+          number: 'INV-SHJ1-PC1-00002',
+          customer_id: '0193f0b1-0000-7000-8000-0000000000e1',
+          customer_name: 'Ahmed Traders',
+          subtotal_fils: 12200,
+          vat_fils: 610,
+          total_fils: 12810,
+        },
+      }),
+    ]);
+    expect(second.results[0]!.status).toBe('rejected');
+    expect(second.results[0]!.error!.code).toBe('DUPLICATE_INVOICE');
+  });
+
+  it('will not let an issued invoice be edited', async () => {
+    const body = await push(counter, [
+      mutation({
+        mutation_id: 'm-invoice-edit',
+        entity: 'invoices',
+        op: 'patch',
+        row_id: invoiceId,
+        base_version: 1,
+        fields: { total_fils: 10000 },
+      }),
+    ]);
+    expect(body.results[0]!.status).toBe('rejected');
+    expect(body.results[0]!.error!.code).toBe('INVOICE_IMMUTABLE');
+    expect((await invoiceRow())['total_fils']).toBe(12810);
+  });
+
+  it('takes a part payment and moves the invoice to part paid', async () => {
+    const body = await push(counter, [pay('m-payment-1', 5000)]);
+    expect(body.results[0]!.status).toBe('applied');
+
+    const row = await invoiceRow();
+    expect(row['paid_fils']).toBe(5000);
+    expect(row['status']).toBe('part_paid');
+
+    const payments = await env.DB.prepare('SELECT * FROM payments WHERE invoice_id = ?')
+      .bind(invoiceId)
+      .all<{ amount_fils: number; method: string; taken_by: string }>();
+    expect(payments.results).toHaveLength(1);
+    expect(payments.results[0]!.amount_fils).toBe(5000);
+    expect(payments.results[0]!.taken_by).toBe(USER_COUNTER);
+  });
+
+  it('refuses to take more than is outstanding', async () => {
+    const body = await push(counter, [pay('m-pay-over', 99999)]);
+    expect(body.results[0]!.status).toBe('rejected');
+    expect(body.results[0]!.error!.code).toBe('OVERPAYMENT');
+    expect((await invoiceRow())['paid_fils']).toBe(5000);
+  });
+
+  it('closes the invoice when the balance reaches zero', async () => {
+    const body = await push(counter, [pay('m-payment-2', 7810)]);
+    expect(body.results[0]!.status).toBe('applied');
+
+    const row = await invoiceRow();
+    expect(row['paid_fils']).toBe(12810);
+    expect(row['status']).toBe('paid');
+  });
+
+  it('refuses to void an invoice that has payments', async () => {
+    const row = await invoiceRow();
+    const body = await push(owner, [
+      mutation({
+        mutation_id: 'm-invoice-void',
+        entity: 'invoices',
+        op: 'patch',
+        row_id: invoiceId,
+        base_version: Number(row['version']),
+        fields: { status: 'void', void_reason: 'Wrong customer' },
+      }),
+    ]);
+    expect(body.results[0]!.status).toBe('rejected');
+    expect(body.results[0]!.error!.code).toBe('HAS_PAYMENTS');
+  });
+
+  it('keeps a payment immutable', async () => {
+    const payments = await env.DB.prepare('SELECT id FROM payments WHERE invoice_id = ?')
+      .bind(invoiceId)
+      .all<{ id: string }>();
+    const body = await push(counter, [
+      mutation({
+        mutation_id: 'm-pay-edit',
+        entity: 'payments',
+        op: 'patch',
+        row_id: payments.results[0]!.id,
+        base_version: 1,
+        fields: { amount_fils: 1 },
+      }),
+    ]);
+    expect(body.results[0]!.status).toBe('rejected');
+    expect(body.results[0]!.error!.code).toBe('PAYMENT_IMMUTABLE');
+  });
+
+  it('only lets a manager void a clean invoice, with a reason', async () => {
+    const cleanId = '0193f0b1-0000-7000-8000-0000000000dd';
+    const created = await push(counter, [
+      mutation({
+        mutation_id: 'm-invoice-clean',
+        entity: 'invoices',
+        row_id: cleanId,
+        fields: {
+          order_id: '0193f0b1-0000-7000-8000-0000000000ac',
+          number: 'INV-SHJ1-PC1-00003',
+          customer_id: '0193f0b1-0000-7000-8000-0000000000e1',
+          customer_name: 'Ahmed Traders',
+          subtotal_fils: 10000,
+          vat_fils: 500,
+          total_fils: 10500,
+        },
+      }),
+    ]);
+    expect(created.results[0]!.status).toBe('applied');
+
+    const byCounter = await push(counter, [
+      mutation({
+        mutation_id: 'm-void-by-counter',
+        entity: 'invoices',
+        op: 'patch',
+        row_id: cleanId,
+        base_version: 1,
+        fields: { status: 'void', void_reason: 'Duplicate' },
+      }),
+    ]);
+    expect(byCounter.results[0]!.error!.code).toBe('PERMISSION_DENIED');
+
+    const noReason = await push(owner, [
+      mutation({
+        mutation_id: 'm-void-no-reason',
+        entity: 'invoices',
+        op: 'patch',
+        row_id: cleanId,
+        base_version: 1,
+        fields: { status: 'void' },
+      }),
+    ]);
+    expect(noReason.results[0]!.error!.code).toBe('REASON_REQUIRED');
+
+    const byOwner = await push(owner, [
+      mutation({
+        mutation_id: 'm-void-by-owner',
+        entity: 'invoices',
+        op: 'patch',
+        row_id: cleanId,
+        base_version: 1,
+        fields: { status: 'void', void_reason: 'Duplicate of INV-00001' },
+      }),
+    ]);
+    expect(byOwner.results[0]!.status).toBe('applied');
+  });
+});
+
 describe('price book editing', () => {
   it('lets the owner change a rate and the catalogue reflects it', async () => {
     const response = await api(

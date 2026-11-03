@@ -107,16 +107,20 @@ Future<void> main(List<String> args) async {
     userId: userId,
   );
 
-  final issued = await NumberSeries(db: db, api: api, series: 'JOB').next();
+  final jobSeries = 'JOB-SHJ1-PC1';
+  final issued = await NumberSeries(db: db, api: api, series: jobSeries).next();
+  final jobDisplay = issued.isTemporary
+      ? issued.display
+      : formatNumber(jobSeries, issued.number!);
   final orderId = await db.createOrderLocal(
     tenantId: tenantId,
     branchId: branchId,
     customerId: customerId,
     customerName: 'Tasks Smoke',
     userId: userId,
-    numberDisplay: issued.display,
+    numberDisplay: jobDisplay,
     number: issued.number,
-    jobTitle: '${issued.display} - Tasks Smoke',
+    jobTitle: '$jobDisplay - Tasks Smoke',
     lines: const <OrderLineDraft>[
       OrderLineDraft(
         productId: 'prod_business_cards',
@@ -224,7 +228,7 @@ Future<void> main(List<String> args) async {
   final serverProof = afterProofs.rows
       .where((row) => row.entity == 'proofs' && row.data['order_id'] == orderId)
       .map((row) => row.data)
-      .firstOrNull;
+      .lastOrNull;
   stdout.writeln(
     'proof            ${serverProof?['status']}  '
     'note=${serverProof?['decided_note']}  pending=${await db.pendingCount()}',
@@ -246,6 +250,62 @@ Future<void> main(List<String> args) async {
   stdout.writeln('time             ${timeRows.length} entries, ${minutes}m total');
   if (timeRows.isEmpty || minutes < 1) {
     stderr.writeln('finishing a stage did not record time on the server');
+    exit(1);
+  }
+
+  // ---- invoice and payments ----------------------------------------------
+  final placedOrder = (await db.orderById(orderId))!;
+  const invoiceSeries = 'INV-SHJ1-PC1';
+  final invoiceNumber = await NumberSeries(db: db, api: api, series: invoiceSeries).next();
+  await db.issueInvoiceLocal(
+    order: placedOrder,
+    tenantId: tenantId,
+    branchId: branchId,
+    userId: userId,
+    number: invoiceNumber.isTemporary
+        ? 'INV-${invoiceNumber.display}'
+        : formatNumber(invoiceSeries, invoiceNumber.number!),
+  );
+
+  var invoice = (await db.invoiceForOrder(orderId))!;
+  await db.takePaymentLocal(
+    invoice: invoice,
+    amountFils: 5000,
+    method: 'cash',
+    userId: userId,
+  );
+  await engine.syncNow();
+
+  invoice = (await db.invoiceForOrder(orderId))!;
+  await db.takePaymentLocal(
+    invoice: invoice,
+    amountFils: invoice.totalFils - invoice.paidFils,
+    method: 'transfer',
+    userId: userId,
+    reference: 'TT-SMOKE-1',
+  );
+  await engine.syncNow();
+
+  final moneyPull = await api.pull(since: 0, limit: 500);
+  final serverInvoice = moneyPull.rows
+      .where((row) => row.entity == 'invoices' && row.data['order_id'] == orderId)
+      .map((row) => row.data)
+      .lastOrNull;
+  final paymentCount = moneyPull.rows
+      .where((row) => row.entity == 'payments' && row.data['invoice_id'] == serverInvoice?['id'])
+      .length;
+
+  stdout.writeln(
+    'invoice          ${serverInvoice?['number']}  '
+    'paid=${serverInvoice?['paid_fils']}  status=${serverInvoice?['status']}  '
+    'payments=$paymentCount  pending=${await db.pendingCount()}',
+  );
+
+  if (serverInvoice == null ||
+      serverInvoice['paid_fils'] != serverInvoice['total_fils'] ||
+      serverInvoice['status'] != 'paid' ||
+      paymentCount != 2) {
+    stderr.writeln('the invoice did not settle on the server');
     exit(1);
   }
 

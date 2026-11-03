@@ -35,4 +35,10 @@ abstract final class AppConfig {
   /// promise the ticket cannot keep. The handler is registered with the public
   /// tracking page in Phase 5; until then a scanner shows the job number.
   static const String jobQrPrefix = 'starparis://job/';
+
+  /// Series codes for numbers. They belong in the settings screen; until that
+  /// exists the pilot runs as the first counter at Sharjah (`SHJ1` / `PC1`), and
+  /// every number it issues carries them: `INV-SHJ1-PC1-00001`.
+  static const String branchCode = 'SHJ1';
+  static const String deviceCode = 'PC1';
 }

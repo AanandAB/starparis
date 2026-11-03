@@ -8,6 +8,7 @@ import 'package:starparis_domain/starparis_domain.dart';
 import 'package:starparis_pricing/pricing_engine.dart';
 import 'package:starparis_sync/starparis_sync.dart';
 
+import '../app_config.dart';
 import '../providers.dart';
 import '../sales/pricer.dart';
 
@@ -139,12 +140,16 @@ class _OrderBuilderScreenState extends ConsumerState<OrderBuilderScreen> {
 
     try {
       final bootstrap = ref.read(bootstrapProvider);
+      final series =
+          '${asQuote ? 'QT' : 'JOB'}-${AppConfig.branchCode}-${AppConfig.deviceCode}';
       final issued = await NumberSeries(
         db: bootstrap.db,
         api: bootstrap.api,
-        series: asQuote ? 'QT' : 'JOB',
+        series: series,
       ).next();
-      final display = asQuote ? 'QT-${issued.display}' : issued.display;
+      final display = issued.isTemporary
+          ? issued.display
+          : formatNumber(series, issued.number!);
 
       final description = ProductPricer.describe(
         product: product,

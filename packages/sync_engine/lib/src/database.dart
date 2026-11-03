@@ -322,6 +322,78 @@ class TimeEntries extends Table {
   Set<Column<Object>> get primaryKey => <Column<Object>>{id};
 }
 
+/// An issued invoice. Immutable by design: only the server's paid cache and the
+/// void transition ever change, and corrections are credit notes.
+class Invoices extends Table {
+  TextColumn get id => text()();
+  TextColumn get tenantId => text()();
+  TextColumn get branchId => text().nullable()();
+  TextColumn get orderId => text()();
+  TextColumn get number => text()();
+  DateTimeColumn get issuedAt => dateTime()();
+  DateTimeColumn get dueAt => dateTime().nullable()();
+  TextColumn get customerId => text()();
+  TextColumn get customerName => text()();
+  TextColumn get customerTrn => text().nullable()();
+  TextColumn get customerAddress => text().nullable()();
+  IntColumn get subtotalFils => integer()();
+  IntColumn get discountFils => integer().withDefault(const Constant(0))();
+  IntColumn get vatBps => integer().withDefault(const Constant(500))();
+  IntColumn get vatFils => integer()();
+  IntColumn get totalFils => integer()();
+  IntColumn get paidFils => integer().withDefault(const Constant(0))();
+  TextColumn get status => text().withDefault(const Constant('issued'))();
+  TextColumn get notes => text().nullable()();
+  TextColumn get voidReason => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  TextColumn get createdBy => text().nullable()();
+  IntColumn get version => integer().withDefault(const Constant(0))();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
+class InvoiceLines extends Table {
+  TextColumn get id => text()();
+  TextColumn get tenantId => text()();
+  TextColumn get invoiceId => text()();
+  IntColumn get lineNo => integer()();
+  TextColumn get description => text()();
+  IntColumn get quantity => integer()();
+  IntColumn get unitFils => integer()();
+  IntColumn get amountFils => integer()();
+  IntColumn get vatBps => integer().withDefault(const Constant(500))();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  IntColumn get version => integer().withDefault(const Constant(0))();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
+class Payments extends Table {
+  TextColumn get id => text()();
+  TextColumn get tenantId => text()();
+  TextColumn get branchId => text().nullable()();
+  TextColumn get invoiceId => text()();
+  IntColumn get amountFils => integer()();
+  TextColumn get method => text()();
+  TextColumn get reference => text().nullable()();
+  DateTimeColumn get takenAt => dateTime()();
+  TextColumn get takenBy => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  TextColumn get createdBy => text().nullable()();
+  IntColumn get version => integer().withDefault(const Constant(0))();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
 /// Sync bookkeeping: cursor, last sync, last head.
 class SyncMeta extends Table {
   TextColumn get key => text()();
@@ -339,6 +411,9 @@ class SyncMeta extends Table {
     Tasks,
     Proofs,
     TimeEntries,
+    Invoices,
+    InvoiceLines,
+    Payments,
     Products,
     Materials,
     PriceRules,
@@ -352,7 +427,7 @@ class LocalDatabase extends _$LocalDatabase {
   LocalDatabase(super.executor);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -379,6 +454,11 @@ class LocalDatabase extends _$LocalDatabase {
       if (from < 4) {
         await m.createTable(proofs);
         await m.createTable(timeEntries);
+      }
+      if (from < 5) {
+        await m.createTable(invoices);
+        await m.createTable(invoiceLines);
+        await m.createTable(payments);
       }
     },
   );
@@ -591,9 +671,94 @@ class LocalDatabase extends _$LocalDatabase {
         await _upsertProof(data);
       case 'time_entries':
         await _upsertTimeEntry(data);
+      case 'invoices':
+        await _upsertInvoice(data);
+      case 'invoice_lines':
+        await _upsertInvoiceLine(data);
+      case 'payments':
+        await _upsertPayment(data);
       default:
         break;
     }
+  }
+
+  Future<void> _upsertInvoice(Map<String, Object?> data) async {
+    final id = data['id'] as String?;
+    if (id == null) return;
+    await into(invoices).insertOnConflictUpdate(
+      InvoicesCompanion(
+        id: Value(id),
+        tenantId: Value(data['tenant_id'] as String? ?? ''),
+        branchId: Value(data['branch_id'] as String?),
+        orderId: Value(data['order_id'] as String? ?? ''),
+        number: Value(data['number'] as String? ?? ''),
+        issuedAt: Value(_asDate(data['issued_at']) ?? DateTime.now().toUtc()),
+        dueAt: Value(_asDate(data['due_at'])),
+        customerId: Value(data['customer_id'] as String? ?? ''),
+        customerName: Value(data['customer_name'] as String? ?? ''),
+        customerTrn: Value(data['customer_trn'] as String?),
+        customerAddress: Value(data['customer_address'] as String?),
+        subtotalFils: Value((data['subtotal_fils'] as num?)?.toInt() ?? 0),
+        discountFils: Value((data['discount_fils'] as num?)?.toInt() ?? 0),
+        vatBps: Value((data['vat_bps'] as num?)?.toInt() ?? 500),
+        vatFils: Value((data['vat_fils'] as num?)?.toInt() ?? 0),
+        totalFils: Value((data['total_fils'] as num?)?.toInt() ?? 0),
+        paidFils: Value((data['paid_fils'] as num?)?.toInt() ?? 0),
+        status: Value(data['status'] as String? ?? 'issued'),
+        notes: Value(data['notes'] as String?),
+        voidReason: Value(data['void_reason'] as String?),
+        createdAt: Value(_asDate(data['created_at']) ?? DateTime.now().toUtc()),
+        updatedAt: Value(_asDate(data['updated_at']) ?? DateTime.now().toUtc()),
+        createdBy: Value(data['created_by'] as String?),
+        version: Value((data['version'] as num?)?.toInt() ?? 0),
+        deletedAt: Value(_asDate(data['deleted_at'])),
+      ),
+    );
+  }
+
+  Future<void> _upsertInvoiceLine(Map<String, Object?> data) async {
+    final id = data['id'] as String?;
+    if (id == null) return;
+    await into(invoiceLines).insertOnConflictUpdate(
+      InvoiceLinesCompanion(
+        id: Value(id),
+        tenantId: Value(data['tenant_id'] as String? ?? ''),
+        invoiceId: Value(data['invoice_id'] as String? ?? ''),
+        lineNo: Value((data['line_no'] as num?)?.toInt() ?? 0),
+        description: Value(data['description'] as String? ?? ''),
+        quantity: Value((data['quantity'] as num?)?.toInt() ?? 0),
+        unitFils: Value((data['unit_fils'] as num?)?.toInt() ?? 0),
+        amountFils: Value((data['amount_fils'] as num?)?.toInt() ?? 0),
+        vatBps: Value((data['vat_bps'] as num?)?.toInt() ?? 500),
+        createdAt: Value(_asDate(data['created_at']) ?? DateTime.now().toUtc()),
+        updatedAt: Value(_asDate(data['updated_at']) ?? DateTime.now().toUtc()),
+        version: Value((data['version'] as num?)?.toInt() ?? 0),
+        deletedAt: Value(_asDate(data['deleted_at'])),
+      ),
+    );
+  }
+
+  Future<void> _upsertPayment(Map<String, Object?> data) async {
+    final id = data['id'] as String?;
+    if (id == null) return;
+    await into(payments).insertOnConflictUpdate(
+      PaymentsCompanion(
+        id: Value(id),
+        tenantId: Value(data['tenant_id'] as String? ?? ''),
+        branchId: Value(data['branch_id'] as String?),
+        invoiceId: Value(data['invoice_id'] as String? ?? ''),
+        amountFils: Value((data['amount_fils'] as num?)?.toInt() ?? 0),
+        method: Value(data['method'] as String? ?? 'cash'),
+        reference: Value(data['reference'] as String?),
+        takenAt: Value(_asDate(data['taken_at']) ?? DateTime.now().toUtc()),
+        takenBy: Value(data['taken_by'] as String?),
+        createdAt: Value(_asDate(data['created_at']) ?? DateTime.now().toUtc()),
+        updatedAt: Value(_asDate(data['updated_at']) ?? DateTime.now().toUtc()),
+        createdBy: Value(data['created_by'] as String?),
+        version: Value((data['version'] as num?)?.toInt() ?? 0),
+        deletedAt: Value(_asDate(data['deleted_at'])),
+      ),
+    );
   }
 
   Future<void> _upsertProof(Map<String, Object?> data) async {
@@ -1567,9 +1732,11 @@ class LocalDatabase extends _$LocalDatabase {
     final existing = await (select(
       proofs,
     )..where((t) => t.orderId.equals(orderId))).get();
-    final revision = existing.fold<int>(
+    final revision =
+        existing.fold<int>(
           0,
-          (highest, proof) => proof.revision > highest ? proof.revision : highest,
+          (highest, proof) =>
+              proof.revision > highest ? proof.revision : highest,
         ) +
         1;
 
@@ -1646,9 +1813,7 @@ class LocalDatabase extends _$LocalDatabase {
       await (update(proofs)..where((t) => t.id.equals(proof.id))).write(
         ProofsCompanion(
           status: Value(status),
-          sentAt: Value(
-            status == 'sent' ? now : proof.sentAt,
-          ),
+          sentAt: Value(status == 'sent' ? now : proof.sentAt),
           decidedAt: Value(
             status == 'approved' || status == 'rejected'
                 ? now
@@ -1687,6 +1852,243 @@ class LocalDatabase extends _$LocalDatabase {
       timeEntries,
     )..where((t) => t.orderId.equals(orderId))).get();
     return rows.fold<int>(0, (sum, entry) => sum + entry.minutes);
+  }
+
+  // -------------------------------------------------------------------------
+  // Money
+  // -------------------------------------------------------------------------
+
+  /// The live invoice for an order (a void one does not count).
+  Stream<Invoice?> watchInvoiceForOrder(String orderId) {
+    return (select(invoices)..where(
+          (t) =>
+              t.orderId.equals(orderId) &
+              t.deletedAt.isNull() &
+              t.status.isNotValue('void'),
+        ))
+        .watchSingleOrNull();
+  }
+
+  Future<Invoice?> invoiceForOrder(String orderId) {
+    return (select(invoices)..where(
+          (t) =>
+              t.orderId.equals(orderId) &
+              t.deletedAt.isNull() &
+              t.status.isNotValue('void'),
+        ))
+        .getSingleOrNull();
+  }
+
+  Future<List<InvoiceLine>> linesFor(String invoiceId) {
+    return (select(invoiceLines)
+          ..where((t) => t.invoiceId.equals(invoiceId) & t.deletedAt.isNull())
+          ..orderBy(<OrderClauseGenerator<$InvoiceLinesTable>>[
+            (t) => OrderingTerm(expression: t.lineNo),
+          ]))
+        .get();
+  }
+
+  Stream<List<Payment>> watchPayments(String invoiceId) {
+    return (select(payments)
+          ..where((t) => t.invoiceId.equals(invoiceId) & t.deletedAt.isNull())
+          ..orderBy(<OrderClauseGenerator<$PaymentsTable>>[
+            (t) => OrderingTerm(expression: t.takenAt),
+          ]))
+        .watch();
+  }
+
+  /// Issues the invoice for an order, snapshotting every number that will be
+  /// printed. Refuses a second one: a duplicate invoice is a tax problem, not a
+  /// UI annoyance, and the server would refuse it anyway.
+  Future<String> issueInvoiceLocal({
+    required Order order,
+    required String tenantId,
+    required String? branchId,
+    required String userId,
+    required String number,
+    DateTime? dueAt,
+    String? customerTrn,
+    String? customerAddress,
+    String? notes,
+  }) async {
+    final existing = await invoiceForOrder(order.id);
+    if (existing != null) {
+      throw StateError(
+        'Order ${order.numberDisplay} already has invoice ${existing.number}.',
+      );
+    }
+
+    final items = await itemsFor(order.id);
+    final vatRate = await vatBps();
+    final id = Uuid7.generate();
+    final now = DateTime.now().toUtc();
+
+    await transaction(() async {
+      await into(invoices).insert(
+        InvoicesCompanion.insert(
+          id: id,
+          tenantId: tenantId,
+          branchId: Value(branchId),
+          orderId: order.id,
+          number: number,
+          issuedAt: now,
+          dueAt: Value(dueAt),
+          customerId: order.customerId,
+          customerName: order.customerName ?? 'Customer',
+          customerTrn: Value(customerTrn),
+          customerAddress: Value(customerAddress),
+          subtotalFils: order.subtotalFils,
+          vatBps: Value(vatRate),
+          vatFils: order.vatFils,
+          totalFils: order.totalFils,
+          notes: Value(notes),
+          createdAt: now,
+          updatedAt: now,
+          createdBy: Value(userId),
+        ),
+      );
+
+      await _enqueue(
+        entity: 'invoices',
+        rowId: id,
+        op: 'insert',
+        baseVersion: 0,
+        fields: <String, Object?>{
+          'order_id': order.id,
+          'number': number,
+          'issued_at': now.toIso8601String(),
+          'due_at': dueAt?.toIso8601String(),
+          'customer_id': order.customerId,
+          'customer_name': order.customerName ?? 'Customer',
+          'customer_trn': customerTrn,
+          'customer_address': customerAddress,
+          'subtotal_fils': order.subtotalFils,
+          'discount_fils': 0,
+          'vat_bps': vatRate,
+          'vat_fils': order.vatFils,
+          'total_fils': order.totalFils,
+          'notes': notes,
+          'status': 'issued',
+        },
+      );
+
+      var lineNo = 0;
+      for (final item in items) {
+        lineNo += 1;
+        final lineId = Uuid7.generate();
+        final unit = item.quantity <= 0
+            ? item.subtotalFils
+            : (item.subtotalFils / item.quantity).round();
+
+        await into(invoiceLines).insert(
+          InvoiceLinesCompanion.insert(
+            id: lineId,
+            tenantId: tenantId,
+            invoiceId: id,
+            lineNo: lineNo,
+            description: item.description,
+            quantity: item.quantity,
+            unitFils: unit,
+            amountFils: item.subtotalFils,
+            vatBps: Value(vatRate),
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+
+        await _enqueue(
+          entity: 'invoice_lines',
+          rowId: lineId,
+          op: 'insert',
+          baseVersion: 0,
+          fields: <String, Object?>{
+            'invoice_id': id,
+            'line_no': lineNo,
+            'description': item.description,
+            'quantity': item.quantity,
+            'unit_fils': unit,
+            'amount_fils': item.subtotalFils,
+            'vat_bps': vatRate,
+          },
+        );
+      }
+    });
+
+    return id;
+  }
+
+  /// Takes money against an invoice. Only the payment is queued: `paid_fils` and
+  /// the paid/part-paid status are the server's to compute, so a device cannot
+  /// declare an invoice settled.
+  Future<void> takePaymentLocal({
+    required Invoice invoice,
+    required int amountFils,
+    required String method,
+    required String userId,
+    String? reference,
+  }) async {
+    const methods = <String>['cash', 'card', 'transfer', 'cheque'];
+    if (!methods.contains(method)) {
+      throw StateError('Unknown payment method: $method');
+    }
+    if (amountFils <= 0) {
+      throw StateError('A payment must be more than zero.');
+    }
+    final outstanding = invoice.totalFils - invoice.paidFils;
+    if (amountFils > outstanding) {
+      throw StateError(
+        'Only ${(outstanding / 100).toStringAsFixed(2)} AED is outstanding.',
+      );
+    }
+
+    final paidAfter = invoice.paidFils + amountFils;
+    final status = paidAfter >= invoice.totalFils
+        ? 'paid'
+        : (paidAfter > 0 ? 'part_paid' : 'issued');
+    final id = Uuid7.generate();
+    final now = DateTime.now().toUtc();
+
+    await transaction(() async {
+      await into(payments).insert(
+        PaymentsCompanion.insert(
+          id: id,
+          tenantId: invoice.tenantId,
+          branchId: Value(invoice.branchId),
+          invoiceId: invoice.id,
+          amountFils: amountFils,
+          method: method,
+          reference: Value(reference),
+          takenAt: now,
+          takenBy: Value(userId),
+          createdAt: now,
+          updatedAt: now,
+          createdBy: Value(userId),
+        ),
+      );
+
+      await (update(invoices)..where((t) => t.id.equals(invoice.id))).write(
+        InvoicesCompanion(
+          paidFils: Value(paidAfter),
+          status: Value(status),
+          updatedAt: Value(now),
+        ),
+      );
+
+      await _enqueue(
+        entity: 'payments',
+        rowId: id,
+        op: 'insert',
+        baseVersion: 0,
+        fields: <String, Object?>{
+          'invoice_id': invoice.id,
+          'amount_fils': amountFils,
+          'method': method,
+          'reference': reference,
+          'taken_at': now.toIso8601String(),
+          'taken_by': userId,
+        },
+      );
+    });
   }
 
   Stream<List<Order>> watchOrders({int limit = 200}) {

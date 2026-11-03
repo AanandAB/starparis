@@ -91,4 +91,38 @@ class DocumentsService {
     await file.writeAsBytes(bytes, flush: true);
     return file;
   }
+
+  /// The tax invoice, rebuilt from the stored snapshot. The printed numbers come
+  /// from the invoice row, never from the order or the current price book.
+  Future<File> invoiceFor(Invoice invoice) async {
+    final lines = await db.linesFor(invoice.id);
+    final bytes = await buildInvoicePdf(
+      InvoiceDocument(
+        number: invoice.number,
+        issuedAt: invoice.issuedAt,
+        dueAt: invoice.dueAt,
+        customerName: invoice.customerName,
+        customerTrn: invoice.customerTrn,
+        customerAddress: invoice.customerAddress,
+        lines: <DocumentLine>[
+          for (final line in lines)
+            DocumentLine(
+              description: line.description,
+              quantity: line.quantity,
+              unitFils: line.unitFils,
+              amountFils: line.amountFils,
+            ),
+        ],
+        subtotalFils: invoice.subtotalFils,
+        discountFils: invoice.discountFils,
+        vatBps: invoice.vatBps,
+        vatFils: invoice.vatFils,
+        totalFils: invoice.totalFils,
+        paidFils: invoice.paidFils,
+        notes: invoice.notes ?? '',
+      ),
+      AppConfig.company,
+    );
+    return _write('${invoice.number}.pdf', bytes);
+  }
 }

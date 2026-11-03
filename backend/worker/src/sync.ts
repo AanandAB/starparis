@@ -21,6 +21,7 @@ import type { AuthContext, Env, Mutation, MutationResult } from './types';
 import { can, permits, redactCosts, type Permission, type RoleKey } from './policy';
 import { cascadeStage, prepareTaskPatch, taskEventStatement } from './tasks';
 import { prepareProofPatch, recordTimeEntry } from './proofs';
+import { prepareInvoicePatch, preparePayment } from './money';
 
 interface EntityDef {
   table: string;
@@ -170,6 +171,83 @@ export const ENTITIES: Record<string, EntityDef> = {
     softDelete: true,
     mutate: ({ fields, existing, ctx }) => prepareProofPatch(fields, existing, ctx),
   },
+  invoices: {
+    table: 'invoices',
+    columns: new Set([
+      'order_id',
+      'number',
+      'issued_at',
+      'due_at',
+      'customer_id',
+      'customer_name',
+      'customer_trn',
+      'customer_address',
+      'subtotal_fils',
+      'discount_fils',
+      'vat_bps',
+      'vat_fils',
+      'total_fils',
+      'notes',
+      'status',
+      'void_reason',
+      'branch_id',
+    ]),
+    required: [
+      'order_id',
+      'number',
+      'customer_id',
+      'customer_name',
+      'subtotal_fils',
+      'vat_fils',
+      'total_fils',
+    ],
+    permission: 'invoice.issue',
+    mergeable: false,
+    branchScoped: true,
+    // An invoice is never deleted, only voided — that is the whole point.
+    softDelete: false,
+    mutate: ({ fields, existing, ctx }) => prepareInvoicePatch(fields, existing, ctx),
+  },
+  invoice_lines: {
+    table: 'invoice_lines',
+    columns: new Set([
+      'invoice_id',
+      'line_no',
+      'description',
+      'quantity',
+      'unit_fils',
+      'amount_fils',
+      'vat_bps',
+    ]),
+    required: ['invoice_id', 'line_no', 'description', 'quantity', 'unit_fils', 'amount_fils'],
+    permission: 'invoice.issue',
+    mergeable: false,
+    branchScoped: false,
+    softDelete: false,
+  },
+  payments: {
+    table: 'payments',
+    columns: new Set([
+      'invoice_id',
+      'amount_fils',
+      'method',
+      'reference',
+      'taken_at',
+      'taken_by',
+    ]),
+    required: ['invoice_id', 'amount_fils', 'method'],
+    permission: 'payment.take',
+    mergeable: false,
+    branchScoped: true,
+    softDelete: false,
+    // Refunds and corrections are Phase 4B work; until then a payment is a fact.
+    mutate: () => ({
+      error: {
+        code: 'PAYMENT_IMMUTABLE',
+        message: 'A payment cannot be edited or removed. Record a refund when that exists.',
+      },
+    }),
+  },
 };
 
 type Row = Record<string, unknown>;
@@ -240,6 +318,9 @@ async function applyMutation(
 
   try {
     if (mutation.op === 'insert') {
+      if (mutation.entity === 'payments') {
+        return await insertPayment(env, ctx, mutation, fields);
+      }
       return await insertRow(env, ctx, def, mutation, fields, existing);
     }
     if (!existing) {
@@ -265,6 +346,20 @@ async function insertRow(
 ): Promise<MutationResult> {
   if (existing) {
     return reject(mutation, 'ALREADY_EXISTS', 'Row already exists');
+  }
+
+  if (mutation.entity === 'invoices') {
+    const duplicate = await env.DB.prepare(
+      "SELECT 1 AS present FROM invoices WHERE tenant_id = ? AND order_id = ? AND status <> 'void'",
+    )
+      .bind(ctx.tenantId, String(fields['order_id'] ?? ''))
+      .first<{ present: number }>();
+    if (duplicate) {
+      return reject(mutation, 'DUPLICATE_INVOICE', 'This order already has an invoice.');
+    }
+    // An invoice is issued now, whatever the device's clock says.
+    (fields as Record<string, unknown>)['issued_at'] =
+      (fields as Record<string, unknown>)['issued_at'] ?? nowIso();
   }
 
   const row: Row = { ...fields };
@@ -608,6 +703,116 @@ function reject(mutation: Mutation, code: string, message: string): MutationResu
     status: 'rejected',
     row_id: mutation.row_id,
     error: { code, message },
+  };
+}
+
+/**
+ * Taking money is its own transaction: the payment row, the invoice balance and
+ * both change-log rows are written in one D1 batch, so a device can never see
+ * cash that the invoice does not know about (or the reverse).
+ */
+async function insertPayment(
+  env: Env,
+  ctx: AuthContext,
+  mutation: Mutation,
+  fields: Row,
+): Promise<MutationResult> {
+  if (!can(asRole(ctx.role), 'payment.take')) {
+    return reject(mutation, 'PERMISSION_DENIED', 'Not allowed to take payments');
+  }
+
+  const invoice = await env.DB.prepare(
+    'SELECT * FROM invoices WHERE id = ? AND tenant_id = ?',
+  )
+    .bind(String(fields['invoice_id'] ?? ''), ctx.tenantId)
+    .first<Row>();
+  if (!invoice) {
+    return reject(mutation, 'NOT_FOUND', 'That invoice does not exist.');
+  }
+
+  if (
+    !permits(
+      { role: asRole(ctx.role), userId: ctx.userId, branchId: ctx.branchId },
+      'payment.take',
+      { branchId: (invoice['branch_id'] as string | null) ?? null, ownerId: null },
+    )
+  ) {
+    return reject(mutation, 'SCOPE_DENIED', 'That invoice belongs to another branch.');
+  }
+
+  const prepared = preparePayment(fields, invoice, ctx);
+  if ('error' in prepared) {
+    return reject(mutation, prepared.error.code, prepared.error.message);
+  }
+
+  const now = nowIso();
+  const row: Row = {
+    ...prepared.payment,
+    id: mutation.row_id,
+    tenant_id: ctx.tenantId,
+    branch_id: (invoice['branch_id'] as string | null) ?? ctx.branchId,
+    created_at: now,
+    updated_at: now,
+    created_by: ctx.userId,
+    version: 1,
+    deleted_at: null,
+  };
+
+  const invoiceUpdate = prepared.invoiceUpdate;
+  const invoiceRow: Row = {
+    ...invoice,
+    paid_fils: invoiceUpdate['paid_fils'],
+    status: invoiceUpdate['status'],
+    updated_at: now,
+    updated_by: ctx.userId,
+    version: invoiceUpdate['version'],
+  };
+
+  const columns = Object.keys(row);
+  const insert = env.DB.prepare(
+    `INSERT INTO payments (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`,
+  ).bind(...columns.map((column) => row[column] as never));
+
+  await env.DB.batch([
+    insert,
+    env.DB.prepare(
+      `UPDATE invoices
+          SET paid_fils = ?, status = ?, updated_at = ?, updated_by = ?, version = ?
+        WHERE id = ? AND tenant_id = ?`,
+    ).bind(
+      invoiceUpdate['paid_fils'] as number,
+      invoiceUpdate['status'] as string,
+      now,
+      ctx.userId,
+      invoiceUpdate['version'] as number,
+      String(invoice['id']),
+      ctx.tenantId,
+    ),
+    await buildChangeLog(env, ctx, {
+      entity: 'payments',
+      rowId: mutation.row_id,
+      op: 'insert',
+      row,
+      version: 1,
+      changedFields: null,
+    }),
+    await buildChangeLog(env, ctx, {
+      entity: 'invoices',
+      rowId: String(invoice['id']),
+      op: 'patch',
+      row: invoiceRow,
+      version: Number(invoiceUpdate['version']),
+      changedFields: invoiceUpdate['changedFields'] as string[],
+    }),
+    markApplied(env, ctx, mutation, 'applied'),
+  ]);
+
+  return {
+    mutation_id: mutation.mutation_id,
+    status: 'applied',
+    row_id: mutation.row_id,
+    server_version: 1,
+    row: redactCosts(row, can(asRole(ctx.role), 'cost.view')),
   };
 }
 
