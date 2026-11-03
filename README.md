@@ -409,6 +409,25 @@ analyzer clean, Windows release build green.
 Remaining: till history and the month-end list, expenses list/export by category, and the Arabic UI
 pass.
 
+### Phase 4G — cash drawer history on the Reports screen
+
+`GET /v1/reports/tills?from&to` returns every shift in the period with the float, the expected and
+counted amounts, the variance, and **who opened and who closed it** (joined to `users`). The response
+also carries the net variance and the total short.
+
+On the Reports screen, under the ageing table: **Cash drawer** — a row per shift ("3/11 19:01 · opened
+by Priya · float AED 200.00", "expected AED 255.00 / short AED 5.00"), and a footer that says *every
+shift balanced* or the over/short total. A variance is never colour alone: it carries a word.
+
+Live through the app's own client:
+
+    tills      2 shift(s) · AED 0.00 net variance · AED 0.00 short
+               2026-11-03 20:50 closed · expected AED 255.00 · counted AED 255.00
+               2026-11-03 19:01 closed · expected AED 305.00 · counted AED 305.00
+    OK — reports parse and reconcile through the client.
+
+62 worker tests (1 new), 6 app tests, analyzer clean, Windows release build green.
+
 ## Commands
 ```bash
 # Dart workspace

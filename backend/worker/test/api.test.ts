@@ -1582,6 +1582,27 @@ describe('expenses and the VAT export', () => {
     expect(csv).toContain('VAT due (AED)');
   });
 
+  it('lists the closed shifts with their variance', async () => {
+    const response = await api(
+      '/v1/reports/tills?from=2020-01-01&to=2030-01-01',
+      authed(owner.access_token),
+    );
+    expect(response.status).toBe(200);
+
+    const body = (await response.json()) as {
+      sessions: Array<Record<string, unknown>>;
+      variance_fils: number;
+      short_fils: number;
+    };
+    expect(body.sessions.length).toBeGreaterThanOrEqual(2);
+    const closed = body.sessions.filter((row) => row['status'] === 'closed');
+    expect(closed.length).toBeGreaterThanOrEqual(2);
+    expect(closed[0]!['expected_fils']).toBeTypeOf('number');
+    // Every probe drawer was counted exactly, so nothing nets out either way.
+    expect(body.variance_fils).toBe(0);
+    expect(body.short_fils).toBe(0);
+  });
+
   it('keeps the counter out of the export', async () => {
     const response = await api('/v1/reports/vat.csv', authed(counter.access_token));
     expect(response.status).toBe(403);

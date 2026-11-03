@@ -23,7 +23,7 @@ import {
 import { verifyAccessToken } from './crypto';
 import { leaseBlock } from './numbers';
 import { can } from './policy';
-import { ageingReport, vatExportCsv, vatSummary } from './reports';
+import { ageingReport, tillHistory, vatExportCsv, vatSummary } from './reports';
 import { currentHead, pullChanges, pushMutations } from './sync';
 import type { AuthContext, Env, Mutation } from './types';
 
@@ -241,6 +241,22 @@ app.get('/v1/reports/vat', async (c) => {
 
   const summary = await vatSummary(c.env, ctx.tenantId, from, to, branchId);
   return c.json(summary);
+});
+
+app.get('/v1/reports/tills', async (c) => {
+  const ctx = c.get('auth');
+  const session = await loadSession(c.env, ctx);
+  if (!session.ok) return c.json(error(session.code, session.message), 401);
+  if (!can(ctx.role as never, 'report.view')) {
+    return c.json(error('PERMISSION_DENIED', 'Reports need report.view.'), 403);
+  }
+
+  const to = c.req.query('to') ?? new Date().toISOString();
+  const from = c.req.query('from') ?? to.slice(0, 8) + '01';
+  const branchId = ['owner', 'accountant'].includes(ctx.role) ? null : ctx.branchId;
+
+  const history = await tillHistory(c.env, ctx.tenantId, from, to, branchId);
+  return c.json(history);
 });
 
 app.get('/v1/reports/vat.csv', async (c) => {

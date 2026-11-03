@@ -22,9 +22,9 @@ class ReportsScreen extends ConsumerStatefulWidget {
 
 class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   late DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
-  late Future<(VatSummary, AgeingReport)> _report = _load();
+  late Future<(VatSummary, AgeingReport, TillHistory)> _report = _load();
 
-  Future<(VatSummary, AgeingReport)> _load() async {
+  Future<(VatSummary, AgeingReport, TillHistory)> _load() async {
     final bootstrap = ref.read(bootstrapProvider);
     final service = ReportsService(
       baseUrl: AppConfig.apiBaseUrl,
@@ -35,7 +35,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       final to = DateTime(_month.year, _month.month + 1);
       final vat = await service.vat(from: from, to: to);
       final ageing = await service.ageing();
-      return (vat, ageing);
+      final tills = await service.tills(from: from, to: to);
+      return (vat, ageing, tills);
     } finally {
       service.dispose();
     }
@@ -52,7 +53,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return FutureBuilder<(VatSummary, AgeingReport)>(
+    return FutureBuilder<(VatSummary, AgeingReport, TillHistory)>(
       future: _report,
       builder: (context, snapshot) {
         return ListView(
@@ -100,6 +101,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               _VatSection(summary: snapshot.data!.$1),
               const SizedBox(height: StarSpace.xl),
               _AgeingSection(report: snapshot.data!.$2),
+              const SizedBox(height: StarSpace.xl),
+              _TillsSection(history: snapshot.data!.$3),
             ],
           ],
         );
@@ -400,5 +403,148 @@ class _ErrorCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// The shifts behind the counter this month.
+///
+/// A variance is not a number to hide: every short drawer gets a person and a
+/// time against it, so the owner can ask the right question instead of
+/// distrusting the till.
+class _TillsSection extends StatelessWidget {
+  const _TillsSection({required this.history});
+
+  final TillHistory history;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final closed = history.shifts.where((shift) => shift.status == 'closed');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text('Cash drawer', style: theme.textTheme.titleMedium),
+        const SizedBox(height: StarSpace.xs),
+        Text(
+          closed.isEmpty
+              ? 'No shift was closed this month.'
+              : '${closed.length} ${closed.length == 1 ? 'shift' : 'shifts'} closed. '
+                    'A variance is what the drawer was over or short against '
+                    'what the server expected.',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: StarSpace.md),
+        if (history.shifts.isEmpty)
+          const EmptyState(
+            icon: Icons.point_of_sale_outlined,
+            title: 'Nothing in the drawer yet',
+            message: 'Open the till at the counter and shifts will show up here.',
+          )
+        else
+          Card(
+            child: Column(
+              children: <Widget>[
+                for (final shift in history.shifts) _TillRow(shift: shift),
+                const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: StarSpace.md,
+                    vertical: StarSpace.sm,
+                  ),
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          history.varianceFils == 0
+                              ? 'Every shift balanced.'
+                              : 'Over all: ${Fils(history.varianceFils).aedLabel}',
+                          style: theme.textTheme.labelLarge,
+                        ),
+                      ),
+                      if (history.shortFils != 0)
+                        Text(
+                          'Short ${Fils(history.shortFils.abs()).aedLabel}',
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: theme.colorScheme.error,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _TillRow extends StatelessWidget {
+  const _TillRow({required this.shift});
+
+  final TillShift shift;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final opened = shift.openedAt.toLocal();
+    final open = '${opened.day}/${opened.month} ${_hhmm(opened)}';
+    final variance = shift.varianceFils ?? 0;
+
+    return ListTile(
+      dense: true,
+      leading: Icon(
+        shift.isShort ? Icons.trending_down : Icons.point_of_sale_outlined,
+        size: 18,
+        color: shift.isShort ? theme.colorScheme.error : null,
+      ),
+      title: Text(
+        shift.status == 'open' ? '$open — still open' : open,
+        style: theme.textTheme.bodyMedium,
+      ),
+      subtitle: Text(
+        <String>[
+          if (shift.openedBy != null) 'opened by ${shift.openedBy}',
+          if (shift.closedBy != null) 'closed by ${shift.closedBy}',
+          if (shift.openingFloatFils > 0)
+            'float ${Fils(shift.openingFloatFils).aedLabel}',
+        ].join(' · '),
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+      trailing: shift.expectedFils == null
+          ? null
+          : Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: <Widget>[
+                Text(
+                  'expected ${Fils(shift.expectedFils!).aedLabel}',
+                  style: theme.textTheme.bodySmall,
+                ),
+                Text(
+                  variance == 0
+                      ? 'counted exactly'
+                      : '${variance > 0 ? 'over' : 'short'} '
+                            '${Fils(variance.abs()).aedLabel}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: variance == 0
+                        ? theme.colorScheme.onSurfaceVariant
+                        : theme.colorScheme.error,
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+
+  static String _hhmm(DateTime value) {
+    final hour = value.hour.toString().padLeft(2, '0');
+    final minute = value.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
   }
 }

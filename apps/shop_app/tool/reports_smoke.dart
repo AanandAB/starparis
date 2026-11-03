@@ -72,6 +72,23 @@ Future<void> main(List<String> args) async {
     stdout.writeln('           ${row.customerName} · ${Fils(row.totalFils).aedLabel}');
   }
 
+  final tills = await reports.tills(
+    from: DateTime(now.year, now.month),
+    to: DateTime(now.year, now.month + 1),
+  );
+  stdout.writeln(
+    'tills      ${tills.shifts.length} shift(s) · '
+    '${Fils(tills.varianceFils).aedLabel} net variance · '
+    '${Fils(tills.shortFils).aedLabel} short',
+  );
+  for (final shift in tills.shifts) {
+    stdout.writeln(
+      '           ${shift.openedAt.toLocal()} ${shift.status} · '
+      'expected ${shift.expectedFils == null ? '-' : Fils(shift.expectedFils!).aedLabel} · '
+      'counted ${shift.countedFils == null ? '-' : Fils(shift.countedFils!).aedLabel}',
+    );
+  }
+
   reports.dispose();
   client.close();
 

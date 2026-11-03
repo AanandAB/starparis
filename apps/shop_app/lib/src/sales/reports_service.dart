@@ -124,6 +124,75 @@ class AgeingReport {
   final AgeingRow totals;
 }
 
+/// One shift at the counter, as the server recorded it.
+class TillShift {
+  const TillShift({
+    required this.id,
+    required this.status,
+    required this.openedAt,
+    required this.openingFloatFils,
+    this.closedAt,
+    this.openedBy,
+    this.closedBy,
+    this.expectedFils,
+    this.countedFils,
+    this.varianceFils,
+  });
+
+  factory TillShift.fromJson(Map<String, Object?> json) {
+    int? asInt(String key) => (json[key] as num?)?.toInt();
+    return TillShift(
+      id: json['id'] as String? ?? '',
+      status: json['status'] as String? ?? 'open',
+      openedAt: DateTime.parse(json['opened_at'] as String),
+      openingFloatFils: asInt('opening_float_fils') ?? 0,
+      closedAt: json['closed_at'] == null
+          ? null
+          : DateTime.parse(json['closed_at'] as String),
+      openedBy: json['opened_by_name'] as String?,
+      closedBy: json['closed_by_name'] as String?,
+      expectedFils: asInt('expected_fils'),
+      countedFils: asInt('counted_fils'),
+      varianceFils: asInt('variance_fils'),
+    );
+  }
+
+  final String id;
+  final String status;
+  final DateTime openedAt;
+  final int openingFloatFils;
+  final DateTime? closedAt;
+  final String? openedBy;
+  final String? closedBy;
+  final int? expectedFils;
+  final int? countedFils;
+  final int? varianceFils;
+
+  bool get isShort => (varianceFils ?? 0) < 0;
+}
+
+class TillHistory {
+  const TillHistory({
+    required this.shifts,
+    required this.varianceFils,
+    required this.shortFils,
+  });
+
+  factory TillHistory.fromJson(Map<String, Object?> json) {
+    final rows = (json['sessions'] as List<Object?>? ?? const <Object?>[])
+        .cast<Map<String, Object?>>();
+    return TillHistory(
+      shifts: rows.map(TillShift.fromJson).toList(growable: false),
+      varianceFils: (json['variance_fils'] as num?)?.toInt() ?? 0,
+      shortFils: (json['short_fils'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  final List<TillShift> shifts;
+  final int varianceFils;
+  final int shortFils;
+}
+
 class ReportsService {
   ReportsService({
     required this.baseUrl,
@@ -151,6 +220,15 @@ class ReportsService {
       '?as_of=${Uri.encodeQueryComponent(at.toUtc().toIso8601String())}',
     );
     return AgeingReport.fromJson(body);
+  }
+
+  Future<TillHistory> tills({required DateTime from, required DateTime to}) async {
+    final body = await _get(
+      '/v1/reports/tills'
+      '?from=${Uri.encodeQueryComponent(from.toUtc().toIso8601String())}'
+      '&to=${Uri.encodeQueryComponent(to.toUtc().toIso8601String())}',
+    );
+    return TillHistory.fromJson(body);
   }
 
   Future<Map<String, Object?>> _get(String path) async {

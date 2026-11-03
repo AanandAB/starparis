@@ -304,3 +304,54 @@ export async function vatExportCsv(
 
   return lines.join('\n');
 }
+
+export interface TillSessionRow {
+  id: string;
+  branch_id: string | null;
+  device_id: string;
+  opened_at: string;
+  opened_by_name: string | null;
+  opening_float_fils: number;
+  closed_at: string | null;
+  closed_by_name: string | null;
+  expected_fils: number | null;
+  counted_fils: number | null;
+  variance_fils: number | null;
+  status: string;
+}
+
+/**
+ * The shifts closed in a period, with what the server expected and what was
+ * counted. This is what the owner opens at month end: every variance is either
+ * zero or has a person and a note against it.
+ */
+export async function tillHistory(
+  env: Env,
+  tenantId: string,
+  from: string,
+  to: string,
+  branchId?: string | null,
+): Promise<{ sessions: TillSessionRow[]; variance_fils: number; short_fils: number }> {
+  const rows = await env.DB.prepare(
+    `SELECT t.*, u.name AS opened_by_name, v.name AS closed_by_name
+       FROM till_sessions t
+       LEFT JOIN users u ON u.id = t.opened_by
+       LEFT JOIN users v ON v.id = t.closed_by
+      WHERE t.tenant_id = ? AND t.deleted_at IS NULL
+        AND t.opened_at >= ? AND t.opened_at < ?
+        ${branchId ? 'AND t.branch_id = ?' : ''}
+      ORDER BY t.opened_at DESC`,
+  )
+    .bind(...(branchId ? [tenantId, from, to, branchId] : [tenantId, from, to]))
+    .all<TillSessionRow>();
+
+  const sessions = rows.results ?? [];
+  let variance = 0;
+  let short = 0;
+  for (const session of sessions) {
+    const value = Number(session.variance_fils ?? 0);
+    variance += value;
+    if (value < 0) short += value;
+  }
+  return { sessions, variance_fils: variance, short_fils: short };
+}
