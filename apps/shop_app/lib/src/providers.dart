@@ -1,3 +1,5 @@
+import 'dart:ui' show Locale;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:starparis_sync/starparis_sync.dart';
 
@@ -113,6 +115,21 @@ final Provider<bool> canManageVendorsProvider = Provider<bool>((ref) {
   final role = ref.watch(sessionProvider)?.role;
   return role == 'owner' || role == 'manager' || role == 'vendor_coordinator';
 });
+
+/// Which language the interface is drawn in. Null follows the device.
+class LocaleChoice extends Notifier<Locale?> {
+  @override
+  Locale? build() => null;
+
+  void set(Locale? locale) => state = locale;
+
+  void toggle() => state = state?.languageCode == 'ar'
+      ? const Locale('en')
+      : const Locale('ar', 'AE');
+}
+
+final NotifierProvider<LocaleChoice, Locale?> localeProvider =
+    NotifierProvider<LocaleChoice, Locale?>(LocaleChoice.new);
 
 /// Which shell tab is open. A provider rather than local state so a card on the
 /// home screen can send the user to the customers tab with one tap.

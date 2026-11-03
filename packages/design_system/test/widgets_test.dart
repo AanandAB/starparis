@@ -57,6 +57,26 @@ void main() {
     expect(tapped, isTrue);
   });
 
+  testWidgets('a screen header carries its subtitle and one action', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      host(
+        ScreenHeader(
+          title: 'Orders',
+          subtitle: 'Everything saved on this device.',
+          actions: <Widget>[
+            FilledButton(onPressed: () {}, child: const Text('New order')),
+          ],
+        ),
+      ),
+    );
+
+    expect(find.text('Orders'), findsOneWidget);
+    expect(find.text('Everything saved on this device.'), findsOneWidget);
+    expect(find.text('New order'), findsOneWidget);
+  });
+
   testWidgets('the skeleton list fills the space without text', (tester) async {
     await tester.pumpWidget(host(const StarSkeletonList(rows: 3)));
 

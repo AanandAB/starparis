@@ -251,9 +251,17 @@ waiting. Every number is a link to the list behind it.
 The two missing modules, in that order: staff first because every stage already names a role, then
 vendors because the schema needs a table before the screens can exist.
 
-**Phase E — Arabic and RTL**
-Locale switch, mirrored layout, Arabic document fonts (shaping is the hard part and is already known
-to be unsolved in `package:pdf` — this needs a shaping-capable renderer, decided separately).
+**Phase E — Arabic and RTL** — *started*
+`flutter_localizations` is wired, `en` and `ar-AE` are declared, and the user menu has a language
+switch. Choosing Arabic mirrors the whole layout — rail on the right, padding from the right, rows
+reversed — because the screens use directional padding rather than hard-coded left/right. What is not
+done: the labels are still English, and Arabic PDFs need a shaping-capable font. The switch proves the
+layout, not the language, and the app says so in the menu ("عربي — Arabic layout").
+
+**Cross-screen consistency** — *in progress*
+`ScreenHeader` is now the one header for a list screen (title, subtitle, actions), applied to Orders
+and Customers. Staff and Vendors still hand-roll theirs; converting them is the next small pass, then
+the same for the sheets.
 
 Each phase ships behind the same gates as everything else: unit tests, worker tests, a live smoke
 against the deployed API, `flutter analyze`, a release build, and a screenshot.

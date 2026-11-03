@@ -23,6 +23,19 @@ class CustomersScreen extends ConsumerWidget {
             StarSpace.lg,
             StarSpace.lg,
             StarSpace.lg,
+            0,
+          ),
+          child: const ScreenHeader(
+            title: 'Customers',
+            subtitle:
+                'Find by phone number: the counter types digits, not names.',
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            StarSpace.lg,
+            StarSpace.lg,
+            StarSpace.lg,
             StarSpace.md,
           ),
           child: Row(

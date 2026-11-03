@@ -264,6 +264,9 @@ class _AppShellState extends ConsumerState<AppShell> {
                   if (value == 'signout') {
                     await ref.read(sessionProvider.notifier).signOut();
                   }
+                  if (value == 'lang') {
+                    ref.read(localeProvider.notifier).toggle();
+                  }
                 },
                 itemBuilder: (context) => <PopupMenuEntry<String>>[
                   PopupMenuItem<String>(
@@ -278,6 +281,15 @@ class _AppShellState extends ConsumerState<AppShell> {
                   const PopupMenuItem<String>(
                     value: 'diagnostics',
                     child: Text('Sync diagnostics'),
+                  ),
+                  const PopupMenuDivider(),
+                  PopupMenuItem<String>(
+                    value: 'lang',
+                    child: Text(
+                      ref.watch(localeProvider)?.languageCode == 'ar'
+                          ? 'English interface'
+                          : 'عربي — Arabic layout',
+                    ),
                   ),
                   const PopupMenuDivider(),
                   const PopupMenuItem<String>(

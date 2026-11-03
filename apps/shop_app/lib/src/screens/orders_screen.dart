@@ -23,7 +23,6 @@ class OrdersScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final orders = ref.watch(ordersProvider);
 
     return Column(
@@ -36,23 +35,10 @@ class OrdersScreen extends ConsumerWidget {
             StarSpace.lg,
             StarSpace.md,
           ),
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text('Orders', style: theme.textTheme.titleLarge),
-                    Text(
-                      'Everything saved on this device, including work still waiting to upload.',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: StarSpace.md),
+          child: ScreenHeader(
+            title: 'Orders',
+            subtitle: 'Everything saved on this device, including work still waiting to upload.',
+            actions: <Widget>[
               FilledButton.icon(
                 onPressed: () => openOrderBuilder(context),
                 icon: const Icon(Icons.add, size: 18),
