@@ -2269,3 +2269,73 @@ describe('number blocks', () => {
     expect(body.end).toBe(50);
   });
 });
+
+describe('conflicts inbox', () => {
+  // A conflict is written whenever a device pushes a patch against a version the
+  // server has moved past. Writing one by hand is the honest way to test the
+  // inbox: it is the same row the sync path produces.
+  const conflictId = '0193f0b1-0000-7000-8000-0000000cf001';
+
+  beforeAll(async () => {
+    await env.DB.prepare(
+      `INSERT INTO conflicts (
+          id, tenant_id, entity, row_id, device_id, mutation_id,
+          local_json, server_json, fields_json, status, created_at
+       ) VALUES (?, ?, 'customers', 'row-1', 'dev-1', 'm-conflict-1',
+          ?, ?, ?, 'open', ?)`,
+    )
+      .bind(
+        conflictId,
+        TENANT,
+        JSON.stringify({ name: 'Ahmed Trading', phone_e164: '+971 5 0000 7777' }),
+        JSON.stringify({ name: 'Ahmed Traders', phone_e164: '+971 5 0000 7777' }),
+        JSON.stringify(['name']),
+        new Date().toISOString(),
+      )
+      .run();
+  });
+
+  it('shows a manager both versions of the same row', async () => {
+    const response = await api('/v1/conflicts', { headers: { authorization: 'Bearer ' + owner.access_token } });
+    expect(response.status).toBe(200);
+
+    const body = (await response.json()) as {
+      conflicts: Array<{ id: string; entity: string; fields: string[]; local: Record<string, unknown>; server: Record<string, unknown> }>;
+    };
+    const found = body.conflicts.find((row) => row.id === conflictId);
+    expect(found).toBeDefined();
+    expect(found!.entity).toBe('customers');
+    expect(found!.fields).toEqual(['name']);
+    expect(found!.local.name).toBe('Ahmed Trading');
+    expect(found!.server.name).toBe('Ahmed Traders');
+  });
+
+  it('keeps the counter out of the inbox', async () => {
+    const response = await api('/v1/conflicts', { headers: { authorization: 'Bearer ' + counter.access_token } });
+    expect(response.status).toBe(403);
+  });
+
+  it('records who closed it, once', async () => {
+    const first = await api(
+      '/v1/conflicts/' + conflictId + '/resolve',
+      authed(owner.access_token, { status: 'resolved' }),
+    );
+    expect(first.status).toBe(200);
+    const body = (await first.json()) as { conflict: { status: string; resolved_by: string | null } };
+    expect(body.conflict.status).toBe('resolved');
+    expect(body.conflict.resolved_by).toBeTruthy();
+
+    // Closing it twice is refused, not silently repeated: the record is evidence.
+    const second = await api(
+      '/v1/conflicts/' + conflictId + '/resolve',
+      authed(owner.access_token, { status: 'resolved' }),
+    );
+    expect(second.status).toBe(409);
+  });
+
+  it('no longer lists a closed conflict as open', async () => {
+    const response = await api('/v1/conflicts', { headers: { authorization: 'Bearer ' + owner.access_token } });
+    const body = (await response.json()) as { conflicts: Array<{ id: string }> };
+    expect(body.conflicts.some((row) => row.id === conflictId)).toBe(false);
+  });
+});

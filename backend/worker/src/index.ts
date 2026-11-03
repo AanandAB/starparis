@@ -8,6 +8,8 @@
  */
 
 import { Hono } from 'hono';
+import type { RoleKey } from './policy';
+import { conflictForbidden, listConflicts, resolveConflict } from './conflicts';
 import { z } from 'zod';
 
 import { error, loadSession, login, loginSchema, refreshSchema, refreshSession, revokeDevice } from './auth';
@@ -115,6 +117,29 @@ app.use('/v1/*', async (c, next) => {
 
   c.set('auth', claims);
   await next();
+});
+
+// --- Conflicts inbox (§5.6, §5.10) -----------------------------------------
+app.get('/v1/conflicts', async (c) => {
+  const auth = c.get('auth');
+  if (conflictForbidden(auth.role as RoleKey)) {
+    return c.json(error('FORBIDDEN', 'Only a manager or the owner can open the conflicts inbox.'), 403);
+  }
+  const status = c.req.query('status');
+  const conflicts = await listConflicts(c.env, auth, { status });
+  return c.json({ conflicts });
+});
+
+app.post('/v1/conflicts/:id/resolve', async (c) => {
+  const auth = c.get('auth');
+  const body = (await safeJson(c)) as { status?: string } | null;
+  const status = body?.status === 'dismissed' ? 'dismissed' : 'resolved';
+
+  const outcome = await resolveConflict(c.env, auth, c.req.param('id'), status);
+  if (!outcome.ok) {
+    return c.json(error(outcome.code, outcome.message), outcome.status as 400);
+  }
+  return c.json({ conflict: outcome.conflict });
 });
 
 app.post('/v1/auth/logout', async (c) => {
