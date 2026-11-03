@@ -82,6 +82,23 @@ export async function login(env: Env, input: LoginInput): Promise<AuthResult> {
   }
 
   const user = matches[0]!;
+
+  // --- Brute-force brake ---------------------------------------------------
+  // Eight wrong passwords in fifteen minutes lock the account for the rest of
+  // that window. The count comes from the audit trail, which already records
+  // every failed sign-in and every success: a successful login therefore clears
+  // the count without ever rewriting history, and the log stays append-only.
+  if ((await recentFailureCount(env, user)) >= MAX_FAILED_ATTEMPTS) {
+    await audit(env, user.tenant_id, user.id, null, 'auth.login_throttled', 'users', user.id);
+    return {
+      status: 429,
+      body: error(
+        'TOO_MANY_ATTEMPTS',
+        'Too many attempts. Try again in 15 minutes, or ask your manager to reset the password.',
+      ),
+    };
+  }
+
   const valid = await verifyPassword(input.password, user.password_hash);
   if (!valid) {
     await audit(env, user.tenant_id, user.id, null, 'auth.login_failed', 'users', user.id);
@@ -337,6 +354,30 @@ export async function revokeDevice(env: Env, ctx: AuthContext): Promise<void> {
     env.DB.prepare('UPDATE refresh_tokens SET revoked_at = ? WHERE device_id = ? AND revoked_at IS NULL').bind(now, ctx.deviceId),
   ]);
   await audit(env, ctx.tenantId, ctx.userId, ctx.deviceId, 'auth.logout', 'devices', ctx.deviceId);
+}
+
+const MAX_FAILED_ATTEMPTS = 8;
+const ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
+
+/// How many times this account has failed since its last successful sign-in, and
+/// only inside the lockout window. Both bounds matter: without the success bound
+/// a fat-fingered morning would lock the account for the day.
+async function recentFailureCount(env: Env, user: UserRow): Promise<number> {
+  const cutoff = new Date(Date.now() - ATTEMPT_WINDOW_MS).toISOString();
+  const row = await env.DB.prepare(
+    `SELECT COUNT(*) AS n
+       FROM audit_log
+      WHERE tenant_id = ? AND entity = 'users' AND row_id = ?
+        AND action = 'auth.login_failed'
+        AND at > ?
+        AND at > COALESCE(
+          (SELECT MAX(at) FROM audit_log
+            WHERE tenant_id = ? AND entity = 'users' AND row_id = ?
+              AND action = 'auth.login'), '')`,
+  )
+    .bind(user.tenant_id, user.id, cutoff, user.tenant_id, user.id)
+    .first<{ n: number }>();
+  return Number(row?.n ?? 0);
 }
 
 async function audit(

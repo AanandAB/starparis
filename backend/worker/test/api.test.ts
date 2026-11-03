@@ -21,6 +21,7 @@ const USER_OWNER = '0193f0b1-0000-7000-8000-0000000000d1';
 const USER_COUNTER = '0193f0b1-0000-7000-8000-0000000000d2';
 const USER_DESIGNER = '0193f0b1-0000-7000-8000-0000000000d3';
 
+const OWNER_PHONE = '+971500000001';
 const PASSWORD = 'counter-pass-123';
 
 interface Session {
@@ -180,7 +181,7 @@ beforeAll(async () => {
     ),
   ]);
 
-  owner = await loginAs('+971500000001', 'Owner PC');
+  owner = await loginAs(OWNER_PHONE, 'Owner PC');
   counter = await loginAs('+971500000002', 'Counter PC');
   designer = await loginAs('+971500000003', 'Designer Laptop');
 });
@@ -208,6 +209,52 @@ describe('authentication', () => {
     expect(response.status).toBe(401);
     const body = (await response.json()) as { error: { code: string } };
     expect(body.error.code).toBe('INVALID_CREDENTIALS');
+  });
+
+  it('locks the account after eight wrong passwords in a row', async () => {
+    // A phone number is easy to learn; a password is not. The brake has to hold
+    // against exactly this: someone standing at a counter guessing. The account
+    // is created here so the lockout cannot spill onto a shared fixture.
+    const target = '+971 5 0000 0099';
+    const created = await api(
+      '/v1/staff',
+      authed(owner.access_token, {
+        name: 'Throttle Target',
+        phone: target,
+        role: 'counter',
+        password: 'throttle-pass-1',
+      }),
+    );
+    expect(created.status).toBe(201);
+
+    const tryLogin = (password: string) =>
+      api('/v1/auth/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          phone: target,
+          password,
+          device: { name: 'Counter PC', platform: 'windows' },
+        }),
+      });
+
+    for (let attempt = 0; attempt < 8; attempt++) {
+      expect((await tryLogin('wrong-password')).status).toBe(401);
+    }
+
+    // The ninth try is refused before the password is checked — knowing the
+    // right password does not help inside the lockout window.
+    const locked = await tryLogin('throttle-pass-1');
+    expect(locked.status).toBe(429);
+    const body = (await locked.json()) as { error: { code: string } };
+    expect(body.error.code).toBe('TOO_MANY_ATTEMPTS');
+
+    // One account locked is not the whole shop locked.
+    const other = await api(
+      '/v1/auth/login',
+      loginRequest(OWNER_PHONE, PASSWORD),
+    );
+    expect(other.status).toBe(200);
   });
 
   it('issues a token bound to a device, with the role matrix', async () => {
