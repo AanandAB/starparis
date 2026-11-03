@@ -334,6 +334,7 @@ final class PriceRequest {
     this.discountBps = 0,
     this.discountFils = 0,
     this.hours = 0,
+    this.requiredGrain,
   });
 
   final String productId;
@@ -361,6 +362,12 @@ final class PriceRequest {
   /// For [ProductKind.service] and [RuleBasis.perHour].
   final int hours;
 
+  /// The grain the product needs, if the shop knows it. Business cards and
+  /// book covers have to be cut with the fibres running their way, or they
+  /// snap and crack; leaving this null means "no opinion" and the layout is
+  /// free to pack whichever way fits more.
+  final GrainDirection? requiredGrain;
+
   factory PriceRequest.fromJson(Map<String, Object?> json) => PriceRequest(
     productId: json['product_id']! as String,
     kind: ProductKind.fromWire(json['kind']! as String),
@@ -383,6 +390,9 @@ final class PriceRequest {
     discountBps: ((json['discount_bps'] as num?) ?? 0).toInt(),
     discountFils: ((json['discount_fils'] as num?) ?? 0).toInt(),
     hours: ((json['hours'] as num?) ?? 0).toInt(),
+    requiredGrain: json['required_grain'] == null
+        ? null
+        : GrainDirection.fromWire(json['required_grain']! as String),
   );
 
   Map<String, Object?> toJson() => <String, Object?>{
@@ -399,6 +409,7 @@ final class PriceRequest {
     if (discountBps != 0) 'discount_bps': discountBps,
     if (discountFils != 0) 'discount_fils': discountFils,
     if (hours != 0) 'hours': hours,
+    if (requiredGrain != null) 'required_grain': requiredGrain!.wire,
   };
 }
 
@@ -406,7 +417,18 @@ final class PriceRequest {
 /// an old quote must be reproducible from the version it was priced with.
 /// How a finishing step is charged. These are the trade's own units: lamination
 /// is per side, creasing per thousand, banners per square metre, binding per copy.
-enum OperationBasis { perPiece, per1000, perSide, perSqm, perCopy, perHour }
+enum OperationBasis {
+  perPiece,
+  per1000,
+  perSide,
+  perSqm,
+  perCopy,
+  perHour,
+
+  /// Per press sheet. Laminating, creasing and die-cutting eat sheets, not
+  /// pieces, so charging them per piece overcharges a 21-up card job 21 times.
+  perSheet,
+}
 
 /// One press or finishing machine, with the numbers its time is bought at.
 final class MachineSpec {
@@ -436,6 +458,7 @@ final class FinishingOperation {
     required this.rateFils,
     this.setupFils = 0,
     this.minChargeFils = 0,
+    this.wasteBps = 0,
   });
 
   final String code;
@@ -445,20 +468,77 @@ final class FinishingOperation {
   final int setupFils;
   final int minChargeFils;
 
+  /// Stock this step loses of its own: a creaser spoils the first sheets on
+  /// make-ready, a laminator eats film, a guillotine miscuts. Charged on top of
+  /// the run, in basis points of the units the step is fed.
+  final int wasteBps;
+
+  /// The units this step is actually fed, in its own unit of sale.
+  ///
+  /// [sheets] is the job's billable sheet count and only matters for
+  /// [OperationBasis.perSheet]; an area job has no sheets and passes zero.
+  int unitsFor({
+    required int quantity,
+    required int sides,
+    required int areaMilliSqm,
+    int sheets = 0,
+  }) => switch (basis) {
+    OperationBasis.perPiece ||
+    OperationBasis.per1000 ||
+    OperationBasis.perCopy => quantity,
+    OperationBasis.perSide => quantity * sides,
+    OperationBasis.perSqm => areaMilliSqm,
+    OperationBasis.perHour => 1,
+    OperationBasis.perSheet => sheets,
+  };
+
+  /// The run cost of [units] alone, before setup and before the minimum
+  /// charge. Used for the waste allowance, which must not carry setup twice.
+  Fils runCostFor(int units) => Fils(
+    switch (basis) {
+      OperationBasis.per1000 => mulDivRoundHalfUp(rateFils, units, 1000),
+      OperationBasis.perSqm => mulDivRoundHalfUp(rateFils, units, 1000),
+      // Time is not stock: a percentage of one hour is not a sheet count, so a
+      // per-hour step carries its setup risk in [setupFils] instead.
+      OperationBasis.perHour => rateFils,
+      _ => rateFils * units,
+    },
+  );
+
+  /// Extra units allowed for this step's waste, rounded up. Zero for per-hour,
+  /// which is charged by time rather than by stock fed through it.
+  int wasteUnitsFor({
+    required int quantity,
+    required int sides,
+    required int areaMilliSqm,
+    int sheets = 0,
+  }) {
+    if (wasteBps <= 0 || basis == OperationBasis.perHour) {
+      return 0;
+    }
+    final units = unitsFor(
+      quantity: quantity,
+      sides: sides,
+      areaMilliSqm: areaMilliSqm,
+      sheets: sheets,
+    );
+    // Rounded up: a step that spoils half a sheet spoils the whole sheet.
+    return (units * wasteBps + 9999) ~/ 10000;
+  }
+
   /// What this operation costs for the job in front of it.
   Fils costFor({
     required int quantity,
     required int sides,
     required int areaMilliSqm,
+    int sheets = 0,
   }) {
-    final units = switch (basis) {
-      OperationBasis.perPiece || OperationBasis.perCopy => quantity,
-      OperationBasis.perSide => quantity * sides,
-      OperationBasis.per1000 => quantity,
-      OperationBasis.perSqm => areaMilliSqm,
-      OperationBasis.perHour => 1,
-    };
-
+    final units = unitsFor(
+      quantity: quantity,
+      sides: sides,
+      areaMilliSqm: areaMilliSqm,
+      sheets: sheets,
+    );
     final run = switch (basis) {
       OperationBasis.per1000 => mulDivRoundHalfUp(rateFils, units, 1000),
       OperationBasis.perSqm => mulDivRoundHalfUp(rateFils, areaMilliSqm, 1000),
@@ -501,6 +581,10 @@ final class PricingContext {
     this.minOrderFils = 0,
     this.roundingStepFils = 100,
     this.vatBps = 500,
+    this.grainWasteBps = 0,
+    this.colours,
+    this.inkCoverageBps,
+    this.extraColourFils = 0,
   });
 
   final int priceBookVersion;
@@ -555,6 +639,28 @@ final class PricingContext {
   /// 500 bps = 5% UAE VAT. Zero for exports.
   final int vatBps;
 
+  /// Stock allowed for when a job has to run across the grain anyway, as basis
+  /// points of the sheets it consumes. Zero means the shop has not priced the
+  /// extra waste yet, and the breakdown still says the grain was compromised.
+  final int grainWasteBps;
+
+  /// How many inks the job lays down: 1 is mono, 4 is process colour. Null
+  /// means the shop has not said, which is priced exactly as mono. Capped at 4
+  /// because beyond that the plate count is a different conversation.
+  final int? colours;
+
+  /// How much of the sheet the ink actually covers, 0–10000 bps. Null means
+  /// "not measured", and then the press rate is used as it stands.
+  ///
+  /// Only colour work is scaled by coverage: a mono click costs the shop the
+  /// same whether the page is 5% or 95% black, but a four-colour sheet is
+  /// billed on the ink it puts down.
+  final int? inkCoverageBps;
+
+  /// Added to the per-side print rate for every colour beyond the first, in
+  /// fils. This is how a shop's own price list steps from mono to colour.
+  final int extraColourFils;
+
   factory PricingContext.fromJson(Map<String, Object?> json) => PricingContext(
     priceBookVersion: (json['price_book_version']! as num).toInt(),
     mode: PricingMode.fromWire(json['mode']! as String),
@@ -581,6 +687,10 @@ final class PricingContext {
     minOrderFils: ((json['min_order_fils'] as num?) ?? 0).toInt(),
     roundingStepFils: ((json['rounding_step_fils'] as num?) ?? 100).toInt(),
     vatBps: ((json['vat_bps'] as num?) ?? 500).toInt(),
+    grainWasteBps: ((json['grain_waste_bps'] as num?) ?? 0).toInt(),
+    colours: (json['colours'] as num?)?.toInt(),
+    inkCoverageBps: (json['ink_coverage_bps'] as num?)?.toInt(),
+    extraColourFils: ((json['extra_colour_fils'] as num?) ?? 0).toInt(),
   );
 
   Map<String, Object?> toJson() => <String, Object?>{
@@ -603,6 +713,10 @@ final class PricingContext {
     'min_order_fils': minOrderFils,
     'rounding_step_fils': roundingStepFils,
     'vat_bps': vatBps,
+    if (grainWasteBps != 0) 'grain_waste_bps': grainWasteBps,
+    if (colours != null) 'colours': colours,
+    if (inkCoverageBps != null) 'ink_coverage_bps': inkCoverageBps,
+    if (extraColourFils != 0) 'extra_colour_fils': extraColourFils,
   };
 }
 

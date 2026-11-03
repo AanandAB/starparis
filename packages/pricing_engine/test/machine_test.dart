@@ -1,4 +1,3 @@
-import 'package:starparis_domain/starparis_domain.dart';
 import 'package:starparis_pricing/pricing_engine.dart';
 import 'package:test/test.dart';
 

@@ -30,6 +30,7 @@ final class PricingEngine {
     if (request.sides <= 0) {
       throw const PricingException('SIDES_INVALID', 'Sides must be 1 or 2.');
     }
+    _checkPrintSettings(context);
 
     final warnings = <String>[];
 
@@ -62,6 +63,8 @@ final class PricingEngine {
           quantity: request.quantity,
           setupSheets: context.setupSheets,
           spoilageBps: context.spoilageBps,
+          requiredGrain: request.requiredGrain,
+          grainWasteBps: context.grainWasteBps,
         );
         sheets = fit.billableSheets;
 
@@ -134,14 +137,57 @@ final class PricingEngine {
       }
     }
 
+    // --- 2b. Grain -------------------------------------------------------
+    // Turning the piece onto the grain is free, and the layout has already
+    // tried it. When neither orientation lines the fibres up, the job has to
+    // run across the grain and the stock that costs is billed on its own line
+    // here — not folded into the sheet count, where material and print would
+    // both charge for it again.
+    final grainWaste = fit?.grainWasteSheets ?? 0;
+    if (grainWaste > 0) {
+      if (materialRate != null && materialRate > 0) {
+        final amount = Fils(materialRate * grainWaste);
+        costSubtotal += amount;
+        lines.add(
+          PriceLine(
+            code: 'grain',
+            label: 'Grain direction',
+            kind: PriceLineKind.cost,
+            quantity: grainWaste,
+            rateFils: materialRate,
+            amount: amount,
+            explain:
+                'the grain on this stock runs the wrong way for these pieces, '
+                'so $grainWaste extra '
+                '${grainWaste == 1 ? 'sheet' : 'sheets'} × '
+                '${Fils(materialRate).aedLabel} cover the waste',
+          ),
+        );
+      } else {
+        warnings.add(
+          'These pieces need the grain the other way and $grainWaste extra '
+          'sheets are allowed for, but no material price is set so the '
+          'allowance is not charged.',
+        );
+      }
+    } else if (fit != null && fit.isGrainCompromised) {
+      warnings.add(
+        'These pieces have to be printed across the grain, and no grain waste '
+        'allowance is configured.',
+      );
+    }
+
     // --- 3. Print --------------------------------------------------------
     final printRate = context.printRatePerSheetSideFils;
     if (request.kind == ProductKind.sheet &&
         printRate != null &&
         printRate > 0) {
       final units = sheets * request.sides;
+      // The rate that comes back carries the colour count and, for colour, the
+      // ink coverage: that is what the press actually charges for the side.
+      final sideRate = _sideRate(context, printRate);
       if (units > 0) {
-        final amount = Fils(printRate * units);
+        final amount = Fils(sideRate * units);
         costSubtotal += amount;
         lines.add(
           PriceLine(
@@ -149,12 +195,12 @@ final class PricingEngine {
             label: 'Printing',
             kind: PriceLineKind.cost,
             quantity: units,
-            rateFils: printRate,
+            rateFils: sideRate,
             amount: amount,
             explain:
                 '$sheets sheets × ${request.sides} '
                 '${request.sides == 1 ? 'side' : 'sides'} × '
-                '${Fils(printRate).aedLabel}',
+                '${Fils(sideRate).aedLabel}${_inkNote(context)}',
           ),
         );
       }
@@ -236,21 +282,55 @@ final class PricingEngine {
         quantity: request.quantity,
         sides: request.sides,
         areaMilliSqm: areaMilliSqm,
+        sheets: sheets,
       );
       if (amount.raw <= 0) continue;
+      final units = operation.unitsFor(
+        quantity: request.quantity,
+        sides: request.sides,
+        areaMilliSqm: areaMilliSqm,
+        sheets: sheets,
+      );
       costSubtotal += amount;
       lines.add(
         PriceLine(
           code: 'op_${operation.code}',
           label: operation.name,
           kind: PriceLineKind.cost,
-          quantity: request.quantity,
+          quantity: units,
           rateFils: operation.rateFils,
           amount: amount,
           explain: operation.setupFils > 0
               ? 'rate ${Fils(operation.rateFils).aedLabel} plus '
                   '${Fils(operation.setupFils).aedLabel} setup'
               : 'rate ${Fils(operation.rateFils).aedLabel}',
+        ),
+      );
+
+      // The step loses stock of its own, so what is fed through it is raised
+      // by its waste. The extra is its own line, named after the step, because
+      // the owner's first question about a finishing charge is which step.
+      final extraUnits = operation.wasteUnitsFor(
+        quantity: request.quantity,
+        sides: request.sides,
+        areaMilliSqm: areaMilliSqm,
+        sheets: sheets,
+      );
+      final wasteAmount = operation.runCostFor(extraUnits);
+      if (extraUnits <= 0 || wasteAmount.raw <= 0) continue;
+      costSubtotal += wasteAmount;
+      lines.add(
+        PriceLine(
+          code: 'op_${operation.code}_waste',
+          label: '${operation.name} — waste',
+          kind: PriceLineKind.cost,
+          quantity: extraUnits,
+          rateFils: operation.rateFils,
+          amount: wasteAmount,
+          explain:
+              '${_extraUnitsText(operation.basis, extraUnits)} × '
+              '${Fils(operation.rateFils).aedLabel} '
+              '(${_percentText(operation.wasteBps)} waste)',
         ),
       );
     }
@@ -538,6 +618,75 @@ final class PricingEngine {
       details: <String, Object?>{'quantity': request.quantity},
     );
   }
+
+  static void _checkPrintSettings(PricingContext context) {
+    final colours = context.colours;
+    if (colours != null && (colours < 1 || colours > 4)) {
+      throw PricingException(
+        'PRINT_SETTINGS_INVALID',
+        'Colour count must be between 1 and 4, not $colours.',
+        details: <String, Object?>{'colours': colours},
+      );
+    }
+    final coverage = context.inkCoverageBps;
+    if (coverage != null && (coverage < 0 || coverage > 10000)) {
+      throw PricingException(
+        'PRINT_SETTINGS_INVALID',
+        'Ink coverage must be between 0 and 10000 basis points, not $coverage.',
+        details: <String, Object?>{'ink_coverage_bps': coverage},
+      );
+    }
+    if (context.extraColourFils < 0) {
+      throw const PricingException(
+        'PRINT_SETTINGS_INVALID',
+        'The extra charge for a colour cannot be negative.',
+      );
+    }
+  }
+
+  /// The per-side rate with the job's colour count and ink coverage built in.
+  ///
+  /// Mono work comes back untouched: a black click costs the shop the same at
+  /// 5% or 95% coverage, which is also why a job that records no colours prices
+  /// exactly as it did before these settings existed.
+  static int _sideRate(PricingContext context, int baseRate) {
+    final colours = context.colours ?? 1;
+    if (colours <= 1) {
+      return baseRate;
+    }
+    final withColour = baseRate + context.extraColourFils * (colours - 1);
+    final coverage = context.inkCoverageBps;
+    return coverage == null
+        ? withColour
+        : mulDivRoundHalfUp(withColour, coverage, 10000);
+  }
+
+  /// The tail of the print line's explanation, and empty when the job does not
+  /// say how many inks it lays down — the line then reads exactly as it always
+  /// has, which is what keeps old quotes comparable.
+  static String _inkNote(PricingContext context) {
+    final colours = context.colours ?? 1;
+    if (colours <= 1) {
+      return '';
+    }
+    final coverage = context.inkCoverageBps;
+    return coverage == null
+        ? ' — $colours colours'
+        : ' — $colours colours at ${_percentText(coverage)} ink coverage';
+  }
+
+  /// "2 extra sheets", "500 extra pieces" — the units an operation's own waste
+  /// is charged in, so the line explains itself without a lookup table.
+  static String _extraUnitsText(OperationBasis basis, int units) =>
+      switch (basis) {
+        OperationBasis.perSheet =>
+          '$units extra ${units == 1 ? 'sheet' : 'sheets'}',
+        OperationBasis.perSqm => '${_sqmText(units)} extra m²',
+        OperationBasis.perSide =>
+          '$units extra ${units == 1 ? 'sheet side' : 'sheet sides'}',
+        OperationBasis.perHour => 'an extra hour',
+        _ => '$units extra ${units == 1 ? 'piece' : 'pieces'}',
+      };
 
   static String _discountExplain(PriceRequest request, Fils amount) {
     if (request.discountBps > 0 && request.discountFils > 0) {

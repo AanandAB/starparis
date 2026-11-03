@@ -8,7 +8,8 @@ library;
 
 export 'src/engine.dart' show PricingEngine;
 export 'src/errors.dart' show PricingException;
-export 'src/layout.dart' show SheetFit, SheetSpec, fitOnSheet;
+export 'src/layout.dart'
+    show GrainDirection, SheetFit, SheetSpec, fitOnSheet;
 export 'src/models.dart';
 export 'src/rules.dart';
 export 'src/vector.dart' show PricingVector;

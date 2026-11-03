@@ -1,4 +1,3 @@
-import 'package:starparis_domain/starparis_domain.dart';
 import 'package:starparis_pricing/pricing_engine.dart';
 import 'package:test/test.dart';
 
@@ -46,10 +45,10 @@ void main() {
 
     final trade = PricingEngine.price(
       product,
-      PricingContext(
+      const PricingContext(
         priceBookVersion: 1,
         mode: PricingMode.priceTable,
-        priceBreaks: const <QuantityBreak>[QuantityBreak(quantity: 500, amountFils: 12200)],
+        priceBreaks: <QuantityBreak>[QuantityBreak(quantity: 500, amountFils: 12200)],
         tierAdjustmentBps: -1000, // 10% off for trade
         roundingStepFils: 100,
         vatBps: 500,
