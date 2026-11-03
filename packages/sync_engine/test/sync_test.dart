@@ -952,6 +952,27 @@ void main() {
       );
     });
 
+    test('a job is found by its number and an invoice by its own', () async {
+      final placed = await order();
+      await db.issueInvoiceLocal(
+        order: placed,
+        tenantId: 't1',
+        branchId: 'b1',
+        userId: 'u1',
+        number: 'INV-SHJ1-PC1-00077',
+      );
+
+      final byJob = await db.searchOrders(placed.numberDisplay).first;
+      expect(byJob.map((row) => row.id), contains(placed.id));
+
+      final byInvoice = await db.searchInvoices('INV-SHJ1-PC1-00077').first;
+      expect(byInvoice, hasLength(1));
+      expect(byInvoice.single.orderId, placed.id);
+
+      expect(await db.searchOrders('nothing-like-this').first, isEmpty);
+      expect(await db.searchInvoices('nothing-like-this').first, isEmpty);
+    });
+
     test('an expense is queued as a whole insert with its method', () async {
       final id = await db.addExpenseLocal(
         tenantId: 't1',

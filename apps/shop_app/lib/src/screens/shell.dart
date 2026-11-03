@@ -15,6 +15,7 @@ import 'home_screen.dart';
 import 'orders_screen.dart';
 import 'price_book_screen.dart';
 import 'reports_screen.dart';
+import 'track_sheet.dart';
 
 /// One place to go, and which page it shows.
 class _Dest {
@@ -40,24 +41,7 @@ class AppShell extends ConsumerStatefulWidget {
 }
 
 class _AppShellState extends ConsumerState<AppShell> {
-  final TextEditingController _search = TextEditingController();
-  final FocusNode _searchFocus = FocusNode();
-
-  @override
-  void dispose() {
-    _search.dispose();
-    _searchFocus.dispose();
-    super.dispose();
-  }
-
   void _select(int page) => ref.read(shellTabProvider.notifier).select(page);
-
-  /// Search is the fastest way to a customer: type a name or a phone number and
-  /// the Customers screen takes over with the result.
-  void _searchChanged(String value) {
-    ref.read(searchQueryProvider.notifier).set(value);
-    if (value.isNotEmpty) _select(HomeTabs.customers);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -135,16 +119,13 @@ class _AppShellState extends ConsumerState<AppShell> {
     return CallbackShortcuts(
       bindings: <ShortcutActivator, VoidCallback>{
         const SingleActivator(LogicalKeyboardKey.keyK, control: true): () =>
-            _searchFocus.requestFocus(),
+            showTrackSheet(context),
         const SingleActivator(LogicalKeyboardKey.keyN, control: true): () =>
             openOrderBuilder(context),
         const SingleActivator(LogicalKeyboardKey.f5): () =>
             ref.read(bootstrapProvider).engine?.syncNow(),
-        const SingleActivator(LogicalKeyboardKey.escape): () {
-          _searchFocus.unfocus();
-          _search.clear();
-          ref.read(searchQueryProvider.notifier).set('');
-        },
+        const SingleActivator(LogicalKeyboardKey.escape): () =>
+            Navigator.of(context).maybePop(),
       },
       child: Focus(
         autofocus: true,
@@ -176,18 +157,48 @@ class _AppShellState extends ConsumerState<AppShell> {
             actions: <Widget>[
               if (useRail)
                 SizedBox(
-                  width: 320,
-                  child: TextField(
-                    controller: _search,
-                    focusNode: _searchFocus,
-                    onChanged: _searchChanged,
-                    decoration: InputDecoration(
-                      isDense: true,
-                      hintText: 'Search a customer or phone',
-                      prefixIcon: const Icon(Icons.search, size: 18),
-                      suffixText: 'Ctrl K',
-                      suffixStyle: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+                  width: 340,
+                  child: InkWell(
+                    onTap: () => showTrackSheet(context),
+                    borderRadius: BorderRadius.circular(StarRadius.field),
+                    child: Container(
+                      height: 40,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: StarSpace.md,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(StarRadius.field),
+                        border: Border.all(
+                          color: theme.colorScheme.outlineVariant,
+                        ),
+                      ),
+                      child: Row(
+                        children: <Widget>[
+                          Icon(
+                            Icons.search,
+                            size: 18,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: StarSpace.sm),
+                          Expanded(
+                            child: Text(
+                              'Job, invoice, phone or customer',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            'Ctrl K',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),

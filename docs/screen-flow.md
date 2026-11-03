@@ -174,9 +174,11 @@ A vendor record (name, trade, phone, terms). A vendor job against an order: what
 cost, the promised date, the commission or markup. Vendor work appears as its own stage so it cannot
 be forgotten, and its cost lands in the job's margin.
 
-### 4.16 Track — **TO BUILD**
-One box: job number, invoice number, phone or customer name. Result: the job, its stage, who has it,
-what is owed, and the last three messages.
+### 4.16 Track — BUILT
+`Ctrl K`, or the box in the top bar: job number, invoice number, phone number or customer name.
+Results come back grouped — **Jobs**, **Invoices**, **Customers** — and opening a job shows its sheet
+with the stage, proofs, payments and the WhatsApp link. Invoices show what is outstanding and open the
+job they belong to. Everything is answered from the local database, so it works with no connection.
 
 ### 4.17 Settings — **TO BUILD**
 Company profile for documents (name, TRN, address), VAT rate, number series, backup/export.
@@ -193,7 +195,7 @@ Company profile for documents (name, TRN, address), VAT rate, number series, bac
 | Role-based logins and access | PARTIAL | Server enforced; no Staff screen |
 | Staff pick up work, status visible | BUILT | Board → My work |
 | Everything centralised by job id | BUILT | Orders, board, money |
-| Track by job id or phone | TO BUILD | — |
+| Track by job id or phone | BUILT | Track (`Ctrl K`) |
 | Quotes and invoices | BUILT | Documents, order sheet |
 | WhatsApp messages | PARTIAL | Click-to-chat on quote/invoice/proof; no templates |
 | Vendor / commission work | TO BUILD | — |

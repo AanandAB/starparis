@@ -601,6 +601,50 @@ class LocalDatabase extends _$LocalDatabase {
         .watch();
   }
 
+  /// Finds a job by its number, or by the customer on it.
+  ///
+  /// The counter's question is always "where is JOB-…", and the answer has to
+  /// come back while the customer is still standing there — so this reads the
+  /// local database, never the network.
+  Stream<List<Order>> searchOrders(String query, {int limit = 20}) {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return watchOrders(limit: limit);
+    final like = '%${trimmed.replaceAll('%', '')}%';
+
+    return (select(orders)
+          ..where(
+            (t) =>
+                t.deletedAt.isNull() &
+                (t.numberDisplay.like(like) |
+                    t.customerName.equals(trimmed) |
+                    t.customerName.like(like)),
+          )
+          ..orderBy(<OrderClauseGenerator<$OrdersTable>>[
+            (t) => OrderingTerm.desc(t.createdAt),
+          ])
+          ..limit(limit))
+        .watch();
+  }
+
+  /// Finds an invoice by number or customer. Same reasoning as [searchOrders]:
+  /// a customer holding a piece of paper wants an answer, not a spinner.
+  Stream<List<Invoice>> searchInvoices(String query, {int limit = 20}) {
+    final trimmed = query.trim();
+    final like = '%${trimmed.replaceAll('%', '')}%';
+
+    return (select(invoices)
+          ..where(
+            (t) =>
+                t.deletedAt.isNull() &
+                (t.number.like(like) | t.customerName.like(like)),
+          )
+          ..orderBy(<OrderClauseGenerator<$InvoicesTable>>[
+            (t) => OrderingTerm.desc(t.issuedAt),
+          ])
+          ..limit(limit))
+        .watch();
+  }
+
   /// Phone-first search: the counter types a number, not a name.
   Stream<List<Customer>> searchCustomers(String query) {
     final trimmed = query.trim();
