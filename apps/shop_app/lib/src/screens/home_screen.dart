@@ -1,22 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:starparis_design/starparis_design.dart';
+import 'package:starparis_domain/starparis_domain.dart';
 import 'package:starparis_sync/starparis_sync.dart';
 
 import '../providers.dart';
-import 'board_screen.dart';
+import '../sales/till_sheet.dart';
 import 'orders_screen.dart';
 
-final StreamProvider<List<Order>> _ordersProvider = StreamProvider<List<Order>>(
-  (ref) => ref.watch(bootstrapProvider).db.watchOrders(limit: 400),
-);
-
-final StreamProvider<List<Proof>> _proofsAwaitingProvider =
-    StreamProvider<List<Proof>>(
-      (ref) => ref.watch(bootstrapProvider).db.watchProofsAwaitingDecision(),
-    );
-
-/// Tab indices in the shell: Home, Customers, Orders, Production, [Prices].
+/// Tab indices in the shell: Today, Customers, Orders, Production, [Prices],
+/// [Reports]. Constants, so a screen can send the user somewhere without
+/// knowing how the navigation is drawn.
 abstract final class HomeTabs {
   static const int home = 0;
   static const int customers = 1;
@@ -24,296 +18,544 @@ abstract final class HomeTabs {
   static const int production = 3;
 }
 
-/// The role-shaped home screen.
+/// Today — the screen the shop opens in the morning.
 ///
-/// Every number here comes from the local database, so it is right offline and
-/// updates the moment work moves. Nothing is a placeholder: a manager who sees a
-/// dashboard that does not work stops trusting the parts that do.
+/// Every figure here is a door: a number the owner cannot act on is decoration.
+/// All of it is read from the local database, so the dashboard is right on a
+/// dead connection — which is the point of the whole product.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionProvider);
-    final theme = Theme.of(context);
-    final pending = ref.watch(pendingCountProvider).value ?? 0;
-    final sync = ref.watch(syncStateProvider).value;
+    if (session == null) return const SizedBox.shrink();
 
-    final myTasks = (ref.watch(myTasksProvider).value ?? const <Task>[])
-        .where((task) => task.status != 'done')
-        .toList();
-    final orders = ref.watch(_ordersProvider).value ?? const <Order>[];
-    final proofs = ref.watch(_proofsAwaitingProvider).value ?? const <Proof>[];
-    final customers =
-        ref.watch(allCustomersProvider).value ?? const <Customer>[];
+    final db = ref.watch(bootstrapProvider).db;
+    final now = DateTime.now();
+    final startOfToday = DateTime(now.year, now.month, now.day);
+    final endOfToday = startOfToday.add(const Duration(days: 1));
 
-    final today = DateUtils.dateOnly(DateTime.now());
-    final dueToday = myTasks
-        .where(
-          (task) =>
-              task.dueAt != null && DateUtils.isSameDay(task.dueAt, today),
-        )
-        .length;
-    final overdue = myTasks
-        .where((task) => task.dueAt != null && task.dueAt!.isBefore(today))
-        .length;
-    final rework = myTasks.where((task) => task.status == 'rework').length;
-    final ready = orders.where((order) => order.status == 'ready').length;
-    final open = myTasks.length;
+    bool isOpen(Task task) =>
+        task.status != 'done' && task.status != 'cancelled';
 
-    final role = session?.role ?? 'counter';
-    final isManager = role == 'owner' || role == 'manager';
+    return StreamBuilder<List<Task>>(
+      stream: db.watchActiveTasks(),
+      builder: (context, taskSnapshot) {
+        final tasks = taskSnapshot.data ?? const <Task>[];
+        final loading = taskSnapshot.connectionState == ConnectionState.waiting;
 
-    final stats = <Widget>[
-      if (isManager || role == 'vendor_coordinator')
-        _StatCard(
-          label: 'Open tasks',
-          value: '$open',
-          icon: Icons.checklist_rtl,
-        ),
-      if (isManager || role == 'operator' || role == 'designer')
-        _StatCard(
-          label: 'Due today',
-          value: '$dueToday',
-          icon: Icons.today,
-          tone: dueToday > 0 ? StarColors.statusActive : null,
-        ),
-      if (isManager || role == 'designer' || role == 'counter')
-        _StatCard(
-          label: 'Proofs waiting',
-          value: '${proofs.length}',
-          icon: Icons.fact_check_outlined,
-          tone: proofs.isEmpty ? null : StarColors.statusPaused,
-        ),
-      if (isManager ||
-          role == 'driver' ||
-          role == 'accountant' ||
-          role == 'counter')
-        _StatCard(
-          label: 'Ready to collect',
-          value: '$ready',
-          icon: Icons.shopping_bag_outlined,
-          tone: ready > 0 ? StarColors.statusDone : null,
-        ),
-      if (role == 'designer')
-        _StatCard(
-          label: 'Sent back',
-          value: '$rework',
-          icon: Icons.replay,
-          tone: rework > 0 ? StarColors.statusProblem : null,
-        ),
-      if (overdue > 0)
-        _StatCard(
-          label: 'Overdue',
-          value: '$overdue',
-          icon: Icons.warning_amber_rounded,
-          tone: StarColors.statusProblem,
-        ),
-      if (role == 'counter' || role == 'accountant')
-        _StatCard(
-          label: 'Customers',
-          value: '${customers.length}',
-          icon: Icons.people_outline,
-        ),
-      _StatCard(
-        label: pending == 0 ? 'All changes sent' : 'Waiting to upload',
-        value: '$pending',
-        icon: pending == 0
-            ? Icons.cloud_done_outlined
-            : Icons.cloud_upload_outlined,
-        tone: pending > 0 ? StarColors.statusPaused : StarColors.statusDone,
-      ),
-    ];
+        return StreamBuilder<List<Order>>(
+          stream: db.watchOrders(),
+          builder: (context, orderSnapshot) {
+            final orders = orderSnapshot.data ?? const <Order>[];
 
-    return ListView(
-      padding: const EdgeInsets.all(StarSpace.lg),
-      children: <Widget>[
-        Text(
-          'Good ${_partOfDay()}, ${session?.name ?? ''}',
-          style: theme.textTheme.headlineSmall,
-        ),
-        const SizedBox(height: StarSpace.xs),
-        Text(
-          '${role.replaceAll('_', ' ')} · '
-          '${sync?.phase == SyncPhase.offline ? 'offline — everything is saved locally' : 'connected and syncing'}',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: StarSpace.lg),
-        Wrap(spacing: StarSpace.md, runSpacing: StarSpace.md, children: stats),
-        const SizedBox(height: StarSpace.xl),
-        Text('Your next step', style: theme.textTheme.titleMedium),
-        const SizedBox(height: StarSpace.md),
-        _primaryAction(context, ref, role),
-        const SizedBox(height: StarSpace.lg),
-        Text('Go to', style: theme.textTheme.titleMedium),
-        const SizedBox(height: StarSpace.md),
-        _ActionCard(
-          icon: Icons.view_kanban_outlined,
-          title: 'Production board',
-          subtitle: open == 0
-              ? 'Nothing in the shop right now.'
-              : '$open task${open == 1 ? '' : 's'} open, $dueToday due today.',
-          onTap: () =>
-              ref.read(shellTabProvider.notifier).select(HomeTabs.production),
-        ),
-        const SizedBox(height: StarSpace.md),
-        _ActionCard(
-          icon: Icons.receipt_long_outlined,
-          title: 'Orders and quotes',
-          subtitle: '${orders.length} in view, $ready ready to collect.',
-          onTap: () =>
-              ref.read(shellTabProvider.notifier).select(HomeTabs.orders),
-        ),
-        const SizedBox(height: StarSpace.md),
-        _ActionCard(
-          icon: Icons.person_add_alt_1_outlined,
-          title: 'Customers',
-          subtitle: 'Find by phone number; ${customers.length} saved.',
-          onTap: () =>
-              ref.read(shellTabProvider.notifier).select(HomeTabs.customers),
-        ),
-      ],
+            final overdue = tasks
+                .where(
+                  (task) =>
+                      isOpen(task) &&
+                      task.dueAt != null &&
+                      task.dueAt!.isBefore(now),
+                )
+                .toList(growable: false);
+
+            final dueToday = tasks
+                .where(
+                  (task) =>
+                      isOpen(task) &&
+                      task.dueAt != null &&
+                      !task.dueAt!.isBefore(startOfToday) &&
+                      task.dueAt!.isBefore(endOfToday),
+                )
+                .toList(growable: false);
+
+            final inProgress = tasks
+                .where((task) => task.status == 'in_progress')
+                .toList(growable: false);
+
+            // Work nobody has picked up, filtered to what this person may take.
+            final unclaimed = tasks
+                .where(
+                  (task) =>
+                      task.status == 'available' &&
+                      (session.isOwner ||
+                          session.role == 'manager' ||
+                          task.requiredRole == session.role),
+                )
+                .toList(growable: false);
+
+            final ordersDueToday = orders
+                .where(
+                  (order) =>
+                      order.dueAt != null &&
+                      !order.dueAt!.isBefore(startOfToday) &&
+                      order.dueAt!.isBefore(endOfToday) &&
+                      order.status != 'delivered' &&
+                      order.status != 'cancelled',
+                )
+                .toList(growable: false);
+
+            return ListView(
+              padding: const EdgeInsets.all(StarSpace.lg),
+              children: <Widget>[
+                _Greeting(
+                  name: session.name,
+                  role: session.role,
+                  onNewOrder: session.canCreateOrders
+                      ? () => openOrderBuilder(context)
+                      : null,
+                ),
+                const SizedBox(height: StarSpace.lg),
+                if (loading)
+                  const StarSkeletonList(rows: 2, rowHeight: 84)
+                else
+                  _StatGrid(
+                    stats: <Widget>[
+                      StarStat(
+                        label: 'In production',
+                        value: '${inProgress.length}',
+                        hint: inProgress.isEmpty
+                            ? 'nothing on a machine'
+                            : 'running right now',
+                        icon: Icons.precision_manufacturing_outlined,
+                        onTap: () => ref
+                            .read(shellTabProvider.notifier)
+                            .select(HomeTabs.production),
+                      ),
+                      StarStat(
+                        label: 'Overdue',
+                        value: '${overdue.length}',
+                        hint: overdue.isEmpty
+                            ? 'nothing late'
+                            : 'past its date',
+                        icon: Icons.warning_amber_outlined,
+                        tone: overdue.isEmpty
+                            ? StarStatTone.positive
+                            : StarStatTone.danger,
+                        onTap: () => ref
+                            .read(shellTabProvider.notifier)
+                            .select(HomeTabs.production),
+                      ),
+                      StarStat(
+                        label: 'Due today',
+                        value: '${ordersDueToday.length}',
+                        hint: ordersDueToday.isEmpty
+                            ? 'no jobs promised today'
+                            : 'jobs promised today',
+                        icon: Icons.event_available_outlined,
+                        tone: ordersDueToday.isEmpty
+                            ? StarStatTone.neutral
+                            : StarStatTone.warning,
+                        onTap: () => ref
+                            .read(shellTabProvider.notifier)
+                            .select(HomeTabs.orders),
+                      ),
+                      StarStat(
+                        label: 'Waiting for you',
+                        value: '${unclaimed.length}',
+                        hint: unclaimed.isEmpty
+                            ? 'your queue is clear'
+                            : 'unclaimed in your role',
+                        icon: Icons.pan_tool_outlined,
+                        onTap: () => ref
+                            .read(shellTabProvider.notifier)
+                            .select(HomeTabs.production),
+                      ),
+                    ],
+                  ),
+                const SizedBox(height: StarSpace.xl),
+                if (overdue.isNotEmpty) ...<Widget>[
+                  StarSectionHeader(
+                    title: 'Overdue',
+                    subtitle:
+                        'Past its promised date. Call the customer today.',
+                    count: overdue.length,
+                    trailing: _seeAll(
+                      'Board',
+                      () => ref
+                          .read(shellTabProvider.notifier)
+                          .select(HomeTabs.production),
+                    ),
+                  ),
+                  _TaskList(tasks: overdue.take(4).toList(growable: false)),
+                  const SizedBox(height: StarSpace.xl),
+                ],
+                if (dueToday.isNotEmpty) ...<Widget>[
+                  StarSectionHeader(
+                    title: 'Due today',
+                    count: dueToday.length,
+                    trailing: _seeAll(
+                      'Board',
+                      () => ref
+                          .read(shellTabProvider.notifier)
+                          .select(HomeTabs.production),
+                    ),
+                  ),
+                  _TaskList(tasks: dueToday.take(4).toList(growable: false)),
+                  const SizedBox(height: StarSpace.xl),
+                ],
+                if (unclaimed.isNotEmpty) ...<Widget>[
+                  StarSectionHeader(
+                    title: 'Waiting to be picked up',
+                    subtitle: session.isOwner || session.role == 'manager'
+                        ? 'Available work across every role.'
+                        : 'Available work for your role.',
+                    count: unclaimed.length,
+                    trailing: _seeAll(
+                      'My work',
+                      () => ref
+                          .read(shellTabProvider.notifier)
+                          .select(HomeTabs.production),
+                    ),
+                  ),
+                  _TaskList(tasks: unclaimed.take(4).toList(growable: false)),
+                  const SizedBox(height: StarSpace.xl),
+                ],
+                const _ProofsWaiting(),
+                const _CashToday(),
+                const SizedBox(height: StarSpace.lg),
+                if (!loading &&
+                    overdue.isEmpty &&
+                    dueToday.isEmpty &&
+                    unclaimed.isEmpty &&
+                    inProgress.isEmpty)
+                  const EmptyState(
+                    icon: Icons.check_circle_outline,
+                    title: 'Nothing needs you right now',
+                    message:
+                        'New orders, due dates and unclaimed work appear here as '
+                        'they arrive — on this device, even with no connection.',
+                  ),
+                const SizedBox(height: StarSpace.xxl),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
-  /// One obvious thing to do next, chosen by what the person does all day.
-  /// A designer starts from their queue, never from "new order".
-  Widget _primaryAction(BuildContext context, WidgetRef ref, String role) {
-    switch (role) {
-      case 'designer':
-      case 'operator':
-        return _ActionCard(
-          icon: Icons.play_circle_outline,
-          title: 'Open my work',
-          subtitle: 'Claim the next job from the pool and start it.',
-          onTap: () =>
-              ref.read(shellTabProvider.notifier).select(HomeTabs.production),
-        );
-      case 'manager':
-      case 'owner':
-        return _ActionCard(
-          icon: Icons.view_kanban_outlined,
-          title: 'Watch the board',
-          subtitle: 'What is where, and who is holding it up.',
-          onTap: () =>
-              ref.read(shellTabProvider.notifier).select(HomeTabs.production),
-        );
-      case 'driver':
-        return _ActionCard(
-          icon: Icons.local_shipping_outlined,
-          title: 'Deliveries ready',
-          subtitle: 'Jobs finished and waiting to go out.',
-          onTap: () =>
-              ref.read(shellTabProvider.notifier).select(HomeTabs.orders),
-        );
-      default:
-        return _ActionCard(
-          icon: Icons.add_shopping_cart,
-          title: 'New order',
-          subtitle: 'Pick a product, see the price, confirm. Works offline.',
-          onTap: () => openOrderBuilder(context),
-        );
-    }
-  }
-
-  static String _partOfDay() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'morning';
-    if (hour < 17) return 'afternoon';
-    return 'evening';
+  static Widget _seeAll(String label, VoidCallback onTap) {
+    return TextButton(
+      onPressed: onTap,
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: StarSpace.sm),
+        minimumSize: const Size(0, 32),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(label, style: const TextStyle(fontSize: 12)),
+          const Icon(Icons.chevron_right, size: 16),
+        ],
+      ),
+    );
   }
 }
 
-class _StatCard extends StatelessWidget {
-  const _StatCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-    this.tone,
-  });
+class _Greeting extends StatelessWidget {
+  const _Greeting({required this.name, required this.role, this.onNewOrder});
 
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color? tone;
+  final String name;
+  final String role;
+  final VoidCallback? onNewOrder;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return SizedBox(
-      width: 220,
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(StarSpace.lg),
+    final hour = DateTime.now().hour;
+    final greeting = hour < 12
+        ? 'Good morning'
+        : hour < 17
+        ? 'Good afternoon'
+        : 'Good evening';
+
+    return Row(
+      children: <Widget>[
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Icon(icon, size: 18, color: tone ?? theme.colorScheme.primary),
-              const SizedBox(height: StarSpace.md),
-              Text(value, style: theme.textTheme.headlineSmall),
-              const SizedBox(height: StarSpace.xs),
               Text(
-                label,
-                style: theme.textTheme.labelMedium?.copyWith(
+                '$greeting, ${name.split(' ').first}',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.6,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${_date(DateTime.now())} · ${role.replaceAll('_', ' ')}',
+                style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
           ),
         ),
+        if (onNewOrder != null)
+          FilledButton.icon(
+            onPressed: onNewOrder,
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text('New order'),
+          ),
+      ],
+    );
+  }
+
+  static String _date(DateTime value) {
+    const days = <String>['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const months = <String>[
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${days[value.weekday - 1]} ${value.day} ${months[value.month - 1]}';
+  }
+}
+
+/// The tiles share the width rather than scrolling sideways: a counter PC is
+/// wide, and the owner should see all four figures without moving anything.
+class _StatGrid extends StatelessWidget {
+  const _StatGrid({required this.stats});
+
+  final List<Widget> stats;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 900 ? 4 : 2;
+        const gap = StarSpace.md;
+        final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
+
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: <Widget>[
+            for (final stat in stats) SizedBox(width: width, child: stat),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _TaskList extends StatelessWidget {
+  const _TaskList({required this.tasks});
+
+  final List<Task> tasks;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Column(
+        children: <Widget>[
+          for (var i = 0; i < tasks.length; i++) ...<Widget>[
+            if (i > 0) const Divider(height: 1),
+            _TaskRow(task: tasks[i]),
+          ],
+        ],
       ),
     );
   }
 }
 
-class _ActionCard extends StatelessWidget {
-  const _ActionCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    this.onTap,
-  });
+class _TaskRow extends StatelessWidget {
+  const _TaskRow({required this.task});
 
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback? onTap;
+  final Task task;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(StarRadius.card),
-        child: Padding(
-          padding: const EdgeInsets.all(StarSpace.lg),
-          child: Row(
+    final late =
+        task.dueAt != null &&
+        task.dueAt!.isBefore(DateTime.now()) &&
+        task.status != 'done';
+
+    return ListTile(
+      dense: true,
+      title: Text(
+        task.title,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: theme.textTheme.bodyMedium,
+      ),
+      subtitle: Text(
+        task.dueAt == null
+            ? task.stageName
+            : '${task.stageName} · ${_dueLabel(task.dueAt!, late)}',
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: late
+              ? theme.colorScheme.error
+              : theme.colorScheme.onSurfaceVariant,
+          fontWeight: late ? FontWeight.w600 : null,
+        ),
+      ),
+      trailing: StatusChip(
+        label: _statusLabel(task.status),
+        tone: _tone(task.status),
+      ),
+    );
+  }
+
+  static String _dueLabel(DateTime due, bool late) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(due.year, due.month, due.day);
+    final days = day.difference(today).inDays;
+    if (days == 0) return late ? 'due earlier today' : 'due today';
+    if (days == 1) return 'due tomorrow';
+    if (days < 0) return '${-days} ${-days == 1 ? 'day' : 'days'} late';
+    return 'in $days days';
+  }
+
+  static String _statusLabel(String status) => switch (status) {
+    'available' => 'Open',
+    'assigned' => 'Claimed',
+    'in_progress' => 'Running',
+    'paused' => 'Paused',
+    'rework' => 'Rework',
+    'waiting' => 'Waiting',
+    'done' => 'Done',
+    'cancelled' => 'Cancelled',
+    _ => status,
+  };
+
+  static StatusTone _tone(String status) => switch (status) {
+    'assigned' || 'in_progress' => StatusTone.active,
+    'paused' => StatusTone.paused,
+    'rework' => StatusTone.problem,
+    'done' => StatusTone.done,
+    _ => StatusTone.neutral,
+  };
+}
+
+/// Proofs that went out and have not come back: the jobs that stall silently,
+/// which is why they get their own block rather than a filter on the board.
+class _ProofsWaiting extends ConsumerWidget {
+  const _ProofsWaiting();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final db = ref.watch(bootstrapProvider).db;
+
+    return StreamBuilder<List<Proof>>(
+      stream: db.watchProofsAwaitingDecision(),
+      builder: (context, snapshot) {
+        final proofs = snapshot.data ?? const <Proof>[];
+        if (proofs.isEmpty) return const SizedBox.shrink();
+
+        final theme = Theme.of(context);
+        return Padding(
+          padding: const EdgeInsets.only(top: StarSpace.xl),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Icon(icon, color: theme.colorScheme.primary),
-              const SizedBox(width: StarSpace.md),
-              Expanded(
+              StarSectionHeader(
+                title: 'Waiting on the customer',
+                subtitle:
+                    'A proof went out and has not come back. Nothing moves on '
+                    'these jobs until it does.',
+                count: proofs.length,
+              ),
+              Card(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(title, style: theme.textTheme.titleSmall),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+                    for (
+                      var i = 0;
+                      i < proofs.length && i < 4;
+                      i++
+                    ) ...<Widget>[
+                      if (i > 0) const Divider(height: 1),
+                      ListTile(
+                        dense: true,
+                        leading: const Icon(Icons.draw_outlined, size: 18),
+                        title: Text(
+                          '${proofs[i].label} · v${proofs[i].revision}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                        subtitle: Text(
+                          proofs[i].sentAt == null
+                              ? 'not sent yet'
+                              : 'sent ${_ago(proofs[i].sentAt!)}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        trailing: TextButton(
+                          onPressed: () => ref
+                              .read(shellTabProvider.notifier)
+                              .select(HomeTabs.orders),
+                          child: const Text('Open'),
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right),
             ],
           ),
-        ),
-      ),
+        );
+      },
+    );
+  }
+
+  static String _ago(DateTime when) {
+    final diff = DateTime.now().difference(when);
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
+  }
+}
+
+/// Cash in the drawer, today. Only shown while a shift is open, because a
+/// figure nobody can act on is noise.
+class _CashToday extends ConsumerWidget {
+  const _CashToday();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final db = ref.watch(bootstrapProvider).db;
+
+    return StreamBuilder<TillSession?>(
+      stream: db.watchOpenTill(),
+      builder: (context, snapshot) {
+        final till = snapshot.data;
+        if (till == null) return const SizedBox.shrink();
+
+        return Padding(
+          padding: const EdgeInsets.only(top: StarSpace.xl),
+          child: FutureBuilder<int>(
+            future: db.cashTakenSince(till.openedAt),
+            builder: (context, cashSnapshot) {
+              final cash = cashSnapshot.data ?? 0;
+              return StarStat(
+                label: 'Cash today',
+                value: Fils(cash).aedLabel,
+                hint:
+                    'in the drawer since the shift opened · should be '
+                    '${Fils(till.openingFloatFils + cash).aedLabel} with the float',
+                icon: Icons.point_of_sale_outlined,
+                onTap: () => showTillSheet(context),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

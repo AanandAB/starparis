@@ -272,7 +272,10 @@ class ReportsService {
     return AgeingReport.fromJson(body);
   }
 
-  Future<TillHistory> tills({required DateTime from, required DateTime to}) async {
+  Future<TillHistory> tills({
+    required DateTime from,
+    required DateTime to,
+  }) async {
     final body = await _get(
       '/v1/reports/tills'
       '?from=${Uri.encodeQueryComponent(from.toUtc().toIso8601String())}'

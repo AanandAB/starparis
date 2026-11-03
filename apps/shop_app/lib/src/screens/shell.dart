@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:starparis_design/starparis_design.dart';
 import 'package:starparis_sync/starparis_sync.dart';
@@ -15,21 +16,102 @@ import 'orders_screen.dart';
 import 'price_book_screen.dart';
 import 'reports_screen.dart';
 
-/// The frame every screen lives in: navigation, the sync chip, and the user
-/// menu. Three layouts — bottom bar on a phone, rail on a tablet, labelled rail
-/// with a wider content area on Windows.
-class AppShell extends ConsumerWidget {
+/// One place to go, and which page it shows.
+class _Dest {
+  const _Dest(this.label, this.icon, this.selectedIcon, this.page);
+
+  final String label;
+  final IconData icon;
+  final IconData selectedIcon;
+  final int page;
+}
+
+/// The frame every screen lives in: navigation, search, sync state, user menu.
+///
+/// Layout follows width, not operating system: a rail on a desktop or a tablet
+/// in landscape, a bottom bar on a phone. Pages keep stable indices (see
+/// [HomeTabs]) so any screen can send the user somewhere without knowing how the
+/// navigation is drawn.
+class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends ConsumerState<AppShell> {
+  final TextEditingController _search = TextEditingController();
+  final FocusNode _searchFocus = FocusNode();
+
+  @override
+  void dispose() {
+    _search.dispose();
+    _searchFocus.dispose();
+    super.dispose();
+  }
+
+  void _select(int page) => ref.read(shellTabProvider.notifier).select(page);
+
+  /// Search is the fastest way to a customer: type a name or a phone number and
+  /// the Customers screen takes over with the result.
+  void _searchChanged(String value) {
+    ref.read(searchQueryProvider.notifier).set(value);
+    if (value.isNotEmpty) _select(HomeTabs.customers);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final session = ref.watch(sessionProvider);
     if (session == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final index = ref.watch(shellTabProvider);
-    void select(int next) => ref.read(shellTabProvider.notifier).select(next);
+    final theme = Theme.of(context);
+    final width = MediaQuery.sizeOf(context).width;
+    final useRail =
+        Platform.isWindows ||
+        Platform.isMacOS ||
+        Platform.isLinux ||
+        width >= StarBreakpoints.medium;
+    final wide = useRail && width >= 1200;
+
+    // One list, grouped for the eye, keeping the page indices the rest of the
+    // app already uses: Today 0, Customers 1, Orders 2, Production 3.
+    const work = <_Dest>[
+      _Dest('Today', Icons.dashboard_outlined, Icons.dashboard, HomeTabs.home),
+      _Dest(
+        'Orders',
+        Icons.receipt_long_outlined,
+        Icons.receipt_long,
+        HomeTabs.orders,
+      ),
+      _Dest(
+        'Production',
+        Icons.view_kanban_outlined,
+        Icons.view_kanban,
+        HomeTabs.production,
+      ),
+    ];
+    const people = <_Dest>[
+      _Dest(
+        'Customers',
+        Icons.people_outline,
+        Icons.people,
+        HomeTabs.customers,
+      ),
+    ];
+    final business = <_Dest>[
+      if (ref.watch(canEditPricesProvider))
+        const _Dest(
+          'Prices',
+          Icons.price_change_outlined,
+          Icons.price_change,
+          4,
+        ),
+      if (ref.watch(canViewReportsProvider))
+        const _Dest('Reports', Icons.insights_outlined, Icons.insights, 5),
+    ];
 
     final pages = <Widget>[
       const HomeScreen(),
@@ -40,149 +122,422 @@ class AppShell extends ConsumerWidget {
       if (ref.watch(canViewReportsProvider)) const ReportsScreen(),
     ];
 
-    final destinations = <NavigationDestination>[
-      const NavigationDestination(
-        icon: Icon(Icons.dashboard_outlined),
-        selectedIcon: Icon(Icons.dashboard),
-        label: 'Home',
-      ),
-      const NavigationDestination(
-        icon: Icon(Icons.people_outline),
-        selectedIcon: Icon(Icons.people),
-        label: 'Customers',
-      ),
-      const NavigationDestination(
-        icon: Icon(Icons.receipt_long_outlined),
-        selectedIcon: Icon(Icons.receipt_long),
-        label: 'Orders',
-      ),
-      const NavigationDestination(
-        icon: Icon(Icons.view_kanban_outlined),
-        selectedIcon: Icon(Icons.view_kanban),
-        label: 'Production',
-      ),
-      if (ref.watch(canEditPricesProvider))
-        const NavigationDestination(
-          icon: Icon(Icons.price_change_outlined),
-          selectedIcon: Icon(Icons.price_change),
-          label: 'Prices',
-        ),
-      if (ref.watch(canViewReportsProvider))
-        const NavigationDestination(
-          icon: Icon(Icons.insights_outlined),
-          selectedIcon: Icon(Icons.insights),
-          label: 'Reports',
-        ),
-    ];
-
-    final width = MediaQuery.sizeOf(context).width;
-    final useRail = Platform.isWindows || Platform.isMacOS || Platform.isLinux
-        ? true
-        : width >= StarBreakpoints.medium;
+    final all = <_Dest>[...work, ...people, ...business];
+    final current = all.firstWhere(
+      (destination) => destination.page == index,
+      orElse: () => all.first,
+    );
 
     final body = IndexedStack(index: index, children: pages);
 
-    return Scaffold(
-      appBar: AppBar(
-        titleSpacing: StarSpace.md,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              'Star Paris',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                letterSpacing: 1.2,
-              ),
+    // Global keys: a counter works at speed, and three of the most common
+    // actions should not need the mouse.
+    return CallbackShortcuts(
+      bindings: <ShortcutActivator, VoidCallback>{
+        const SingleActivator(LogicalKeyboardKey.keyK, control: true): () =>
+            _searchFocus.requestFocus(),
+        const SingleActivator(LogicalKeyboardKey.keyN, control: true): () =>
+            openOrderBuilder(context),
+        const SingleActivator(LogicalKeyboardKey.f5): () =>
+            ref.read(bootstrapProvider).engine?.syncNow(),
+        const SingleActivator(LogicalKeyboardKey.escape): () {
+          _searchFocus.unfocus();
+          _search.clear();
+          ref.read(searchQueryProvider.notifier).set('');
+        },
+      },
+      child: Focus(
+        autofocus: true,
+        child: Scaffold(
+          appBar: AppBar(
+            titleSpacing: StarSpace.md,
+            toolbarHeight: 64,
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Text(
+                  'STAR PARIS',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    letterSpacing: 1.6,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  current.label,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+              ],
             ),
-            Text(session.homeTitle),
-          ],
-        ),
-        actions: <Widget>[
-          const Padding(
-            padding: EdgeInsets.only(right: StarSpace.sm),
-            child: SyncStatusChip(),
-          ),
-          PopupMenuButton<String>(
-            tooltip: session.name,
-            icon: CircleAvatar(
-              radius: 14,
-              backgroundColor: StarColors.petrol,
-              child: Text(
-                session.name.characters.first.toUpperCase(),
-                style: const TextStyle(color: Colors.white, fontSize: 12),
+            actions: <Widget>[
+              if (useRail)
+                SizedBox(
+                  width: 320,
+                  child: TextField(
+                    controller: _search,
+                    focusNode: _searchFocus,
+                    onChanged: _searchChanged,
+                    decoration: InputDecoration(
+                      isDense: true,
+                      hintText: 'Search a customer or phone',
+                      prefixIcon: const Icon(Icons.search, size: 18),
+                      suffixText: 'Ctrl K',
+                      suffixStyle: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+              const SizedBox(width: StarSpace.md),
+              const SyncStatusChip(),
+              const SizedBox(width: StarSpace.sm),
+              PopupMenuButton<String>(
+                tooltip: session.name,
+                icon: CircleAvatar(
+                  radius: 15,
+                  backgroundColor: StarColors.petrol,
+                  child: Text(
+                    session.name.characters.first.toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                onSelected: (value) async {
+                  if (value == 'till') {
+                    await showTillSheet(context);
+                    return;
+                  }
+                  if (value == 'diagnostics') {
+                    await showDiagnosticsSheet(context);
+                    return;
+                  }
+                  if (value == 'signout') {
+                    await ref.read(sessionProvider.notifier).signOut();
+                  }
+                },
+                itemBuilder: (context) => <PopupMenuEntry<String>>[
+                  PopupMenuItem<String>(
+                    enabled: false,
+                    child: Text('${session.name} · ${session.role}'),
+                  ),
+                  const PopupMenuDivider(),
+                  const PopupMenuItem<String>(
+                    value: 'till',
+                    child: Text('Cash drawer'),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'diagnostics',
+                    child: Text('Sync diagnostics'),
+                  ),
+                  const PopupMenuDivider(),
+                  const PopupMenuItem<String>(
+                    value: 'signout',
+                    child: Text('Sign out'),
+                  ),
+                ],
               ),
-            ),
-            onSelected: (value) async {
-              if (value == 'till') {
-                await showTillSheet(context);
-                return;
-              }
-              if (value == 'diagnostics') {
-                await showDiagnosticsSheet(context);
-                return;
-              }
-              if (value == 'signout') {
-                await ref.read(sessionProvider.notifier).signOut();
-              }
-            },
-            itemBuilder: (context) => <PopupMenuEntry<String>>[
-              PopupMenuItem<String>(
-                enabled: false,
-                child: Text('${session.name} · ${session.role}'),
-              ),
-              const PopupMenuDivider(),
-              const PopupMenuItem<String>(
-                value: 'till',
-                child: Text('Cash drawer'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'diagnostics',
-                child: Text('Sync diagnostics'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'signout',
-                child: Text('Sign out'),
-              ),
+              const SizedBox(width: StarSpace.sm),
             ],
           ),
-          const SizedBox(width: StarSpace.sm),
-        ],
-      ),
-      body: useRail
-          ? Row(
-              children: <Widget>[
-                NavigationRail(
-                  selectedIndex: index,
-                  onDestinationSelected: select,
-                  labelType: width > StarBreakpoints.medium
-                      ? NavigationRailLabelType.none
-                      : NavigationRailLabelType.selected,
-                  leading: const Padding(
-                    padding: EdgeInsets.symmetric(vertical: StarSpace.md),
-                    child: Icon(Icons.local_print_shop_outlined),
-                  ),
-                  destinations: <NavigationRailDestination>[
-                    for (final destination in destinations)
-                      NavigationRailDestination(
-                        icon: destination.icon,
-                        selectedIcon: destination.selectedIcon,
-                        label: Text(destination.label),
+          body: useRail
+              ? Row(
+                  children: <Widget>[
+                    _Rail(
+                      work: work,
+                      people: people,
+                      business: business,
+                      selected: index,
+                      extended: wide,
+                      onSelect: _select,
+                    ),
+                    const VerticalDivider(width: 1),
+                    Expanded(child: body),
+                  ],
+                )
+              : body,
+          bottomNavigationBar: useRail
+              ? null
+              : NavigationBar(
+                  selectedIndex: _bottomIndex(index, work, people),
+                  onDestinationSelected: (position) {
+                    if (position < work.length) {
+                      _select(work[position].page);
+                    } else if (position == work.length) {
+                      _select(people.first.page);
+                    } else {
+                      _showMore(context, business);
+                    }
+                  },
+                  destinations: <Widget>[
+                    for (final destination in work)
+                      NavigationDestination(
+                        icon: Icon(destination.icon),
+                        selectedIcon: Icon(destination.selectedIcon),
+                        label: destination.label,
                       ),
+                    NavigationDestination(
+                      icon: Icon(people.first.icon),
+                      selectedIcon: Icon(people.first.selectedIcon),
+                      label: people.first.label,
+                    ),
+                    const NavigationDestination(
+                      icon: Icon(Icons.more_horiz),
+                      selectedIcon: Icon(Icons.more_horiz),
+                      label: 'More',
+                    ),
                   ],
                 ),
-                const VerticalDivider(width: 1),
-                Expanded(child: body),
-              ],
-            )
-          : body,
-      bottomNavigationBar: useRail
-          ? null
-          : NavigationBar(
-              selectedIndex: index,
-              onDestinationSelected: select,
-              destinations: destinations,
+        ),
+      ),
+    );
+  }
+
+  /// With a bottom bar, "More" is the last position and is never selected.
+  static int _bottomIndex(int index, List<_Dest> work, List<_Dest> people) {
+    for (var i = 0; i < work.length; i++) {
+      if (work[i].page == index) return i;
+    }
+    return people.first.page == index ? work.length : work.length + 1;
+  }
+
+  void _showMore(BuildContext context, List<_Dest> business) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            ListTile(
+              leading: const Icon(Icons.point_of_sale_outlined),
+              title: const Text('Cash drawer'),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                showTillSheet(context);
+              },
             ),
+            for (final destination in business)
+              ListTile(
+                leading: Icon(destination.icon),
+                title: Text(destination.label),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _select(destination.page);
+                },
+              ),
+            ListTile(
+              leading: const Icon(Icons.sync_problem_outlined),
+              title: const Text('Sync diagnostics'),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                showDiagnosticsSheet(context);
+              },
+            ),
+            const SizedBox(height: StarSpace.sm),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The rail: three labelled groups instead of six flat icons.
+///
+/// Grouping is not decoration — it tells a new clerk that Prices and Reports
+/// belong to the owner, and that a Customer is a different kind of thing from an
+/// Order.
+class _Rail extends StatelessWidget {
+  const _Rail({
+    required this.work,
+    required this.people,
+    required this.business,
+    required this.selected,
+    required this.extended,
+    required this.onSelect,
+  });
+
+  final List<_Dest> work;
+  final List<_Dest> people;
+  final List<_Dest> business;
+  final int selected;
+  final bool extended;
+  final ValueChanged<int> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      width: extended ? 224 : 84,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        border: Border(
+          right: BorderSide(
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          const SizedBox(height: StarSpace.md),
+          if (extended)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                StarSpace.lg,
+                StarSpace.sm,
+                StarSpace.lg,
+                StarSpace.lg,
+              ),
+              child: Row(
+                children: <Widget>[
+                  const Icon(
+                    Icons.local_print_shop_outlined,
+                    color: StarColors.petrol,
+                  ),
+                  const SizedBox(width: StarSpace.sm),
+                  Expanded(
+                    child: Text(
+                      'Star Paris',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          _group(context, 'WORK', work),
+          _group(context, 'PEOPLE', people),
+          if (business.isNotEmpty) _group(context, 'BUSINESS', business),
+          const Spacer(),
+          if (extended)
+            Padding(
+              padding: const EdgeInsets.all(StarSpace.md),
+              child: Text(
+                'Ctrl K search · Ctrl N new order · F5 sync',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  height: 1.5,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _group(BuildContext context, String label, List<_Dest> items) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        if (extended)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              StarSpace.lg,
+              StarSpace.md,
+              StarSpace.lg,
+              StarSpace.xs,
+            ),
+            child: Text(
+              label,
+              style: theme.textTheme.labelSmall?.copyWith(
+                letterSpacing: 1.2,
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          )
+        else
+          const SizedBox(height: StarSpace.md),
+        for (final destination in items)
+          _RailItem(
+            destination: destination,
+            selected: destination.page == selected,
+            extended: extended,
+            onTap: () => onSelect(destination.page),
+          ),
+      ],
+    );
+  }
+}
+
+class _RailItem extends StatelessWidget {
+  const _RailItem({
+    required this.destination,
+    required this.selected,
+    required this.extended,
+    required this.onTap,
+  });
+
+  final _Dest destination;
+  final bool selected;
+  final bool extended;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final foreground = selected
+        ? theme.colorScheme.primary
+        : theme.colorScheme.onSurfaceVariant;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: StarSpace.sm,
+        vertical: 2,
+      ),
+      child: Material(
+        color: selected
+            ? theme.colorScheme.primary.withValues(alpha: 0.10)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(StarRadius.field),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(StarRadius.field),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: extended ? StarSpace.md : 0,
+              vertical: 10,
+            ),
+            child: Row(
+              mainAxisAlignment: extended
+                  ? MainAxisAlignment.start
+                  : MainAxisAlignment.center,
+              children: <Widget>[
+                Icon(
+                  selected ? destination.selectedIcon : destination.icon,
+                  size: 20,
+                  color: foreground,
+                ),
+                if (extended) ...<Widget>[
+                  const SizedBox(width: StarSpace.md),
+                  Expanded(
+                    child: Text(
+                      destination.label,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: foreground,
+                        fontWeight: selected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

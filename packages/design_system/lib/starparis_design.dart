@@ -10,5 +10,8 @@ export 'src/theme.dart';
 export 'src/tokens.dart';
 export 'src/widgets/empty_state.dart';
 export 'src/widgets/money_text.dart';
+export 'src/widgets/section_header.dart';
+export 'src/widgets/skeleton.dart';
+export 'src/widgets/stat_tile.dart';
 export 'src/widgets/status_chip.dart';
 export 'src/widgets/sync_chip.dart';

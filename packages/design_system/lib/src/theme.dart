@@ -121,6 +121,15 @@ abstract final class StarTheme {
           borderRadius: BorderRadius.circular(StarRadius.field),
         ),
       ),
+      // The bottom bar is a surface, not a shadow: flat, with a tinted pill
+      // behind the current item.
+      navigationBarTheme: NavigationBarThemeData(
+        height: 68,
+        elevation: 0,
+        backgroundColor: scheme.surface,
+        indicatorColor: scheme.primary.withValues(alpha: 0.12),
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+      ),
     );
   }
 
@@ -140,7 +149,16 @@ abstract final class StarTheme {
             letterSpacing: -0.3,
           ),
           titleMedium: base.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+          // Section headings and card titles sit one step below the page title,
+          // so a screen reads as: page, section, row.
+          titleSmall: base.titleSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.1,
+          ),
+          bodyMedium: base.bodyMedium?.copyWith(height: 1.35),
+          bodySmall: base.bodySmall?.copyWith(height: 1.35),
           labelLarge: base.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+          labelSmall: base.labelSmall?.copyWith(letterSpacing: 0.2),
         );
   }
 }

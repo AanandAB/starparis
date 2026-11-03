@@ -466,7 +466,8 @@ class _TillsSection extends StatelessWidget {
           const EmptyState(
             icon: Icons.point_of_sale_outlined,
             title: 'Nothing in the drawer yet',
-            message: 'Open the till at the counter and shifts will show up here.',
+            message:
+                'Open the till at the counter and shifts will show up here.',
           )
         else
           Card(
@@ -628,7 +629,9 @@ class _PurchasesSection extends StatelessWidget {
                         dense: true,
                         title: Text(row.category),
                         subtitle: Text(
-                          row.entries == 1 ? '1 entry' : '${row.entries} entries',
+                          row.entries == 1
+                              ? '1 entry'
+                              : '${row.entries} entries',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
