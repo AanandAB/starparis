@@ -107,6 +107,11 @@ class Products extends Table {
   IntColumn get roundingStepFils =>
       integer().withDefault(const Constant(100))();
 
+  /// Which press this product runs on, and the finishing steps it includes.
+  TextColumn get machineId => text().nullable()();
+  TextColumn get operationCodesJson =>
+      text().withDefault(const Constant('[]'))();
+
   TextColumn get sizesJson => text().withDefault(const Constant('[]'))();
   TextColumn get finishesJson => text().withDefault(const Constant('[]'))();
   TextColumn get quantityPresetsJson =>
@@ -589,7 +594,7 @@ class LocalDatabase extends _$LocalDatabase {
   LocalDatabase(super.executor);
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -635,6 +640,12 @@ class LocalDatabase extends _$LocalDatabase {
       if (from < 9) {
         await m.createTable(vendors);
         await m.createTable(vendorJobs);
+      }
+      if (from < 11) {
+        if (from >= 1) {
+          await m.addColumn(products, products.machineId);
+          await m.addColumn(products, products.operationCodesJson);
+        }
       }
       if (from < 10) {
         if (from >= 1) {

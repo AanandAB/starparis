@@ -14048,6 +14048,29 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
     requiredDuringInsert: false,
     defaultValue: const Constant(100),
   );
+  static const VerificationMeta _machineIdMeta = const VerificationMeta(
+    'machineId',
+  );
+  @override
+  late final GeneratedColumn<String> machineId = GeneratedColumn<String>(
+    'machine_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _operationCodesJsonMeta =
+      const VerificationMeta('operationCodesJson');
+  @override
+  late final GeneratedColumn<String> operationCodesJson =
+      GeneratedColumn<String>(
+        'operation_codes_json',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('[]'),
+      );
   static const VerificationMeta _sizesJsonMeta = const VerificationMeta(
     'sizesJson',
   );
@@ -14152,6 +14175,8 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
     markupBps,
     minOrderFils,
     roundingStepFils,
+    machineId,
+    operationCodesJson,
     sizesJson,
     finishesJson,
     quantityPresetsJson,
@@ -14331,6 +14356,21 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
         ),
       );
     }
+    if (data.containsKey('machine_id')) {
+      context.handle(
+        _machineIdMeta,
+        machineId.isAcceptableOrUnknown(data['machine_id']!, _machineIdMeta),
+      );
+    }
+    if (data.containsKey('operation_codes_json')) {
+      context.handle(
+        _operationCodesJsonMeta,
+        operationCodesJson.isAcceptableOrUnknown(
+          data['operation_codes_json']!,
+          _operationCodesJsonMeta,
+        ),
+      );
+    }
     if (data.containsKey('sizes_json')) {
       context.handle(
         _sizesJsonMeta,
@@ -14471,6 +14511,14 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
         DriftSqlType.int,
         data['${effectivePrefix}rounding_step_fils'],
       )!,
+      machineId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}machine_id'],
+      ),
+      operationCodesJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}operation_codes_json'],
+      )!,
       sizesJson: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}sizes_json'],
@@ -14531,6 +14579,10 @@ class Product extends DataClass implements Insertable<Product> {
   final int markupBps;
   final int minOrderFils;
   final int roundingStepFils;
+
+  /// Which press this product runs on, and the finishing steps it includes.
+  final String? machineId;
+  final String operationCodesJson;
   final String sizesJson;
   final String finishesJson;
   final String quantityPresetsJson;
@@ -14561,6 +14613,8 @@ class Product extends DataClass implements Insertable<Product> {
     required this.markupBps,
     required this.minOrderFils,
     required this.roundingStepFils,
+    this.machineId,
+    required this.operationCodesJson,
     required this.sizesJson,
     required this.finishesJson,
     required this.quantityPresetsJson,
@@ -14606,6 +14660,10 @@ class Product extends DataClass implements Insertable<Product> {
     map['markup_bps'] = Variable<int>(markupBps);
     map['min_order_fils'] = Variable<int>(minOrderFils);
     map['rounding_step_fils'] = Variable<int>(roundingStepFils);
+    if (!nullToAbsent || machineId != null) {
+      map['machine_id'] = Variable<String>(machineId);
+    }
+    map['operation_codes_json'] = Variable<String>(operationCodesJson);
     map['sizes_json'] = Variable<String>(sizesJson);
     map['finishes_json'] = Variable<String>(finishesJson);
     map['quantity_presets_json'] = Variable<String>(quantityPresetsJson);
@@ -14654,6 +14712,10 @@ class Product extends DataClass implements Insertable<Product> {
       markupBps: Value(markupBps),
       minOrderFils: Value(minOrderFils),
       roundingStepFils: Value(roundingStepFils),
+      machineId: machineId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(machineId),
+      operationCodesJson: Value(operationCodesJson),
       sizesJson: Value(sizesJson),
       finishesJson: Value(finishesJson),
       quantityPresetsJson: Value(quantityPresetsJson),
@@ -14692,6 +14754,10 @@ class Product extends DataClass implements Insertable<Product> {
       markupBps: serializer.fromJson<int>(json['markupBps']),
       minOrderFils: serializer.fromJson<int>(json['minOrderFils']),
       roundingStepFils: serializer.fromJson<int>(json['roundingStepFils']),
+      machineId: serializer.fromJson<String?>(json['machineId']),
+      operationCodesJson: serializer.fromJson<String>(
+        json['operationCodesJson'],
+      ),
       sizesJson: serializer.fromJson<String>(json['sizesJson']),
       finishesJson: serializer.fromJson<String>(json['finishesJson']),
       quantityPresetsJson: serializer.fromJson<String>(
@@ -14727,6 +14793,8 @@ class Product extends DataClass implements Insertable<Product> {
       'markupBps': serializer.toJson<int>(markupBps),
       'minOrderFils': serializer.toJson<int>(minOrderFils),
       'roundingStepFils': serializer.toJson<int>(roundingStepFils),
+      'machineId': serializer.toJson<String?>(machineId),
+      'operationCodesJson': serializer.toJson<String>(operationCodesJson),
       'sizesJson': serializer.toJson<String>(sizesJson),
       'finishesJson': serializer.toJson<String>(finishesJson),
       'quantityPresetsJson': serializer.toJson<String>(quantityPresetsJson),
@@ -14758,6 +14826,8 @@ class Product extends DataClass implements Insertable<Product> {
     int? markupBps,
     int? minOrderFils,
     int? roundingStepFils,
+    Value<String?> machineId = const Value.absent(),
+    String? operationCodesJson,
     String? sizesJson,
     String? finishesJson,
     String? quantityPresetsJson,
@@ -14792,6 +14862,8 @@ class Product extends DataClass implements Insertable<Product> {
     markupBps: markupBps ?? this.markupBps,
     minOrderFils: minOrderFils ?? this.minOrderFils,
     roundingStepFils: roundingStepFils ?? this.roundingStepFils,
+    machineId: machineId.present ? machineId.value : this.machineId,
+    operationCodesJson: operationCodesJson ?? this.operationCodesJson,
     sizesJson: sizesJson ?? this.sizesJson,
     finishesJson: finishesJson ?? this.finishesJson,
     quantityPresetsJson: quantityPresetsJson ?? this.quantityPresetsJson,
@@ -14842,6 +14914,10 @@ class Product extends DataClass implements Insertable<Product> {
       roundingStepFils: data.roundingStepFils.present
           ? data.roundingStepFils.value
           : this.roundingStepFils,
+      machineId: data.machineId.present ? data.machineId.value : this.machineId,
+      operationCodesJson: data.operationCodesJson.present
+          ? data.operationCodesJson.value
+          : this.operationCodesJson,
       sizesJson: data.sizesJson.present ? data.sizesJson.value : this.sizesJson,
       finishesJson: data.finishesJson.present
           ? data.finishesJson.value
@@ -14881,6 +14957,8 @@ class Product extends DataClass implements Insertable<Product> {
           ..write('markupBps: $markupBps, ')
           ..write('minOrderFils: $minOrderFils, ')
           ..write('roundingStepFils: $roundingStepFils, ')
+          ..write('machineId: $machineId, ')
+          ..write('operationCodesJson: $operationCodesJson, ')
           ..write('sizesJson: $sizesJson, ')
           ..write('finishesJson: $finishesJson, ')
           ..write('quantityPresetsJson: $quantityPresetsJson, ')
@@ -14914,6 +14992,8 @@ class Product extends DataClass implements Insertable<Product> {
     markupBps,
     minOrderFils,
     roundingStepFils,
+    machineId,
+    operationCodesJson,
     sizesJson,
     finishesJson,
     quantityPresetsJson,
@@ -14946,6 +15026,8 @@ class Product extends DataClass implements Insertable<Product> {
           other.markupBps == this.markupBps &&
           other.minOrderFils == this.minOrderFils &&
           other.roundingStepFils == this.roundingStepFils &&
+          other.machineId == this.machineId &&
+          other.operationCodesJson == this.operationCodesJson &&
           other.sizesJson == this.sizesJson &&
           other.finishesJson == this.finishesJson &&
           other.quantityPresetsJson == this.quantityPresetsJson &&
@@ -14976,6 +15058,8 @@ class ProductsCompanion extends UpdateCompanion<Product> {
   final Value<int> markupBps;
   final Value<int> minOrderFils;
   final Value<int> roundingStepFils;
+  final Value<String?> machineId;
+  final Value<String> operationCodesJson;
   final Value<String> sizesJson;
   final Value<String> finishesJson;
   final Value<String> quantityPresetsJson;
@@ -15005,6 +15089,8 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     this.markupBps = const Value.absent(),
     this.minOrderFils = const Value.absent(),
     this.roundingStepFils = const Value.absent(),
+    this.machineId = const Value.absent(),
+    this.operationCodesJson = const Value.absent(),
     this.sizesJson = const Value.absent(),
     this.finishesJson = const Value.absent(),
     this.quantityPresetsJson = const Value.absent(),
@@ -15035,6 +15121,8 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     this.markupBps = const Value.absent(),
     this.minOrderFils = const Value.absent(),
     this.roundingStepFils = const Value.absent(),
+    this.machineId = const Value.absent(),
+    this.operationCodesJson = const Value.absent(),
     this.sizesJson = const Value.absent(),
     this.finishesJson = const Value.absent(),
     this.quantityPresetsJson = const Value.absent(),
@@ -15070,6 +15158,8 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     Expression<int>? markupBps,
     Expression<int>? minOrderFils,
     Expression<int>? roundingStepFils,
+    Expression<String>? machineId,
+    Expression<String>? operationCodesJson,
     Expression<String>? sizesJson,
     Expression<String>? finishesJson,
     Expression<String>? quantityPresetsJson,
@@ -15101,6 +15191,9 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       if (markupBps != null) 'markup_bps': markupBps,
       if (minOrderFils != null) 'min_order_fils': minOrderFils,
       if (roundingStepFils != null) 'rounding_step_fils': roundingStepFils,
+      if (machineId != null) 'machine_id': machineId,
+      if (operationCodesJson != null)
+        'operation_codes_json': operationCodesJson,
       if (sizesJson != null) 'sizes_json': sizesJson,
       if (finishesJson != null) 'finishes_json': finishesJson,
       if (quantityPresetsJson != null)
@@ -15134,6 +15227,8 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     Value<int>? markupBps,
     Value<int>? minOrderFils,
     Value<int>? roundingStepFils,
+    Value<String?>? machineId,
+    Value<String>? operationCodesJson,
     Value<String>? sizesJson,
     Value<String>? finishesJson,
     Value<String>? quantityPresetsJson,
@@ -15164,6 +15259,8 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       markupBps: markupBps ?? this.markupBps,
       minOrderFils: minOrderFils ?? this.minOrderFils,
       roundingStepFils: roundingStepFils ?? this.roundingStepFils,
+      machineId: machineId ?? this.machineId,
+      operationCodesJson: operationCodesJson ?? this.operationCodesJson,
       sizesJson: sizesJson ?? this.sizesJson,
       finishesJson: finishesJson ?? this.finishesJson,
       quantityPresetsJson: quantityPresetsJson ?? this.quantityPresetsJson,
@@ -15238,6 +15335,12 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     if (roundingStepFils.present) {
       map['rounding_step_fils'] = Variable<int>(roundingStepFils.value);
     }
+    if (machineId.present) {
+      map['machine_id'] = Variable<String>(machineId.value);
+    }
+    if (operationCodesJson.present) {
+      map['operation_codes_json'] = Variable<String>(operationCodesJson.value);
+    }
     if (sizesJson.present) {
       map['sizes_json'] = Variable<String>(sizesJson.value);
     }
@@ -15290,6 +15393,8 @@ class ProductsCompanion extends UpdateCompanion<Product> {
           ..write('markupBps: $markupBps, ')
           ..write('minOrderFils: $minOrderFils, ')
           ..write('roundingStepFils: $roundingStepFils, ')
+          ..write('machineId: $machineId, ')
+          ..write('operationCodesJson: $operationCodesJson, ')
           ..write('sizesJson: $sizesJson, ')
           ..write('finishesJson: $finishesJson, ')
           ..write('quantityPresetsJson: $quantityPresetsJson, ')
@@ -26024,6 +26129,8 @@ typedef $$ProductsTableCreateCompanionBuilder = ProductsCompanion Function({
   Value<int> markupBps,
   Value<int> minOrderFils,
   Value<int> roundingStepFils,
+  Value<String?> machineId,
+  Value<String> operationCodesJson,
   Value<String> sizesJson,
   Value<String> finishesJson,
   Value<String> quantityPresetsJson,
@@ -26054,6 +26161,8 @@ typedef $$ProductsTableUpdateCompanionBuilder = ProductsCompanion Function({
   Value<int> markupBps,
   Value<int> minOrderFils,
   Value<int> roundingStepFils,
+  Value<String?> machineId,
+  Value<String> operationCodesJson,
   Value<String> sizesJson,
   Value<String> finishesJson,
   Value<String> quantityPresetsJson,
@@ -26170,6 +26279,16 @@ class $$ProductsTableFilterComposer
 
   ColumnFilters<int> get roundingStepFils => $composableBuilder(
     column: $table.roundingStepFils,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get machineId => $composableBuilder(
+    column: $table.machineId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get operationCodesJson => $composableBuilder(
+    column: $table.operationCodesJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -26318,6 +26437,16 @@ class $$ProductsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get machineId => $composableBuilder(
+    column: $table.machineId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get operationCodesJson => $composableBuilder(
+    column: $table.operationCodesJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get sizesJson => $composableBuilder(
     column: $table.sizesJson,
     builder: (column) => ColumnOrderings(column),
@@ -26443,6 +26572,14 @@ class $$ProductsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get machineId =>
+      $composableBuilder(column: $table.machineId, builder: (column) => column);
+
+  GeneratedColumn<String> get operationCodesJson => $composableBuilder(
+    column: $table.operationCodesJson,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get sizesJson =>
       $composableBuilder(column: $table.sizesJson, builder: (column) => column);
 
@@ -26519,6 +26656,8 @@ class $$ProductsTableTableManager
                 Value<int> markupBps = const Value.absent(),
                 Value<int> minOrderFils = const Value.absent(),
                 Value<int> roundingStepFils = const Value.absent(),
+                Value<String?> machineId = const Value.absent(),
+                Value<String> operationCodesJson = const Value.absent(),
                 Value<String> sizesJson = const Value.absent(),
                 Value<String> finishesJson = const Value.absent(),
                 Value<String> quantityPresetsJson = const Value.absent(),
@@ -26548,6 +26687,8 @@ class $$ProductsTableTableManager
                 markupBps: markupBps,
                 minOrderFils: minOrderFils,
                 roundingStepFils: roundingStepFils,
+                machineId: machineId,
+                operationCodesJson: operationCodesJson,
                 sizesJson: sizesJson,
                 finishesJson: finishesJson,
                 quantityPresetsJson: quantityPresetsJson,
@@ -26579,6 +26720,8 @@ class $$ProductsTableTableManager
                 Value<int> markupBps = const Value.absent(),
                 Value<int> minOrderFils = const Value.absent(),
                 Value<int> roundingStepFils = const Value.absent(),
+                Value<String?> machineId = const Value.absent(),
+                Value<String> operationCodesJson = const Value.absent(),
                 Value<String> sizesJson = const Value.absent(),
                 Value<String> finishesJson = const Value.absent(),
                 Value<String> quantityPresetsJson = const Value.absent(),
@@ -26608,6 +26751,8 @@ class $$ProductsTableTableManager
                 markupBps: markupBps,
                 minOrderFils: minOrderFils,
                 roundingStepFils: roundingStepFils,
+                machineId: machineId,
+                operationCodesJson: operationCodesJson,
                 sizesJson: sizesJson,
                 finishesJson: finishesJson,
                 quantityPresetsJson: quantityPresetsJson,
