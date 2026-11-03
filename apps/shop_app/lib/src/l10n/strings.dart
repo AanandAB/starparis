@@ -24,6 +24,7 @@ const Map<String, String> _en = <String, String>{
   'nav.business': 'BUSINESS',
 
   'menu.till': 'Cash drawer',
+  'menu.log': 'Activity log',
   'menu.diagnostics': 'Sync diagnostics',
   'menu.language': 'عربي — Arabic layout',
   'menu.signout': 'Sign out',
@@ -75,6 +76,7 @@ const Map<String, String> _ar = <String, String>{
   'nav.business': 'الإدارة',
 
   'menu.till': 'درج النقد',
+  'menu.log': 'سجل النشاط',
   'menu.diagnostics': 'تشخيص المزامنة',
   'menu.language': 'English interface',
   'menu.signout': 'تسجيل الخروج',

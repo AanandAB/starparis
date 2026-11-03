@@ -13,6 +13,7 @@ import 'catalogue_screen.dart';
 import 'customers_screen.dart';
 import 'diagnostics_sheet.dart';
 import 'home_screen.dart';
+import 'log_sheet.dart';
 import 'orders_screen.dart';
 import 'price_book_screen.dart';
 import 'reports_screen.dart';
@@ -293,6 +294,10 @@ class _AppShellState extends ConsumerState<AppShell> {
                     await showTillSheet(context);
                     return;
                   }
+                  if (value == 'log') {
+                    await showLogSheet(context);
+                    return;
+                  }
                   if (value == 'diagnostics') {
                     await showDiagnosticsSheet(context);
                     return;
@@ -313,6 +318,10 @@ class _AppShellState extends ConsumerState<AppShell> {
                   PopupMenuItem<String>(
                     value: 'till',
                     child: Text(t('menu.till')),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'log',
+                    child: Text(t('menu.log')),
                   ),
                   PopupMenuItem<String>(
                     value: 'diagnostics',
