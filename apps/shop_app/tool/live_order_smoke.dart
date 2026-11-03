@@ -167,7 +167,8 @@ Future<void> main(List<String> args) async {
     userId: userId,
   );
 
-  final issued = await NumberSeries(db: db, api: api, series: 'JOB').next();
+  const jobSeries = 'JOB-SHJ1-PC1';
+  final issued = await NumberSeries(db: db, api: api, series: jobSeries).next();
   stdout.writeln('job number       ok  ${issued.display}');
 
   final orderId = await db.createOrderLocal(
@@ -176,7 +177,9 @@ Future<void> main(List<String> args) async {
     customerId: customerId,
     customerName: 'Live Smoke Customer',
     userId: userId,
-    numberDisplay: issued.display,
+    numberDisplay: issued.isTemporary
+        ? issued.display
+        : formatNumber(jobSeries, issued.number!),
     number: issued.number,
     lines: <OrderLineDraft>[
       OrderLineDraft(

@@ -251,6 +251,27 @@ Still open in money: credit accounts and ageing, till sessions and cash-up, expe
 summary/export the accountant signs off. Those are reads over what now exists, plus one new table for
 till sessions — Phase 4C.
 
+### Deployed
+
+`https://starparis-api.theblacklightstudio.workers.dev` now runs the code through Phase 4B, against
+`starparis-dev` in Cloudflare account `5a1b8404…`, with migrations 0001–0007 applied. Both smokes pass
+against the live Worker, not just locally:
+
+    invoice          INV-SHJ1-PC1-00001  paid=12810  status=paid  payments=2  pending=0
+    credit note      CN-SHJ1-PC1-00001  total=5000  refunded=5000  refunds=1  invoice_credited=5000
+    job number       ok  JOB-SHJ1-PC1-00101
+    price            ok  total=AED 122.00 vat=AED 6.10 grand=AED 128.10
+
+Deploying needs the account token, exported per shell session (never committed):
+
+```bash
+export CLOUDFLARE_ACCOUNT_ID=5a1b840410cdb75395413eec56be1c2d
+export CLOUDFLARE_API_TOKEN=…                     # in .env.local, git-ignored
+cd backend/worker && bunx wrangler d1 migrations apply starparis-dev --remote && bunx wrangler deploy
+```
+
+`starparis-staging` still has no tables — it gets its own migrate before a staging deploy.
+
 ## Commands
 ```bash
 # Dart workspace
