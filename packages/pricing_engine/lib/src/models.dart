@@ -471,6 +471,15 @@ final class FinishingOperation {
   }
 }
 
+/// The sell price at one quantity — "500 cards, AED 122". A break is a decision
+/// the owner made, so it beats any formula for the quantity it names.
+final class QuantityBreak {
+  const QuantityBreak({required this.quantity, required this.amountFils});
+
+  final int quantity;
+  final int amountFils;
+}
+
 final class PricingContext {
   const PricingContext({
     required this.priceBookVersion,
@@ -483,6 +492,7 @@ final class PricingContext {
     this.printRatePerSheetSideFils,
     this.machine,
     this.operations = const <FinishingOperation>[],
+    this.priceBreaks = const <QuantityBreak>[],
     this.areaRateFilsPerSqm,
     this.vendorCostFils,
     this.tiers = const <PriceTier>[],
@@ -514,6 +524,9 @@ final class PricingContext {
 
   /// Finishing steps chosen for this job, priced at their own basis.
   final List<FinishingOperation> operations;
+
+  /// Sell prices at quantity, from the catalogue.
+  final List<QuantityBreak> priceBreaks;
 
   /// For [ProductKind.area].
   final int? areaRateFilsPerSqm;

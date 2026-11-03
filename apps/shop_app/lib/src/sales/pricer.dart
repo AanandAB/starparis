@@ -97,6 +97,7 @@ class ProductPricer {
     required int vatBps,
     MachineSpec? machine,
     List<FinishingOperation> operations = const <FinishingOperation>[],
+    List<PriceBreak> priceBreaks = const <PriceBreak>[],
   }) {
     return PricingContext(
       priceBookVersion: priceBookVersion,
@@ -117,6 +118,10 @@ class ProductPricer {
       printRatePerSheetSideFils: product.printRateFils,
       machine: machine,
       operations: operations,
+      priceBreaks: <QuantityBreak>[
+        for (final row in priceBreaks)
+          QuantityBreak(quantity: row.quantity, amountFils: row.amountFils),
+      ],
       areaRateFilsPerSqm: product.areaRateFilsPerSqm,
       markupBps: product.markupBps,
       minOrderFils: product.minOrderFils,
@@ -137,6 +142,7 @@ class ProductPricer {
     /// press the product actually runs on and the steps it actually includes.
     List<Machine> machines = const <Machine>[],
     List<Operation> operations = const <Operation>[],
+    List<PriceBreak> priceBreaks = const <PriceBreak>[],
     PriceOption? size,
     int sides = 1,
     List<String> finishes = const <String>[],
@@ -167,6 +173,7 @@ class ProductPricer {
         vatBps: vatBps,
         machine: machine,
         operations: chosenOperations,
+        priceBreaks: priceBreaks,
       ),
     );
   }

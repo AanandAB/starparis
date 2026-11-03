@@ -350,6 +350,29 @@ final class PricingEngine {
         priceBeforeSurcharges =
             costSubtotal + costSubtotal.timesBps(context.markupBps);
       case PricingMode.priceTable:
+        // A break the owner set for exactly this quantity is the price: it is a
+        // decision, not a derivation. Tiers remain the fallback between rungs.
+        final breakAmount = context.priceBreaks
+            .where((row) => row.quantity == request.quantity)
+            .map((row) => row.amountFils)
+            .firstOrNull;
+        if (breakAmount != null) {
+          final amount = Fils(breakAmount);
+          lines.insert(
+            0,
+            PriceLine(
+              code: 'break_price',
+              label: 'Price for ${request.quantity}',
+              kind: PriceLineKind.tablePrice,
+              quantity: request.quantity,
+              rateFils: request.quantity == 0 ? 0 : breakAmount ~/ request.quantity,
+              amount: amount,
+              explain: 'Set price for ${request.quantity} pieces',
+            ),
+          );
+          priceBeforeSurcharges = amount + addOns;
+          break;
+        }
         final tier = _tierFor(request, context);
         final tableAmount = Fils(tier.unitPriceFils * request.quantity);
         lines.insert(

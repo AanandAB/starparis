@@ -91,6 +91,11 @@ final StreamProvider<List<Operation>> operationsProvider =
       (ref) => ref.watch(bootstrapProvider).db.watchOperations(),
     );
 
+/// The price rungs for one product, straight from the local catalogue.
+final priceBreaksProvider = StreamProvider.family<List<PriceBreak>, String>(
+  (ref, productId) => ref.watch(bootstrapProvider).db.watchBreaksFor(productId),
+);
+
 final StreamProvider<List<PriceRuleRow>> allRulesProvider =
     StreamProvider<List<PriceRuleRow>>(
       (ref) => ref.watch(bootstrapProvider).db.watchAllRules(),
