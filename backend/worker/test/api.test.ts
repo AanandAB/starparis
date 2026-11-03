@@ -1881,6 +1881,79 @@ describe('vendor jobs', () => {
   });
 });
 
+describe('shop settings', () => {
+  it('reads the shop profile with defaults for anything unset', async () => {
+    const response = await api('/v1/settings', authed(counter.access_token));
+    expect(response.status).toBe(200);
+
+    const body = (await response.json()) as {
+      company: { name: string; trn: string };
+      vat_bps: number;
+      numbers: { invoice_prefix: string };
+    };
+    expect(body.company.name.length).toBeGreaterThan(2);
+    expect(body.vat_bps).toBe(500);
+    // A counter clerk may read the shop's own details: documents need them.
+    expect(body.numbers.invoice_prefix).toBe('INV');
+  });
+
+  it('lets the owner change the TRN, the VAT rate and the prefixes', async () => {
+    const response = await api(
+      '/v1/settings',
+      authed(
+        owner.access_token,
+        {
+          company: {
+            name: 'Star Paris Graphic LLC',
+            trn: '100000000000003',
+            address: 'Industrial Area 12, Sharjah',
+            phone: '+9716000000',
+            email: 'hello@starparis.example',
+          },
+          vat_bps: 1000,
+          numbers: { invoice_prefix: 'BILL' },
+        },
+        'PUT',
+      ),
+    );
+    expect(response.status).toBe(200);
+
+    const body = (await response.json()) as {
+      company: { trn: string; address: string };
+      vat_bps: number;
+      numbers: { invoice_prefix: string; order_prefix: string };
+    };
+    expect(body.company.trn).toBe('100000000000003');
+    expect(body.company.address).toContain('Sharjah');
+    expect(body.vat_bps).toBe(1000);
+    expect(body.numbers.invoice_prefix).toBe('BILL');
+    // Untouched fields survive a partial patch.
+    expect(body.numbers.order_prefix).toBe('JOB');
+
+    const tenant = (await env.DB.prepare('SELECT name, trn FROM tenants WHERE id = ?')
+      .bind(TENANT)
+      .first()) as { name: string; trn: string };
+    expect(tenant.trn).toBe('100000000000003');
+  });
+
+  it('refuses a clerk, and refuses a TRN that is not fifteen digits', async () => {
+    const clerk = await api(
+      '/v1/settings',
+      authed(counter.access_token, { vat_bps: 0 }, 'PUT'),
+    );
+    expect(clerk.status).toBe(403);
+
+    const badTrn = await api(
+      '/v1/settings',
+      authed(owner.access_token, { company: { trn: '12345' } }, 'PUT'),
+    );
+    expect(badTrn.status).toBe(400);
+
+    // Put the rate back so later tests see the seeded 5%.
+    await api('/v1/settings', authed(owner.access_token, { vat_bps: 500 }, 'PUT'));
+  });
+});
+
 describe('price book editing', () => {
   it('lets the owner change a rate and the catalogue reflects it', async () => {
     const response = await api(

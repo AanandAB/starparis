@@ -195,7 +195,10 @@ class _OrderSheetState extends ConsumerState<_OrderSheet> {
     setState(() => _busy = true);
     final messenger = ScaffoldMessenger.of(context);
     try {
-      final service = DocumentsService(db: ref.read(bootstrapProvider).db);
+      final service = DocumentsService(
+        db: ref.read(bootstrapProvider).db,
+        company: ref.read(companyProvider),
+      );
       final file = quote
           ? await service.quoteFor(widget.order)
           : await service.jobTicketFor(widget.order);

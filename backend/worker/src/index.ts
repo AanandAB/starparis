@@ -37,6 +37,7 @@ import {
   updateStaff,
   updateStaffSchema,
 } from './staff';
+import { loadSettings, saveSettings, settingsSchema } from './settings';
 import { prepareVendorJobPatch } from './vendors';
 import { currentHead, pullChanges, pushMutations } from './sync';
 import type { AuthContext, Env, Mutation } from './types';
@@ -239,6 +240,34 @@ app.post('/v1/price-book/bulk-adjust', async (c) => {
 });
 
 // --- reports (read-only) ---------------------------------------------------
+
+app.get('/v1/settings', async (c) => {
+  const ctx = c.get('auth');
+  const session = await loadSession(c.env, ctx);
+  if (!session.ok) return c.json(error(session.code, session.message), 401);
+
+  // Everyone may read the shop's own details: documents need the name and TRN.
+  return c.json(await loadSettings(c.env, ctx.tenantId));
+});
+
+app.put('/v1/settings', async (c) => {
+  const ctx = c.get('auth');
+  const session = await loadSession(c.env, ctx);
+  if (!session.ok) return c.json(error(session.code, session.message), 401);
+  if (!can(ctx.role as never, 'settings.manage')) {
+    return c.json(error('PERMISSION_DENIED', 'Only an owner changes the shop settings.'), 403);
+  }
+
+  const parsed = settingsSchema.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) {
+    return c.json(
+      error('BAD_REQUEST', parsed.error.issues[0]?.message ?? 'Check the details.'),
+      400,
+    );
+  }
+
+  return c.json(await saveSettings(c.env, ctx.tenantId, ctx.userId, parsed.data));
+});
 
 app.get('/v1/staff', async (c) => {
   const ctx = c.get('auth');

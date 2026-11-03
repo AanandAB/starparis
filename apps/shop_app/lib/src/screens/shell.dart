@@ -15,6 +15,7 @@ import 'home_screen.dart';
 import 'orders_screen.dart';
 import 'price_book_screen.dart';
 import 'reports_screen.dart';
+import 'settings_screen.dart';
 import 'staff_screen.dart';
 import 'track_sheet.dart';
 import 'vendors_screen.dart';
@@ -128,6 +129,18 @@ class _AppShellState extends ConsumerState<AppShell> {
         _Dest(t('nav.staff'), Icons.badge_outlined, Icons.badge, nextPage++),
       );
       optionalPages.add(const StaffScreen());
+    }
+    if (ref.watch(canManageStaffProvider)) {
+      // Settings sits last: it is the rarest thing an owner opens.
+      business.add(
+        _Dest(
+          t('nav.settings'),
+          Icons.settings_outlined,
+          Icons.settings,
+          nextPage++,
+        ),
+      );
+      optionalPages.add(const SettingsScreen());
     }
     if (ref.watch(canManageVendorsProvider)) {
       business.add(

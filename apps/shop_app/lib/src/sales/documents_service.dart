@@ -14,9 +14,14 @@ import '../app_config.dart';
 /// and always consistent. Files land in the shop's documents folder with a
 /// predictable name, which is what staff actually look for.
 class DocumentsService {
-  DocumentsService({required this.db});
+  DocumentsService({required this.db, CompanyProfile? company})
+    : company = company ?? AppConfig.company;
 
   final LocalDatabase db;
+
+  /// The shop's details for the document header. Passed in from the settings
+  /// provider so a changed TRN appears on the next document, not the next build.
+  final CompanyProfile company;
 
   Future<Directory> _outputDirectory() async {
     final base = await getApplicationDocumentsDirectory();
@@ -55,7 +60,7 @@ class DocumentsService {
             : ((order.vatFils * 10000) / order.subtotalFils).round(),
         notes: order.notes ?? '',
       ),
-      AppConfig.company,
+      company,
     );
     return _write('Quote-${order.numberDisplay}.pdf', bytes);
   }
@@ -80,7 +85,7 @@ class DocumentsService {
         isQuote: order.isQuote,
         trackUrl: '${AppConfig.jobQrPrefix}${order.numberDisplay}',
       ),
-      AppConfig.company,
+      company,
     );
     return _write('Job-${order.numberDisplay}.pdf', bytes);
   }
@@ -121,7 +126,7 @@ class DocumentsService {
         paidFils: invoice.paidFils,
         notes: invoice.notes ?? '',
       ),
-      AppConfig.company,
+      company,
     );
     return _write('${invoice.number}.pdf', bytes);
   }
@@ -151,7 +156,7 @@ class DocumentsService {
         reference: invoice.number,
         showPayments: false,
       ),
-      AppConfig.company,
+      company,
     );
     return _write('${note.number}.pdf', bytes);
   }

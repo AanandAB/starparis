@@ -1,11 +1,14 @@
 import 'dart:ui' show Locale;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:starparis_documents/starparis_documents.dart';
 import 'package:starparis_sync/starparis_sync.dart';
 
 import 'auth/session.dart';
 import 'bootstrap.dart';
+import 'app_config.dart';
 import 'l10n/strings.dart';
+import 'sales/settings_service.dart';
 
 /// Overridden in `main()` with the real object; a missing override is a
 /// programming error, not a runtime condition.
@@ -135,6 +138,39 @@ final NotifierProvider<LocaleChoice, Locale?> localeProvider =
 /// The words for the current locale. A widget reads `ref.watch(stringsProvider)`.
 final Provider<AppStrings> stringsProvider = Provider<AppStrings>((ref) {
   return AppStrings.of(ref.watch(localeProvider));
+});
+
+/// The shop's own details, loaded once and refreshed after a save.
+///
+/// Documents read the company from here, with the build-time profile as the
+/// fallback: a device that has never reached the server still prints something
+/// honest, and a shop that changes its TRN changes it everywhere at once.
+final FutureProvider<ShopSettings> shopSettingsProvider =
+    FutureProvider<ShopSettings>((ref) async {
+      final bootstrap = ref.watch(bootstrapProvider);
+      final service = SettingsService(
+        baseUrl: AppConfig.apiBaseUrl,
+        tokenProvider: bootstrap.auth.accessToken,
+      );
+      try {
+        return await service.load();
+      } catch (_) {
+        return ShopSettings(
+          company: AppConfig.company,
+          vatBps: 500,
+          orderPrefix: 'JOB',
+          invoicePrefix: 'INV',
+          quotePrefix: 'QT',
+        );
+      } finally {
+        service.dispose();
+      }
+    });
+
+final Provider<CompanyProfile> companyProvider = Provider<CompanyProfile>((
+  ref,
+) {
+  return ref.watch(shopSettingsProvider).value?.company ?? AppConfig.company;
 });
 
 /// Which shell tab is open. A provider rather than local state so a card on the

@@ -226,7 +226,10 @@ class _InvoiceSectionState extends ConsumerState<InvoiceSection> {
     setState(() => _busy = true);
     final messenger = ScaffoldMessenger.of(context);
     try {
-      final service = DocumentsService(db: ref.read(bootstrapProvider).db);
+      final service = DocumentsService(
+        db: ref.read(bootstrapProvider).db,
+        company: ref.read(companyProvider),
+      );
       final file = await service.invoiceFor(invoice);
       messenger.showSnackBar(
         SnackBar(
@@ -266,7 +269,10 @@ class _InvoiceSectionState extends ConsumerState<InvoiceSection> {
     setState(() => _busy = true);
     final messenger = ScaffoldMessenger.of(context);
     try {
-      final service = DocumentsService(db: ref.read(bootstrapProvider).db);
+      final service = DocumentsService(
+        db: ref.read(bootstrapProvider).db,
+        company: ref.read(companyProvider),
+      );
       final file = await service.creditNoteFor(note, invoice);
       messenger.showSnackBar(
         SnackBar(
