@@ -227,6 +227,30 @@ expenses and the VAT report. A void is only possible before money is taken, and 
 does not exist yet — 4B adds both, and invoices stay immutable so nothing already issued has to be
 rewritten when it lands.
 
+### Phase 4B — credit notes and refunds
+
+| Piece | State |
+|---|---|
+| Credit notes | `credit_notes`, numbered `CN-SHJ1-PC1-00001`, issued **against** an invoice, reason mandatory |
+| VAT split | the credited gross is split back into net + VAT at the invoice's own rate (50.00 → 47.62 + 2.38) |
+| Cap | never more than the invoice still has to credit (`OVER_CREDIT`); the invoice's `credited_fils` is mirrored by the server |
+| Refunds | `refunds` against a credit note, manager-only, capped at what the note still has left (`OVER_REFUND`) |
+| Immutability | a credit note cannot be edited (`CREDIT_NOTE_IMMUTABLE`); a refund is a fact (`REFUND_IMMUTABLE`) |
+| Balance | outstanding = total − paid − credited, shown on the invoice card next to the credits and their refunds |
+
+Live proof, after settling the invoice with two payments:
+
+    invoice          INV-SHJ1-PC1-00201  paid=12810  status=paid  payments=2  pending=0
+    credit note      CN-SHJ1-PC1-00001  total=5000  refunded=5000  refunds=1  invoice_credited=5000  pending=0
+
+The shape that matters: an invoice is never edited. Money comes back through a credit note, cash comes
+back through a refund against that note, and both are single-writer rows the server validates. That is
+the trail an auditor asks for.
+
+Still open in money: credit accounts and ageing, till sessions and cash-up, expenses, and the VAT
+summary/export the accountant signs off. Those are reads over what now exists, plus one new table for
+till sessions — Phase 4C.
+
 ## Commands
 ```bash
 # Dart workspace

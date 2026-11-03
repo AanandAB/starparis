@@ -97,7 +97,10 @@ class FakeApi implements SyncApi {
   bool failLeases = false;
 
   @override
-  Future<NumberRange> leaseNumbers({required String series, int size = 100}) async {
+  Future<NumberRange> leaseNumbers({
+    required String series,
+    int size = 100,
+  }) async {
     if (failEverything || failLeases) {
       throw const SyncException('OFFLINE', 'No network');
     }
@@ -354,7 +357,12 @@ void main() {
 
   group('number series', () {
     test('leases a block and spends it in order', () async {
-      final series = NumberSeries(db: db, api: api, series: 'JOB', blockSize: 100);
+      final series = NumberSeries(
+        db: db,
+        api: api,
+        series: 'JOB',
+        blockSize: 100,
+      );
       final first = await series.next();
       final second = await series.next();
       expect(first.display, '1');
@@ -362,72 +370,78 @@ void main() {
       expect(await series.remaining(), 98);
     });
 
-    test('falls back to a temporary number when there is no connection', () async {
-      api.failLeases = true;
-      final series = NumberSeries(db: db, api: api, series: 'JOB');
-      final issued = await series.next();
-      expect(issued.isTemporary, isTrue);
-      expect(issued.number, isNull);
-      expect(issued.display, 'T-0001');
-    });
+    test(
+      'falls back to a temporary number when there is no connection',
+      () async {
+        api.failLeases = true;
+        final series = NumberSeries(db: db, api: api, series: 'JOB');
+        final issued = await series.next();
+        expect(issued.isTemporary, isTrue);
+        expect(issued.number, isNull);
+        expect(issued.display, 'T-0001');
+      },
+    );
   });
 
   group('catalogue', () {
-    test('replaces the price book atomically and exposes product rules', () async {
-      await db.replaceCatalogue(
-        productRows: <Map<String, Object?>>[
-          <String, Object?>{
-            'id': 'prod_cards',
-            'tenant_id': 't1',
-            'code': 'business_cards',
-            'name_en': 'Business cards',
-            'kind': 'sheet',
-            'pricing_mode': 'cost_plus',
-            'sheet_width_mm': 320,
-            'sheet_height_mm': 450,
-            'material_code': 'art_card_350',
-            'print_rate_fils': 35,
-            'markup_bps': 6500,
-            'sizes_json': '[]',
-            'finishes_json': '[]',
-            'quantity_presets_json': '[100,500]',
-            'active': 1,
-          },
-        ],
-        materialRows: <Map<String, Object?>>[
-          <String, Object?>{
-            'id': 'mat1',
-            'tenant_id': 't1',
-            'code': 'art_card_350',
-            'name': 'Art card 350',
-            'cost_per_sheet_fils': 60,
-            'active': 1,
-          },
-        ],
-        ruleRows: <Map<String, Object?>>[
-          <String, Object?>{
-            'id': 'rule1',
-            'tenant_id': 't1',
-            'price_book_version': 1,
-            'label': 'Cutting',
-            'phase': 'finishing',
-            'basis': 'flat',
-            'rate_fils': 500,
-            'priority': 60,
-            'when_json': '[]',
-            'active': 1,
-          },
-        ],
-        priceBookVersion: 1,
-        vatBps: 500,
-      );
+    test(
+      'replaces the price book atomically and exposes product rules',
+      () async {
+        await db.replaceCatalogue(
+          productRows: <Map<String, Object?>>[
+            <String, Object?>{
+              'id': 'prod_cards',
+              'tenant_id': 't1',
+              'code': 'business_cards',
+              'name_en': 'Business cards',
+              'kind': 'sheet',
+              'pricing_mode': 'cost_plus',
+              'sheet_width_mm': 320,
+              'sheet_height_mm': 450,
+              'material_code': 'art_card_350',
+              'print_rate_fils': 35,
+              'markup_bps': 6500,
+              'sizes_json': '[]',
+              'finishes_json': '[]',
+              'quantity_presets_json': '[100,500]',
+              'active': 1,
+            },
+          ],
+          materialRows: <Map<String, Object?>>[
+            <String, Object?>{
+              'id': 'mat1',
+              'tenant_id': 't1',
+              'code': 'art_card_350',
+              'name': 'Art card 350',
+              'cost_per_sheet_fils': 60,
+              'active': 1,
+            },
+          ],
+          ruleRows: <Map<String, Object?>>[
+            <String, Object?>{
+              'id': 'rule1',
+              'tenant_id': 't1',
+              'price_book_version': 1,
+              'label': 'Cutting',
+              'phase': 'finishing',
+              'basis': 'flat',
+              'rate_fils': 500,
+              'priority': 60,
+              'when_json': '[]',
+              'active': 1,
+            },
+          ],
+          priceBookVersion: 1,
+          vatBps: 500,
+        );
 
-      final products = await db.watchProducts().first;
-      expect(products, hasLength(1));
-      expect(await db.materialByCode('art_card_350'), isNotNull);
-      expect(await db.rulesForProduct('prod_cards', 1), hasLength(1));
-      expect(await db.vatBps(), 500);
-    });
+        final products = await db.watchProducts().first;
+        expect(products, hasLength(1));
+        expect(await db.materialByCode('art_card_350'), isNotNull);
+        expect(await db.rulesForProduct('prod_cards', 1), hasLength(1));
+        expect(await db.vatBps(), 500);
+      },
+    );
   });
 
   group('orders', () {
@@ -447,7 +461,8 @@ void main() {
             optionsJson: '{"quantity":500}',
             quantity: 500,
             priceBookVersion: 7,
-            breakdownJson: '{"total_fils":12200,"vat_fils":610,"grand_total_fils":12810}',
+            breakdownJson:
+                '{"total_fils":12200,"vat_fils":610,"grand_total_fils":12810}',
             subtotalFils: 12200,
             vatFils: 610,
             totalFils: 12810,
@@ -474,53 +489,57 @@ void main() {
   });
 
   group('quotes', () {
-    test('converting a quote copies the frozen lines and marks it converted', () async {
-      const breakdown = '{"total_fils":12200,"vat_fils":610,"grand_total_fils":12810}';
-      final quoteId = await db.createOrderLocal(
-        tenantId: 't1',
-        branchId: 'b1',
-        customerId: 'c1',
-        customerName: 'Ahmed Traders',
-        userId: 'u1',
-        numberDisplay: 'QT-00001',
-        number: 1,
-        isQuote: true,
-        status: 'draft',
-        lines: const <OrderLineDraft>[
-          OrderLineDraft(
-            productId: 'prod_cards',
-            description: 'Business cards | 500 | 90x55 | matt',
-            optionsJson: '{"quantity":500}',
-            quantity: 500,
-            priceBookVersion: 7,
-            breakdownJson: breakdown,
-            subtotalFils: 12200,
-            vatFils: 610,
-            totalFils: 12810,
-          ),
-        ],
-      );
+    test(
+      'converting a quote copies the frozen lines and marks it converted',
+      () async {
+        const breakdown =
+            '{"total_fils":12200,"vat_fils":610,"grand_total_fils":12810}';
+        final quoteId = await db.createOrderLocal(
+          tenantId: 't1',
+          branchId: 'b1',
+          customerId: 'c1',
+          customerName: 'Ahmed Traders',
+          userId: 'u1',
+          numberDisplay: 'QT-00001',
+          number: 1,
+          isQuote: true,
+          status: 'draft',
+          lines: const <OrderLineDraft>[
+            OrderLineDraft(
+              productId: 'prod_cards',
+              description: 'Business cards | 500 | 90x55 | matt',
+              optionsJson: '{"quantity":500}',
+              quantity: 500,
+              priceBookVersion: 7,
+              breakdownJson: breakdown,
+              subtotalFils: 12200,
+              vatFils: 610,
+              totalFils: 12810,
+            ),
+          ],
+        );
 
-      final orderId = await db.convertQuoteToOrder(
-        quoteId: quoteId,
-        numberDisplay: '10452',
-        number: 10452,
-        userId: 'u1',
-      );
+        final orderId = await db.convertQuoteToOrder(
+          quoteId: quoteId,
+          numberDisplay: '10452',
+          number: 10452,
+          userId: 'u1',
+        );
 
-      final order = await db.orderById(orderId);
-      expect(order, isNotNull);
-      expect(order!.isQuote, isFalse);
-      expect(order.numberDisplay, '10452');
-      expect(order.totalFils, 12810);
+        final order = await db.orderById(orderId);
+        expect(order, isNotNull);
+        expect(order!.isQuote, isFalse);
+        expect(order.numberDisplay, '10452');
+        expect(order.totalFils, 12810);
 
-      final quote = await db.orderById(quoteId);
-      expect(quote!.status, 'converted');
+        final quote = await db.orderById(quoteId);
+        expect(quote!.status, 'converted');
 
-      final convertedItems = await db.itemsFor(orderId);
-      expect(convertedItems, hasLength(1));
-      expect(convertedItems.single.breakdownJson, breakdown);
-    });
+        final convertedItems = await db.itemsFor(orderId);
+        expect(convertedItems, hasLength(1));
+        expect(convertedItems.single.breakdownJson, breakdown);
+      },
+    );
   });
 
   group('production', () {
@@ -548,34 +567,54 @@ void main() {
       ],
     );
 
-    test('an order opens one task per stage; only the first is offered', () async {
-      final orderId = await placedOrder();
-      final tasks = await db.tasksForOrder(orderId);
+    test(
+      'an order opens one task per stage; only the first is offered',
+      () async {
+        final orderId = await placedOrder();
+        final tasks = await db.tasksForOrder(orderId);
 
-      expect(tasks, hasLength(5));
-      expect(
-        tasks.map((task) => task.stageKey).toList(),
-        <String>['design', 'print', 'finish', 'qc', 'delivery'],
-      );
-      expect(tasks.map((task) => task.sequence).toList(), <int>[10, 20, 30, 40, 50]);
-      expect(tasks.first.status, 'available');
-      expect(
-        tasks.skip(1).every((task) => task.status == 'waiting'),
-        isTrue,
-        reason: 'later stages must not pretend to be startable',
-      );
-      expect(tasks.first.requiredRole, 'designer');
-    });
+        expect(tasks, hasLength(5));
+        expect(tasks.map((task) => task.stageKey).toList(), <String>[
+          'design',
+          'print',
+          'finish',
+          'qc',
+          'delivery',
+        ]);
+        expect(tasks.map((task) => task.sequence).toList(), <int>[
+          10,
+          20,
+          30,
+          40,
+          50,
+        ]);
+        expect(tasks.first.status, 'available');
+        expect(
+          tasks.skip(1).every((task) => task.status == 'waiting'),
+          isTrue,
+          reason: 'later stages must not pretend to be startable',
+        );
+        expect(tasks.first.requiredRole, 'designer');
+      },
+    );
 
     test('finishing a stage opens the next one locally', () async {
       final orderId = await placedOrder();
       var design = (await db.tasksForOrder(orderId)).first;
 
-      await db.transitionTask(task: design, to: TaskStatus.assigned, userId: 'u1');
+      await db.transitionTask(
+        task: design,
+        to: TaskStatus.assigned,
+        userId: 'u1',
+      );
       design = (await db.tasksForOrder(orderId)).first;
       expect(design.status, 'assigned');
 
-      await db.transitionTask(task: design, to: TaskStatus.inProgress, userId: 'u1');
+      await db.transitionTask(
+        task: design,
+        to: TaskStatus.inProgress,
+        userId: 'u1',
+      );
       design = (await db.tasksForOrder(orderId)).first;
       expect(design.startedAt, isNotNull);
 
@@ -584,7 +623,11 @@ void main() {
       final after = await db.tasksForOrder(orderId);
       expect(after.first.status, 'done');
       expect(after.first.doneAt, isNotNull);
-      expect(after[1].status, 'available', reason: 'print opens when design is done');
+      expect(
+        after[1].status,
+        'available',
+        reason: 'print opens when design is done',
+      );
       expect(after[2].status, 'waiting');
     });
 
@@ -602,9 +645,17 @@ void main() {
     test('sending work back needs a reason', () async {
       final orderId = await placedOrder();
       var task = (await db.tasksForOrder(orderId)).first;
-      await db.transitionTask(task: task, to: TaskStatus.assigned, userId: 'u1');
+      await db.transitionTask(
+        task: task,
+        to: TaskStatus.assigned,
+        userId: 'u1',
+      );
       task = (await db.tasksForOrder(orderId)).first;
-      await db.transitionTask(task: task, to: TaskStatus.inProgress, userId: 'u1');
+      await db.transitionTask(
+        task: task,
+        to: TaskStatus.inProgress,
+        userId: 'u1',
+      );
       task = (await db.tasksForOrder(orderId)).first;
 
       await expectLater(
@@ -630,14 +681,21 @@ void main() {
       // patch merged into a pending insert is correct, a patch merged into
       // another patch is not.
       await db.markApplied(<String>[
-        for (final mutation in await db.nextBatch())
-          mutation.mutationId,
+        for (final mutation in await db.nextBatch()) mutation.mutationId,
       ]);
 
       var task = (await db.tasksForOrder(orderId)).first;
-      await db.transitionTask(task: task, to: TaskStatus.assigned, userId: 'u1');
+      await db.transitionTask(
+        task: task,
+        to: TaskStatus.assigned,
+        userId: 'u1',
+      );
       task = (await db.tasksForOrder(orderId)).first;
-      await db.transitionTask(task: task, to: TaskStatus.inProgress, userId: 'u1');
+      await db.transitionTask(
+        task: task,
+        to: TaskStatus.inProgress,
+        userId: 'u1',
+      );
       task = (await db.tasksForOrder(orderId)).first;
       await db.transitionTask(task: task, to: TaskStatus.done, userId: 'u1');
 
@@ -651,7 +709,8 @@ void main() {
       expect(
         <Object?>[
           for (final mutation in patches)
-            (jsonDecode(mutation.payloadJson) as Map<String, Object?>)['status'],
+            (jsonDecode(mutation.payloadJson)
+                as Map<String, Object?>)['status'],
         ],
         <String>['assigned', 'in_progress', 'done', 'available'],
         reason: 'coalescing a state machine would present the server a jump',
@@ -661,14 +720,21 @@ void main() {
     test('a duplicate cascade the server already applied is dropped, not queued', () async {
       final orderId = await placedOrder();
       await db.markApplied(<String>[
-        for (final mutation in await db.nextBatch())
-          mutation.mutationId,
+        for (final mutation in await db.nextBatch()) mutation.mutationId,
       ]);
 
       var design = (await db.tasksForOrder(orderId)).first;
-      await db.transitionTask(task: design, to: TaskStatus.assigned, userId: 'u1');
+      await db.transitionTask(
+        task: design,
+        to: TaskStatus.assigned,
+        userId: 'u1',
+      );
       design = (await db.tasksForOrder(orderId)).first;
-      await db.transitionTask(task: design, to: TaskStatus.inProgress, userId: 'u1');
+      await db.transitionTask(
+        task: design,
+        to: TaskStatus.inProgress,
+        userId: 'u1',
+      );
       design = (await db.tasksForOrder(orderId)).first;
       await db.transitionTask(task: design, to: TaskStatus.done, userId: 'u1');
 
@@ -677,7 +743,8 @@ void main() {
       final batch = await db.nextBatch();
       final cascade = batch.firstWhere((mutation) {
         if (mutation.entity != 'tasks') return false;
-        final payload = (jsonDecode(mutation.payloadJson) as Map).cast<String, Object?>();
+        final payload = (jsonDecode(mutation.payloadJson) as Map)
+            .cast<String, Object?>();
         return payload['status'] == 'available';
       });
       await db.markApplied(<String>[
@@ -712,54 +779,56 @@ void main() {
         reason: 'a duplicate must not leave a permanent pending badge',
       );
     });
-
   });
 
   group('proofs', () {
-    test('a proof link becomes the next version and travels as a draft', () async {
-      final orderId = await db.createOrderLocal(
-        tenantId: 't1',
-        branchId: 'b1',
-        customerId: 'c1',
-        customerName: 'Ahmed Traders',
-        userId: 'u1',
-        numberDisplay: '10452',
-        lines: const <OrderLineDraft>[
-          OrderLineDraft(
-            productId: 'prod_cards',
-            description: 'Business cards',
-            optionsJson: '{}',
-            quantity: 500,
-            priceBookVersion: 1,
-            breakdownJson: '{}',
-            subtotalFils: 12200,
-            vatFils: 610,
-            totalFils: 12810,
-          ),
-        ],
-      );
+    test(
+      'a proof link becomes the next version and travels as a draft',
+      () async {
+        final orderId = await db.createOrderLocal(
+          tenantId: 't1',
+          branchId: 'b1',
+          customerId: 'c1',
+          customerName: 'Ahmed Traders',
+          userId: 'u1',
+          numberDisplay: '10452',
+          lines: const <OrderLineDraft>[
+            OrderLineDraft(
+              productId: 'prod_cards',
+              description: 'Business cards',
+              optionsJson: '{}',
+              quantity: 500,
+              priceBookVersion: 1,
+              breakdownJson: '{}',
+              subtotalFils: 12200,
+              vatFils: 610,
+              totalFils: 12810,
+            ),
+          ],
+        );
 
-      await db.addProofLocal(
-        orderId: orderId,
-        tenantId: 't1',
-        branchId: 'b1',
-        userId: 'u1',
-        label: 'Front',
-        url: 'https://drive.example/front.pdf',
-      );
-      await db.addProofLocal(
-        orderId: orderId,
-        tenantId: 't1',
-        branchId: 'b1',
-        userId: 'u1',
-        label: 'Back',
-        url: 'https://drive.example/back.pdf',
-      );
+        await db.addProofLocal(
+          orderId: orderId,
+          tenantId: 't1',
+          branchId: 'b1',
+          userId: 'u1',
+          label: 'Front',
+          url: 'https://drive.example/front.pdf',
+        );
+        await db.addProofLocal(
+          orderId: orderId,
+          tenantId: 't1',
+          branchId: 'b1',
+          userId: 'u1',
+          label: 'Back',
+          url: 'https://drive.example/back.pdf',
+        );
 
-      final proofs = await db.watchProofs(orderId).first;
-      expect(proofs.map((proof) => proof.revision).toList(), <int>[1, 2]);
-      expect(proofs.first.status, 'draft');
-    });
+        final proofs = await db.watchProofs(orderId).first;
+        expect(proofs.map((proof) => proof.revision).toList(), <int>[1, 2]);
+        expect(proofs.first.status, 'draft');
+      },
+    );
 
     test('a rejection needs a note and records it', () async {
       final orderId = await db.createOrderLocal(
@@ -883,60 +952,129 @@ void main() {
       );
     });
 
-    test('a payment moves the balance but only the payment is queued', () async {
-      final placed = await order();
-      await db.issueInvoiceLocal(
-        order: placed,
-        tenantId: 't1',
-        branchId: 'b1',
-        userId: 'u1',
-        number: 'INV-SHJ1-PC1-00003',
-      );
-      await db.markApplied(<String>[
-        for (final mutation in await db.nextBatch()) mutation.mutationId,
-      ]);
+    test(
+      'a payment moves the balance but only the payment is queued',
+      () async {
+        final placed = await order();
+        await db.issueInvoiceLocal(
+          order: placed,
+          tenantId: 't1',
+          branchId: 'b1',
+          userId: 'u1',
+          number: 'INV-SHJ1-PC1-00003',
+        );
+        await db.markApplied(<String>[
+          for (final mutation in await db.nextBatch()) mutation.mutationId,
+        ]);
 
-      var invoice = (await db.invoiceForOrder(placed.id))!;
-      await db.takePaymentLocal(
-        invoice: invoice,
-        amountFils: 5000,
-        method: 'cash',
-        userId: 'u1',
-      );
-
-      invoice = (await db.invoiceForOrder(placed.id))!;
-      expect(invoice.paidFils, 5000);
-      expect(invoice.status, 'part_paid');
-
-      final batch = await db.nextBatch();
-      expect(batch.where((m) => m.entity == 'payments'), hasLength(1));
-      expect(
-        batch.where((m) => m.entity == 'invoices' && m.op == 'patch'),
-        isEmpty,
-        reason: 'the paid cache belongs to the server',
-      );
-
-      await expectLater(
-        db.takePaymentLocal(
+        var invoice = (await db.invoiceForOrder(placed.id))!;
+        await db.takePaymentLocal(
           invoice: invoice,
-          amountFils: 99999,
+          amountFils: 5000,
           method: 'cash',
           userId: 'u1',
-        ),
-        throwsA(isA<StateError>()),
-      );
+        );
 
-      await db.takePaymentLocal(
-        invoice: invoice,
-        amountFils: 7810,
-        method: 'transfer',
-        userId: 'u1',
-        reference: 'TT-7788',
-      );
-      invoice = (await db.invoiceForOrder(placed.id))!;
-      expect(invoice.paidFils, 12810);
-      expect(invoice.status, 'paid');
-    });
+        invoice = (await db.invoiceForOrder(placed.id))!;
+        expect(invoice.paidFils, 5000);
+        expect(invoice.status, 'part_paid');
+
+        final batch = await db.nextBatch();
+        expect(batch.where((m) => m.entity == 'payments'), hasLength(1));
+        expect(
+          batch.where((m) => m.entity == 'invoices' && m.op == 'patch'),
+          isEmpty,
+          reason: 'the paid cache belongs to the server',
+        );
+
+        await expectLater(
+          db.takePaymentLocal(
+            invoice: invoice,
+            amountFils: 99999,
+            method: 'cash',
+            userId: 'u1',
+          ),
+          throwsA(isA<StateError>()),
+        );
+
+        await db.takePaymentLocal(
+          invoice: invoice,
+          amountFils: 7810,
+          method: 'transfer',
+          userId: 'u1',
+          reference: 'TT-7788',
+        );
+        invoice = (await db.invoiceForOrder(placed.id))!;
+        expect(invoice.paidFils, 12810);
+        expect(invoice.status, 'paid');
+      },
+    );
+    test(
+      'a credit note reduces what is owed and a refund pays it back',
+      () async {
+        final placed = await order();
+        await db.issueInvoiceLocal(
+          order: placed,
+          tenantId: 't1',
+          branchId: 'b1',
+          userId: 'u1',
+          number: 'INV-SHJ1-PC1-00004',
+        );
+        final invoice = (await db.invoiceForOrder(placed.id))!;
+
+        await db.issueCreditNoteLocal(
+          invoice: invoice,
+          tenantId: 't1',
+          branchId: 'b1',
+          userId: 'u1',
+          number: 'CN-SHJ1-PC1-00001',
+          amountFils: 5000,
+          reason: 'Customer returned 100 cards damaged in finishing',
+        );
+
+        final updated = (await db.invoiceForOrder(placed.id))!;
+        expect(updated.creditedFils, 5000);
+        expect(updated.paidFils, 0, reason: 'crediting is not payment');
+
+        final notes = await db.watchCreditNotes(invoice.id).first;
+        expect(notes, hasLength(1));
+        expect(notes.single.totalFils, 5000);
+        expect(notes.single.subtotalFils, 4762, reason: '50.00 at 5% VAT');
+        expect(notes.single.vatFils, 238);
+
+        await expectLater(
+          db.issueCreditNoteLocal(
+            invoice: updated,
+            tenantId: 't1',
+            branchId: 'b1',
+            userId: 'u1',
+            number: 'CN-SHJ1-PC1-00002',
+            amountFils: 99999,
+            reason: 'Trying to credit more than the invoice',
+          ),
+          throwsA(isA<StateError>()),
+        );
+
+        await db.refundLocal(
+          note: notes.single,
+          amountFils: 5000,
+          method: 'cash',
+          userId: 'u1',
+        );
+        final refunded = (await db.watchCreditNotes(invoice.id).first).single;
+        expect(refunded.refundedFils, 5000);
+
+        await expectLater(
+          db.refundLocal(
+            note: refunded,
+            amountFils: 100,
+            method: 'cash',
+            userId: 'u1',
+          ),
+          throwsA(isA<StateError>()),
+        );
+      },
+    );
   });
 
   group('state', () {

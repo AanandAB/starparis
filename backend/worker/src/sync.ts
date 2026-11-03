@@ -21,7 +21,12 @@ import type { AuthContext, Env, Mutation, MutationResult } from './types';
 import { can, permits, redactCosts, type Permission, type RoleKey } from './policy';
 import { cascadeStage, prepareTaskPatch, taskEventStatement } from './tasks';
 import { prepareProofPatch, recordTimeEntry } from './proofs';
-import { prepareInvoicePatch, preparePayment } from './money';
+import {
+  prepareCreditNote,
+  prepareInvoicePatch,
+  preparePayment,
+  prepareRefund,
+} from './money';
 
 interface EntityDef {
   table: string;
@@ -248,6 +253,54 @@ export const ENTITIES: Record<string, EntityDef> = {
       },
     }),
   },
+  credit_notes: {
+    table: 'credit_notes',
+    columns: new Set([
+      'invoice_id',
+      'number',
+      'issued_at',
+      'reason',
+      'subtotal_fils',
+      'vat_bps',
+      'vat_fils',
+      'total_fils',
+      'branch_id',
+    ]),
+    required: ['invoice_id', 'number', 'reason', 'total_fils'],
+    permission: 'credit.note.issue',
+    mergeable: false,
+    branchScoped: true,
+    softDelete: false,
+    mutate: () => ({
+      error: {
+        code: 'CREDIT_NOTE_IMMUTABLE',
+        message: 'A credit note cannot be edited. Issue another one against the invoice.',
+      },
+    }),
+  },
+  refunds: {
+    table: 'refunds',
+    columns: new Set([
+      'credit_note_id',
+      'invoice_id',
+      'amount_fils',
+      'method',
+      'reference',
+      'refunded_at',
+      'refunded_by',
+    ]),
+    required: ['credit_note_id', 'invoice_id', 'amount_fils', 'method'],
+    permission: 'credit.note.issue',
+    mergeable: false,
+    branchScoped: true,
+    softDelete: false,
+    mutate: () => ({
+      error: {
+        code: 'REFUND_IMMUTABLE',
+        message: 'A refund is a fact once it is paid out.',
+      },
+    }),
+  },
 };
 
 type Row = Record<string, unknown>;
@@ -320,6 +373,12 @@ async function applyMutation(
     if (mutation.op === 'insert') {
       if (mutation.entity === 'payments') {
         return await insertPayment(env, ctx, mutation, fields);
+      }
+      if (mutation.entity === 'credit_notes') {
+        return await insertCreditNote(env, ctx, mutation, fields);
+      }
+      if (mutation.entity === 'refunds') {
+        return await insertRefund(env, ctx, mutation, fields);
       }
       return await insertRow(env, ctx, def, mutation, fields, existing);
     }
@@ -813,6 +872,192 @@ async function insertPayment(
     row_id: mutation.row_id,
     server_version: 1,
     row: redactCosts(row, can(asRole(ctx.role), 'cost.view')),
+  };
+}
+
+/**
+ * A credit note and the invoice credit it creates travel together, exactly like
+ * a payment: the note, the invoice's `credited_fils`, both change-log rows.
+ */
+async function insertCreditNote(
+  env: Env,
+  ctx: AuthContext,
+  mutation: Mutation,
+  fields: Row,
+): Promise<MutationResult> {
+  if (!can(asRole(ctx.role), 'credit.note.issue')) {
+    return reject(mutation, 'PERMISSION_DENIED', 'Not allowed to issue credit notes');
+  }
+
+  const invoice = await env.DB.prepare(
+    'SELECT * FROM invoices WHERE id = ? AND tenant_id = ?',
+  )
+    .bind(String(fields['invoice_id'] ?? ''), ctx.tenantId)
+    .first<Row>();
+  if (!invoice) return reject(mutation, 'NOT_FOUND', 'That invoice does not exist.');
+
+  if (
+    !permits(
+      { role: asRole(ctx.role), userId: ctx.userId, branchId: ctx.branchId },
+      'credit.note.issue',
+      { branchId: (invoice['branch_id'] as string | null) ?? null, ownerId: null },
+    )
+  ) {
+    return reject(mutation, 'SCOPE_DENIED', 'That invoice belongs to another branch.');
+  }
+
+  const prepared = prepareCreditNote(fields, invoice);
+  if ('error' in prepared) {
+    return reject(mutation, prepared.error.code, prepared.error.message);
+  }
+
+  const now = nowIso();
+  const row: Row = {
+    ...prepared.note,
+    id: mutation.row_id,
+    tenant_id: ctx.tenantId,
+    branch_id: (invoice['branch_id'] as string | null) ?? ctx.branchId,
+    created_at: now,
+    updated_at: now,
+    created_by: ctx.userId,
+    version: 1,
+    deleted_at: null,
+  };
+
+  const invoiceUpdate = prepared.invoiceUpdate;
+  const invoiceRow: Row = {
+    ...invoice,
+    credited_fils: invoiceUpdate['credited_fils'],
+    status: invoiceUpdate['status'],
+    updated_at: now,
+    updated_by: ctx.userId,
+    version: invoiceUpdate['version'],
+  };
+
+  const columns = Object.keys(row);
+  await env.DB.batch([
+    env.DB.prepare(
+      `INSERT INTO credit_notes (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`,
+    ).bind(...columns.map((column) => row[column] as never)),
+    env.DB.prepare(
+      `UPDATE invoices SET credited_fils = ?, status = ?, updated_at = ?, updated_by = ?, version = ?
+        WHERE id = ? AND tenant_id = ?`,
+    ).bind(
+      invoiceUpdate['credited_fils'] as number,
+      invoiceUpdate['status'] as string,
+      now,
+      ctx.userId,
+      invoiceUpdate['version'] as number,
+      String(invoice['id']),
+      ctx.tenantId,
+    ),
+    await buildChangeLog(env, ctx, {
+      entity: 'credit_notes',
+      rowId: mutation.row_id,
+      op: 'insert',
+      row,
+      version: 1,
+      changedFields: null,
+    }),
+    await buildChangeLog(env, ctx, {
+      entity: 'invoices',
+      rowId: String(invoice['id']),
+      op: 'patch',
+      row: invoiceRow,
+      version: Number(invoiceUpdate['version']),
+      changedFields: invoiceUpdate['changedFields'] as string[],
+    }),
+    markApplied(env, ctx, mutation, 'applied'),
+  ]);
+
+  return {
+    mutation_id: mutation.mutation_id,
+    status: 'applied',
+    row_id: mutation.row_id,
+    server_version: 1,
+    row: redactCosts(row, can(asRole(ctx.role), 'cost.view')),
+  };
+}
+
+/** Cash leaving the till, against a credit note. Manager-only, and it shows. */
+async function insertRefund(
+  env: Env,
+  ctx: AuthContext,
+  mutation: Mutation,
+  fields: Row,
+): Promise<MutationResult> {
+  const note = await env.DB.prepare(
+    'SELECT * FROM credit_notes WHERE id = ? AND tenant_id = ?',
+  )
+    .bind(String(fields['credit_note_id'] ?? ''), ctx.tenantId)
+    .first<Row>();
+  if (!note) return reject(mutation, 'NOT_FOUND', 'That credit note does not exist.');
+
+  const prepared = prepareRefund(fields, note, ctx);
+  if ('error' in prepared) {
+    return reject(mutation, prepared.error.code, prepared.error.message);
+  }
+
+  const now = nowIso();
+  const row: Row = {
+    ...prepared.refund,
+    id: mutation.row_id,
+    tenant_id: ctx.tenantId,
+    branch_id: (note['branch_id'] as string | null) ?? ctx.branchId,
+    invoice_id: note['invoice_id'],
+    created_at: now,
+    updated_at: now,
+    created_by: ctx.userId,
+    version: 1,
+    deleted_at: null,
+  };
+
+  const noteRow: Row = {
+    ...note,
+    refunded_fils: prepared.noteUpdate['refunded_fils'],
+    updated_at: now,
+    version: prepared.noteUpdate['version'],
+  };
+
+  const columns = Object.keys(row);
+  await env.DB.batch([
+    env.DB.prepare(
+      `INSERT INTO refunds (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`,
+    ).bind(...columns.map((column) => row[column] as never)),
+    env.DB.prepare(
+      'UPDATE credit_notes SET refunded_fils = ?, updated_at = ?, version = ? WHERE id = ? AND tenant_id = ?',
+    ).bind(
+      prepared.noteUpdate['refunded_fils'] as number,
+      now,
+      prepared.noteUpdate['version'] as number,
+      String(note['id']),
+      ctx.tenantId,
+    ),
+    await buildChangeLog(env, ctx, {
+      entity: 'refunds',
+      rowId: mutation.row_id,
+      op: 'insert',
+      row,
+      version: 1,
+      changedFields: null,
+    }),
+    await buildChangeLog(env, ctx, {
+      entity: 'credit_notes',
+      rowId: String(note['id']),
+      op: 'patch',
+      row: noteRow,
+      version: Number(prepared.noteUpdate['version']),
+      changedFields: ['refunded_fils'],
+    }),
+    markApplied(env, ctx, mutation, 'applied'),
+  ]);
+
+  return {
+    mutation_id: mutation.mutation_id,
+    status: 'applied',
+    row_id: mutation.row_id,
+    server_version: 1,
+    row: row,
   };
 }
 

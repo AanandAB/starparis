@@ -309,6 +309,65 @@ Future<void> main(List<String> args) async {
     exit(1);
   }
 
+  // ---- credit note, then cash back ---------------------------------------
+  const creditSeries = 'CN-SHJ1-PC1';
+  final creditNumber = await NumberSeries(
+    db: db,
+    api: api,
+    series: creditSeries,
+  ).next();
+  await db.issueCreditNoteLocal(
+    invoice: invoice,
+    tenantId: tenantId,
+    branchId: branchId,
+    userId: userId,
+    number: creditNumber.isTemporary
+        ? 'CN-${creditNumber.display}'
+        : formatNumber(creditSeries, creditNumber.number!),
+    amountFils: 5000,
+    reason: 'Smoke: 100 cards damaged in finishing',
+  );
+
+  final note = (await db.watchCreditNotes(invoice.id).first).single;
+  await db.refundLocal(
+    note: note,
+    amountFils: 5000,
+    method: 'cash',
+    userId: userId,
+  );
+  await engine.syncNow();
+
+  final afterCredit = await api.pull(since: 0, limit: 600);
+  final serverNote = afterCredit.rows
+      .where((row) => row.entity == 'credit_notes' && row.data['invoice_id'] == invoice.id)
+      .map((row) => row.data)
+      .lastOrNull;
+  final creditedInvoice = afterCredit.rows
+      .where((row) => row.entity == 'invoices' && row.data['order_id'] == orderId)
+      .map((row) => row.data)
+      .lastOrNull;
+  final refundRows = afterCredit.rows
+      .where(
+        (row) =>
+            row.entity == 'refunds' && row.data['credit_note_id'] == serverNote?['id'],
+      )
+      .length;
+
+  stdout.writeln(
+    'credit note      ${serverNote?['number']}  '
+    'total=${serverNote?['total_fils']}  refunded=${serverNote?['refunded_fils']}  '
+    'refunds=$refundRows  invoice_credited=${creditedInvoice?['credited_fils']}  '
+    'pending=${await db.pendingCount()}',
+  );
+
+  if (serverNote == null ||
+      serverNote['refunded_fils'] != 5000 ||
+      creditedInvoice?['credited_fils'] != 5000 ||
+      refundRows != 1) {
+    stderr.writeln('the credit note or refund did not reach the server intact');
+    exit(1);
+  }
+
   // ---- the server must refuse a jump even when asked directly ------------
   final printRow = serverTasks['print']!;
   final jumpResponse = await client.post(

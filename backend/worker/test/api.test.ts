@@ -1144,6 +1144,108 @@ describe('invoices and payments', () => {
   });
 });
 
+describe('credit notes and refunds', () => {
+  const invoiceId = '0193f0b1-0000-7000-8000-0000000000da';
+  const creditNoteId = '0193f0b1-0000-7000-8000-0000000000ea';
+
+  function creditNote(amountFils: number, extra: Record<string, unknown> = {}) {
+    return mutation({
+      mutation_id: `m-cn-${amountFils}-${Math.random().toString(36).slice(2, 8)}`,
+      entity: 'credit_notes',
+      row_id: creditNoteId,
+      fields: {
+        invoice_id: invoiceId,
+        number: 'CN-SHJ1-PC1-00001',
+        total_fils: amountFils,
+        reason: 'Customer returned 100 cards damaged in finishing',
+        ...extra,
+      },
+    });
+  }
+
+  async function push(session: Session, mutations: Array<Record<string, unknown>>) {
+    const response = await api(
+      '/v1/push',
+      authed(session.access_token, { device_id: session.device_id, mutations }),
+    );
+    return (await response.json()) as {
+      results: Array<{ status: string; error?: { code: string } }>;
+    };
+  }
+
+  it('does not let the counter issue a credit note', async () => {
+    const body = await push(counter, [creditNote(5000)]);
+    expect(body.results[0]!.status).toBe('rejected');
+    expect(body.results[0]!.error!.code).toBe('PERMISSION_DENIED');
+  });
+
+  it('needs a reason before crediting', async () => {
+    const body = await push(owner, [creditNote(5000, { reason: '' })]);
+    expect(body.results[0]!.status).toBe('rejected');
+    expect(body.results[0]!.error!.code).toBe('REASON_REQUIRED');
+  });
+
+  it('credits the invoice without touching what was paid', async () => {
+    const body = await push(owner, [creditNote(5000)]);
+    expect(body.results[0]!.status).toBe('applied');
+
+    const invoice = (await env.DB.prepare('SELECT * FROM invoices WHERE id = ?')
+      .bind(invoiceId)
+      .first()) as Record<string, unknown>;
+    expect(invoice['credited_fils']).toBe(5000);
+    expect(invoice['paid_fils']).toBe(12810);
+
+    const note = (await env.DB.prepare('SELECT * FROM credit_notes WHERE id = ?')
+      .bind(creditNoteId)
+      .first()) as Record<string, unknown>;
+    // 50.00 credited at 5% VAT is 47.62 net + 2.38 VAT.
+    expect(note['total_fils']).toBe(5000);
+    expect(note['subtotal_fils']).toBe(4762);
+    expect(note['vat_fils']).toBe(238);
+    expect(note['refunded_fils']).toBe(0);
+  });
+
+  it('refuses to credit more than the invoice is worth', async () => {
+    const body = await push(owner, [creditNote(99999, { number: 'CN-SHJ1-PC1-00002' })]);
+    expect(body.results[0]!.status).toBe('rejected');
+    expect(body.results[0]!.error!.code).toBe('OVER_CREDIT');
+  });
+
+  it('refunds cash against the note, once, and only by a manager', async () => {
+    const refund = (session: Session, amount: number, id = crypto.randomUUID()) =>
+      push(session, [
+        mutation({
+          mutation_id: `m-refund-${id.slice(0, 8)}`,
+          entity: 'refunds',
+          row_id: id,
+          fields: {
+            credit_note_id: creditNoteId,
+            invoice_id: invoiceId,
+            amount_fils: amount,
+            method: 'cash',
+          },
+        }),
+      ]);
+
+    const byCounter = await refund(counter, 1000);
+    expect(byCounter.results[0]!.error!.code).toBe('PERMISSION_DENIED');
+
+    const tooMuch = await refund(owner, 99999);
+    expect(tooMuch.results[0]!.error!.code).toBe('OVER_REFUND');
+
+    const paid = await refund(owner, 5000);
+    expect(paid.results[0]!.status).toBe('applied');
+
+    const note = (await env.DB.prepare('SELECT * FROM credit_notes WHERE id = ?')
+      .bind(creditNoteId)
+      .first()) as Record<string, unknown>;
+    expect(note['refunded_fils']).toBe(5000);
+
+    const again = await refund(owner, 100);
+    expect(again.results[0]!.error!.code).toBe('OVER_REFUND');
+  });
+});
+
 describe('price book editing', () => {
   it('lets the owner change a rate and the catalogue reflects it', async () => {
     const response = await api(

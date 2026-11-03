@@ -133,6 +133,95 @@ class _InvoiceSectionState extends ConsumerState<InvoiceSection> {
     }
   }
 
+  bool get _isManager {
+    final session = ref.read(sessionProvider);
+    return session?.isOwner == true || session?.role == 'manager';
+  }
+
+  Future<void> _creditNote(Invoice invoice) async {
+    final draft = await showDialog<_CreditDraft>(
+      context: context,
+      builder: (_) => _CreditNoteDialog(
+        creditable: invoice.totalFils - invoice.creditedFils,
+      ),
+    );
+    if (draft == null || !mounted) return;
+
+    setState(() => _busy = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final bootstrap = ref.read(bootstrapProvider);
+      final session = ref.read(sessionProvider);
+      if (session == null) throw StateError('Session expired');
+
+      const series = 'CN-SHJ1-PC1';
+      final issued = await NumberSeries(
+        db: bootstrap.db,
+        api: bootstrap.api,
+        series: series,
+      ).next();
+
+      await bootstrap.db.issueCreditNoteLocal(
+        invoice: invoice,
+        tenantId: session.tenantId,
+        branchId: session.branchId,
+        userId: session.userId,
+        number: issued.isTemporary
+            ? 'CN-${issued.display}'
+            : formatNumber(series, issued.number!),
+        amountFils: draft.amountFils,
+        reason: draft.reason,
+      );
+      unawaited(bootstrap.engine?.syncNow());
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Credit note issued.')),
+      );
+    } catch (error) {
+      messenger.showSnackBar(SnackBar(content: Text('$error')));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _refund(CreditNote note) async {
+    final draft = await showDialog<_CreditDraft>(
+      context: context,
+      builder: (_) => _CreditNoteDialog(
+        creditable: note.totalFils - note.refundedFils,
+        title: 'Refund money',
+        amountLabel: 'Amount to refund (AED)',
+        confirmLabel: 'Refund',
+        reasonLabel: 'Reference (optional)',
+        reasonOptional: true,
+      ),
+    );
+    if (draft == null || !mounted) return;
+
+    setState(() => _busy = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final bootstrap = ref.read(bootstrapProvider);
+      final session = ref.read(sessionProvider);
+      if (session == null) throw StateError('Session expired');
+
+      await bootstrap.db.refundLocal(
+        note: note,
+        amountFils: draft.amountFils,
+        method: 'cash',
+        userId: session.userId,
+        reference: draft.reason.isEmpty ? null : draft.reason,
+      );
+      unawaited(bootstrap.engine?.syncNow());
+      messenger.showSnackBar(
+        SnackBar(content: Text('${Fils(draft.amountFils).aedLabel} refunded.')),
+      );
+    } catch (error) {
+      messenger.showSnackBar(SnackBar(content: Text('$error')));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _print(Invoice invoice) async {
     setState(() => _busy = true);
     final messenger = ScaffoldMessenger.of(context);
@@ -221,7 +310,11 @@ class _InvoiceSectionState extends ConsumerState<InvoiceSection> {
           );
         }
 
-        final outstanding = invoice.totalFils - invoice.paidFils;
+        final outstanding =
+            (invoice.totalFils - invoice.paidFils - invoice.creditedFils).clamp(
+              0,
+              invoice.totalFils,
+            );
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -283,6 +376,55 @@ class _InvoiceSectionState extends ConsumerState<InvoiceSection> {
                 );
               },
             ),
+            if (invoice.creditedFils > 0)
+              Padding(
+                padding: const EdgeInsets.only(bottom: StarSpace.sm),
+                child: Text(
+                  'Credited ${Fils(invoice.creditedFils).aedLabel}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            StreamBuilder<List<CreditNote>>(
+              stream: db.watchCreditNotes(invoice.id),
+              builder: (context, notesSnapshot) {
+                final notes = notesSnapshot.data ?? const <CreditNote>[];
+                if (notes.isEmpty) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: StarSpace.sm),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      for (final note in notes)
+                        Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: Text(
+                                '${note.number} · ${Fils(note.totalFils).aedLabel} · ${note.reason}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            ),
+                            if (_isManager &&
+                                note.refundedFils < note.totalFils)
+                              TextButton(
+                                onPressed: _busy ? null : () => _refund(note),
+                                child: const Text('Refund'),
+                              )
+                            else
+                              Text(
+                                'refunded ${Fils(note.refundedFils).aedLabel}',
+                                style: theme.textTheme.bodySmall,
+                              ),
+                          ],
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
             Wrap(
               spacing: StarSpace.sm,
               runSpacing: StarSpace.sm,
@@ -303,6 +445,17 @@ class _InvoiceSectionState extends ConsumerState<InvoiceSection> {
                   icon: const Icon(Icons.chat_outlined, size: 18),
                   label: const Text('Send'),
                 ),
+                if (_isManager &&
+                    invoice.creditedFils < invoice.totalFils &&
+                    invoice.status != 'void')
+                  OutlinedButton.icon(
+                    onPressed: _busy ? null : () => _creditNote(invoice),
+                    icon: const Icon(
+                      Icons.assignment_return_outlined,
+                      size: 18,
+                    ),
+                    label: const Text('Credit note'),
+                  ),
               ],
             ),
           ],
@@ -446,6 +599,128 @@ class _PaymentDialogState extends State<_PaymentDialog> {
           child: const Text('Cancel'),
         ),
         FilledButton(onPressed: _save, child: const Text('Record')),
+      ],
+    );
+  }
+}
+
+class _CreditDraft {
+  const _CreditDraft({required this.amountFils, required this.reason});
+
+  final int amountFils;
+  final String reason;
+}
+
+/// One dialog for both crediting and refunding: same shape, different words.
+class _CreditNoteDialog extends StatefulWidget {
+  const _CreditNoteDialog({
+    required this.creditable,
+    this.title = 'Issue a credit note',
+    this.amountLabel = 'Amount to credit (AED)',
+    this.confirmLabel = 'Issue',
+    this.reasonLabel = 'Why?',
+    this.reasonOptional = false,
+  });
+
+  final int creditable;
+  final String title;
+  final String amountLabel;
+  final String confirmLabel;
+  final String reasonLabel;
+  final bool reasonOptional;
+
+  @override
+  State<_CreditNoteDialog> createState() => _CreditNoteDialogState();
+}
+
+class _CreditNoteDialogState extends State<_CreditNoteDialog> {
+  late final TextEditingController _amount = TextEditingController(
+    text: (widget.creditable / 100).toStringAsFixed(2),
+  );
+  final TextEditingController _reason = TextEditingController();
+  String? _error;
+
+  @override
+  void dispose() {
+    _amount.dispose();
+    _reason.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final parsed = double.tryParse(_amount.text.trim());
+    if (parsed == null || parsed <= 0) {
+      setState(() => _error = 'Enter an amount.');
+      return;
+    }
+    final fils = (parsed * 100).round();
+    if (fils > widget.creditable) {
+      setState(
+        () => _error =
+            'Only ${(widget.creditable / 100).toStringAsFixed(2)} is available.',
+      );
+      return;
+    }
+    final reason = _reason.text.trim();
+    if (!widget.reasonOptional && reason.length < 3) {
+      setState(
+        () => _error =
+            'Say why — a credit note without a reason is a problem later.',
+      );
+      return;
+    }
+    Navigator.of(context).pop(_CreditDraft(amountFils: fils, reason: reason));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
+      content: SizedBox(
+        width: 400,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            TextField(
+              controller: _amount,
+              autofocus: true,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(
+                labelText: widget.amountLabel,
+                prefixText: 'AED ',
+              ),
+            ),
+            const SizedBox(height: StarSpace.sm),
+            TextField(
+              controller: _reason,
+              maxLines: 2,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: InputDecoration(
+                labelText: widget.reasonLabel,
+                hintText: widget.reasonOptional
+                    ? 'Cheque no, transfer ref'
+                    : 'Damaged in finishing, wrong paper, short delivery',
+              ),
+            ),
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.only(top: StarSpace.sm),
+                child: Text(
+                  _error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+          ],
+        ),
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(onPressed: _save, child: Text(widget.confirmLabel)),
       ],
     );
   }

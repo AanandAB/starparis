@@ -5292,6 +5292,18 @@ class $InvoicesTable extends Invoices with TableInfo<$InvoicesTable, Invoice> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _creditedFilsMeta = const VerificationMeta(
+    'creditedFils',
+  );
+  @override
+  late final GeneratedColumn<int> creditedFils = GeneratedColumn<int>(
+    'credited_fils',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
   late final GeneratedColumn<String> status = GeneratedColumn<String>(
@@ -5397,6 +5409,7 @@ class $InvoicesTable extends Invoices with TableInfo<$InvoicesTable, Invoice> {
     vatFils,
     totalFils,
     paidFils,
+    creditedFils,
     status,
     notes,
     voidReason,
@@ -5552,6 +5565,15 @@ class $InvoicesTable extends Invoices with TableInfo<$InvoicesTable, Invoice> {
         paidFils.isAcceptableOrUnknown(data['paid_fils']!, _paidFilsMeta),
       );
     }
+    if (data.containsKey('credited_fils')) {
+      context.handle(
+        _creditedFilsMeta,
+        creditedFils.isAcceptableOrUnknown(
+          data['credited_fils']!,
+          _creditedFilsMeta,
+        ),
+      );
+    }
     if (data.containsKey('status')) {
       context.handle(
         _statusMeta,
@@ -5681,6 +5703,10 @@ class $InvoicesTable extends Invoices with TableInfo<$InvoicesTable, Invoice> {
         DriftSqlType.int,
         data['${effectivePrefix}paid_fils'],
       )!,
+      creditedFils: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}credited_fils'],
+      )!,
       status: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}status'],
@@ -5740,6 +5766,9 @@ class Invoice extends DataClass implements Insertable<Invoice> {
   final int vatFils;
   final int totalFils;
   final int paidFils;
+
+  /// Credit notes issued against this invoice, mirrored from the server.
+  final int creditedFils;
   final String status;
   final String? notes;
   final String? voidReason;
@@ -5766,6 +5795,7 @@ class Invoice extends DataClass implements Insertable<Invoice> {
     required this.vatFils,
     required this.totalFils,
     required this.paidFils,
+    required this.creditedFils,
     required this.status,
     this.notes,
     this.voidReason,
@@ -5803,6 +5833,7 @@ class Invoice extends DataClass implements Insertable<Invoice> {
     map['vat_fils'] = Variable<int>(vatFils);
     map['total_fils'] = Variable<int>(totalFils);
     map['paid_fils'] = Variable<int>(paidFils);
+    map['credited_fils'] = Variable<int>(creditedFils);
     map['status'] = Variable<String>(status);
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
@@ -5849,6 +5880,7 @@ class Invoice extends DataClass implements Insertable<Invoice> {
       vatFils: Value(vatFils),
       totalFils: Value(totalFils),
       paidFils: Value(paidFils),
+      creditedFils: Value(creditedFils),
       status: Value(status),
       notes: notes == null && nullToAbsent
           ? const Value.absent()
@@ -5891,6 +5923,7 @@ class Invoice extends DataClass implements Insertable<Invoice> {
       vatFils: serializer.fromJson<int>(json['vatFils']),
       totalFils: serializer.fromJson<int>(json['totalFils']),
       paidFils: serializer.fromJson<int>(json['paidFils']),
+      creditedFils: serializer.fromJson<int>(json['creditedFils']),
       status: serializer.fromJson<String>(json['status']),
       notes: serializer.fromJson<String?>(json['notes']),
       voidReason: serializer.fromJson<String?>(json['voidReason']),
@@ -5922,6 +5955,7 @@ class Invoice extends DataClass implements Insertable<Invoice> {
       'vatFils': serializer.toJson<int>(vatFils),
       'totalFils': serializer.toJson<int>(totalFils),
       'paidFils': serializer.toJson<int>(paidFils),
+      'creditedFils': serializer.toJson<int>(creditedFils),
       'status': serializer.toJson<String>(status),
       'notes': serializer.toJson<String?>(notes),
       'voidReason': serializer.toJson<String?>(voidReason),
@@ -5951,6 +5985,7 @@ class Invoice extends DataClass implements Insertable<Invoice> {
     int? vatFils,
     int? totalFils,
     int? paidFils,
+    int? creditedFils,
     String? status,
     Value<String?> notes = const Value.absent(),
     Value<String?> voidReason = const Value.absent(),
@@ -5979,6 +6014,7 @@ class Invoice extends DataClass implements Insertable<Invoice> {
     vatFils: vatFils ?? this.vatFils,
     totalFils: totalFils ?? this.totalFils,
     paidFils: paidFils ?? this.paidFils,
+    creditedFils: creditedFils ?? this.creditedFils,
     status: status ?? this.status,
     notes: notes.present ? notes.value : this.notes,
     voidReason: voidReason.present ? voidReason.value : this.voidReason,
@@ -6019,6 +6055,9 @@ class Invoice extends DataClass implements Insertable<Invoice> {
       vatFils: data.vatFils.present ? data.vatFils.value : this.vatFils,
       totalFils: data.totalFils.present ? data.totalFils.value : this.totalFils,
       paidFils: data.paidFils.present ? data.paidFils.value : this.paidFils,
+      creditedFils: data.creditedFils.present
+          ? data.creditedFils.value
+          : this.creditedFils,
       status: data.status.present ? data.status.value : this.status,
       notes: data.notes.present ? data.notes.value : this.notes,
       voidReason: data.voidReason.present
@@ -6052,6 +6091,7 @@ class Invoice extends DataClass implements Insertable<Invoice> {
           ..write('vatFils: $vatFils, ')
           ..write('totalFils: $totalFils, ')
           ..write('paidFils: $paidFils, ')
+          ..write('creditedFils: $creditedFils, ')
           ..write('status: $status, ')
           ..write('notes: $notes, ')
           ..write('voidReason: $voidReason, ')
@@ -6083,6 +6123,7 @@ class Invoice extends DataClass implements Insertable<Invoice> {
     vatFils,
     totalFils,
     paidFils,
+    creditedFils,
     status,
     notes,
     voidReason,
@@ -6113,6 +6154,7 @@ class Invoice extends DataClass implements Insertable<Invoice> {
           other.vatFils == this.vatFils &&
           other.totalFils == this.totalFils &&
           other.paidFils == this.paidFils &&
+          other.creditedFils == this.creditedFils &&
           other.status == this.status &&
           other.notes == this.notes &&
           other.voidReason == this.voidReason &&
@@ -6141,6 +6183,7 @@ class InvoicesCompanion extends UpdateCompanion<Invoice> {
   final Value<int> vatFils;
   final Value<int> totalFils;
   final Value<int> paidFils;
+  final Value<int> creditedFils;
   final Value<String> status;
   final Value<String?> notes;
   final Value<String?> voidReason;
@@ -6168,6 +6211,7 @@ class InvoicesCompanion extends UpdateCompanion<Invoice> {
     this.vatFils = const Value.absent(),
     this.totalFils = const Value.absent(),
     this.paidFils = const Value.absent(),
+    this.creditedFils = const Value.absent(),
     this.status = const Value.absent(),
     this.notes = const Value.absent(),
     this.voidReason = const Value.absent(),
@@ -6196,6 +6240,7 @@ class InvoicesCompanion extends UpdateCompanion<Invoice> {
     required int vatFils,
     required int totalFils,
     this.paidFils = const Value.absent(),
+    this.creditedFils = const Value.absent(),
     this.status = const Value.absent(),
     this.notes = const Value.absent(),
     this.voidReason = const Value.absent(),
@@ -6235,6 +6280,7 @@ class InvoicesCompanion extends UpdateCompanion<Invoice> {
     Expression<int>? vatFils,
     Expression<int>? totalFils,
     Expression<int>? paidFils,
+    Expression<int>? creditedFils,
     Expression<String>? status,
     Expression<String>? notes,
     Expression<String>? voidReason,
@@ -6263,6 +6309,7 @@ class InvoicesCompanion extends UpdateCompanion<Invoice> {
       if (vatFils != null) 'vat_fils': vatFils,
       if (totalFils != null) 'total_fils': totalFils,
       if (paidFils != null) 'paid_fils': paidFils,
+      if (creditedFils != null) 'credited_fils': creditedFils,
       if (status != null) 'status': status,
       if (notes != null) 'notes': notes,
       if (voidReason != null) 'void_reason': voidReason,
@@ -6293,6 +6340,7 @@ class InvoicesCompanion extends UpdateCompanion<Invoice> {
     Value<int>? vatFils,
     Value<int>? totalFils,
     Value<int>? paidFils,
+    Value<int>? creditedFils,
     Value<String>? status,
     Value<String?>? notes,
     Value<String?>? voidReason,
@@ -6321,6 +6369,7 @@ class InvoicesCompanion extends UpdateCompanion<Invoice> {
       vatFils: vatFils ?? this.vatFils,
       totalFils: totalFils ?? this.totalFils,
       paidFils: paidFils ?? this.paidFils,
+      creditedFils: creditedFils ?? this.creditedFils,
       status: status ?? this.status,
       notes: notes ?? this.notes,
       voidReason: voidReason ?? this.voidReason,
@@ -6387,6 +6436,9 @@ class InvoicesCompanion extends UpdateCompanion<Invoice> {
     if (paidFils.present) {
       map['paid_fils'] = Variable<int>(paidFils.value);
     }
+    if (creditedFils.present) {
+      map['credited_fils'] = Variable<int>(creditedFils.value);
+    }
     if (status.present) {
       map['status'] = Variable<String>(status.value);
     }
@@ -6437,6 +6489,7 @@ class InvoicesCompanion extends UpdateCompanion<Invoice> {
           ..write('vatFils: $vatFils, ')
           ..write('totalFils: $totalFils, ')
           ..write('paidFils: $paidFils, ')
+          ..write('creditedFils: $creditedFils, ')
           ..write('status: $status, ')
           ..write('notes: $notes, ')
           ..write('voidReason: $voidReason, ')
@@ -7994,6 +8047,1810 @@ class PaymentsCompanion extends UpdateCompanion<Payment> {
           ..write('reference: $reference, ')
           ..write('takenAt: $takenAt, ')
           ..write('takenBy: $takenBy, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('createdBy: $createdBy, ')
+          ..write('version: $version, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CreditNotesTable extends CreditNotes
+    with TableInfo<$CreditNotesTable, CreditNote> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CreditNotesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tenantIdMeta = const VerificationMeta(
+    'tenantId',
+  );
+  @override
+  late final GeneratedColumn<String> tenantId = GeneratedColumn<String>(
+    'tenant_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _branchIdMeta = const VerificationMeta(
+    'branchId',
+  );
+  @override
+  late final GeneratedColumn<String> branchId = GeneratedColumn<String>(
+    'branch_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _invoiceIdMeta = const VerificationMeta(
+    'invoiceId',
+  );
+  @override
+  late final GeneratedColumn<String> invoiceId = GeneratedColumn<String>(
+    'invoice_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _numberMeta = const VerificationMeta('number');
+  @override
+  late final GeneratedColumn<String> number = GeneratedColumn<String>(
+    'number',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _issuedAtMeta = const VerificationMeta(
+    'issuedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> issuedAt = GeneratedColumn<DateTime>(
+    'issued_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _reasonMeta = const VerificationMeta('reason');
+  @override
+  late final GeneratedColumn<String> reason = GeneratedColumn<String>(
+    'reason',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _subtotalFilsMeta = const VerificationMeta(
+    'subtotalFils',
+  );
+  @override
+  late final GeneratedColumn<int> subtotalFils = GeneratedColumn<int>(
+    'subtotal_fils',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _vatBpsMeta = const VerificationMeta('vatBps');
+  @override
+  late final GeneratedColumn<int> vatBps = GeneratedColumn<int>(
+    'vat_bps',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(500),
+  );
+  static const VerificationMeta _vatFilsMeta = const VerificationMeta(
+    'vatFils',
+  );
+  @override
+  late final GeneratedColumn<int> vatFils = GeneratedColumn<int>(
+    'vat_fils',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _totalFilsMeta = const VerificationMeta(
+    'totalFils',
+  );
+  @override
+  late final GeneratedColumn<int> totalFils = GeneratedColumn<int>(
+    'total_fils',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _refundedFilsMeta = const VerificationMeta(
+    'refundedFils',
+  );
+  @override
+  late final GeneratedColumn<int> refundedFils = GeneratedColumn<int>(
+    'refunded_fils',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdByMeta = const VerificationMeta(
+    'createdBy',
+  );
+  @override
+  late final GeneratedColumn<String> createdBy = GeneratedColumn<String>(
+    'created_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _versionMeta = const VerificationMeta(
+    'version',
+  );
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+    'version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    tenantId,
+    branchId,
+    invoiceId,
+    number,
+    issuedAt,
+    reason,
+    subtotalFils,
+    vatBps,
+    vatFils,
+    totalFils,
+    refundedFils,
+    createdAt,
+    updatedAt,
+    createdBy,
+    version,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'credit_notes';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CreditNote> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('tenant_id')) {
+      context.handle(
+        _tenantIdMeta,
+        tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tenantIdMeta);
+    }
+    if (data.containsKey('branch_id')) {
+      context.handle(
+        _branchIdMeta,
+        branchId.isAcceptableOrUnknown(data['branch_id']!, _branchIdMeta),
+      );
+    }
+    if (data.containsKey('invoice_id')) {
+      context.handle(
+        _invoiceIdMeta,
+        invoiceId.isAcceptableOrUnknown(data['invoice_id']!, _invoiceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_invoiceIdMeta);
+    }
+    if (data.containsKey('number')) {
+      context.handle(
+        _numberMeta,
+        number.isAcceptableOrUnknown(data['number']!, _numberMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_numberMeta);
+    }
+    if (data.containsKey('issued_at')) {
+      context.handle(
+        _issuedAtMeta,
+        issuedAt.isAcceptableOrUnknown(data['issued_at']!, _issuedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_issuedAtMeta);
+    }
+    if (data.containsKey('reason')) {
+      context.handle(
+        _reasonMeta,
+        reason.isAcceptableOrUnknown(data['reason']!, _reasonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_reasonMeta);
+    }
+    if (data.containsKey('subtotal_fils')) {
+      context.handle(
+        _subtotalFilsMeta,
+        subtotalFils.isAcceptableOrUnknown(
+          data['subtotal_fils']!,
+          _subtotalFilsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_subtotalFilsMeta);
+    }
+    if (data.containsKey('vat_bps')) {
+      context.handle(
+        _vatBpsMeta,
+        vatBps.isAcceptableOrUnknown(data['vat_bps']!, _vatBpsMeta),
+      );
+    }
+    if (data.containsKey('vat_fils')) {
+      context.handle(
+        _vatFilsMeta,
+        vatFils.isAcceptableOrUnknown(data['vat_fils']!, _vatFilsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_vatFilsMeta);
+    }
+    if (data.containsKey('total_fils')) {
+      context.handle(
+        _totalFilsMeta,
+        totalFils.isAcceptableOrUnknown(data['total_fils']!, _totalFilsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_totalFilsMeta);
+    }
+    if (data.containsKey('refunded_fils')) {
+      context.handle(
+        _refundedFilsMeta,
+        refundedFils.isAcceptableOrUnknown(
+          data['refunded_fils']!,
+          _refundedFilsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('created_by')) {
+      context.handle(
+        _createdByMeta,
+        createdBy.isAcceptableOrUnknown(data['created_by']!, _createdByMeta),
+      );
+    }
+    if (data.containsKey('version')) {
+      context.handle(
+        _versionMeta,
+        version.isAcceptableOrUnknown(data['version']!, _versionMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CreditNote map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CreditNote(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      tenantId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tenant_id'],
+      )!,
+      branchId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}branch_id'],
+      ),
+      invoiceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}invoice_id'],
+      )!,
+      number: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}number'],
+      )!,
+      issuedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}issued_at'],
+      )!,
+      reason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reason'],
+      )!,
+      subtotalFils: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}subtotal_fils'],
+      )!,
+      vatBps: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}vat_bps'],
+      )!,
+      vatFils: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}vat_fils'],
+      )!,
+      totalFils: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total_fils'],
+      )!,
+      refundedFils: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}refunded_fils'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      createdBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}created_by'],
+      ),
+      version: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}version'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $CreditNotesTable createAlias(String alias) {
+    return $CreditNotesTable(attachedDatabase, alias);
+  }
+}
+
+class CreditNote extends DataClass implements Insertable<CreditNote> {
+  final String id;
+  final String tenantId;
+  final String? branchId;
+  final String invoiceId;
+  final String number;
+  final DateTime issuedAt;
+  final String reason;
+  final int subtotalFils;
+  final int vatBps;
+  final int vatFils;
+  final int totalFils;
+  final int refundedFils;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String? createdBy;
+  final int version;
+  final DateTime? deletedAt;
+  const CreditNote({
+    required this.id,
+    required this.tenantId,
+    this.branchId,
+    required this.invoiceId,
+    required this.number,
+    required this.issuedAt,
+    required this.reason,
+    required this.subtotalFils,
+    required this.vatBps,
+    required this.vatFils,
+    required this.totalFils,
+    required this.refundedFils,
+    required this.createdAt,
+    required this.updatedAt,
+    this.createdBy,
+    required this.version,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['tenant_id'] = Variable<String>(tenantId);
+    if (!nullToAbsent || branchId != null) {
+      map['branch_id'] = Variable<String>(branchId);
+    }
+    map['invoice_id'] = Variable<String>(invoiceId);
+    map['number'] = Variable<String>(number);
+    map['issued_at'] = Variable<DateTime>(issuedAt);
+    map['reason'] = Variable<String>(reason);
+    map['subtotal_fils'] = Variable<int>(subtotalFils);
+    map['vat_bps'] = Variable<int>(vatBps);
+    map['vat_fils'] = Variable<int>(vatFils);
+    map['total_fils'] = Variable<int>(totalFils);
+    map['refunded_fils'] = Variable<int>(refundedFils);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || createdBy != null) {
+      map['created_by'] = Variable<String>(createdBy);
+    }
+    map['version'] = Variable<int>(version);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  CreditNotesCompanion toCompanion(bool nullToAbsent) {
+    return CreditNotesCompanion(
+      id: Value(id),
+      tenantId: Value(tenantId),
+      branchId: branchId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(branchId),
+      invoiceId: Value(invoiceId),
+      number: Value(number),
+      issuedAt: Value(issuedAt),
+      reason: Value(reason),
+      subtotalFils: Value(subtotalFils),
+      vatBps: Value(vatBps),
+      vatFils: Value(vatFils),
+      totalFils: Value(totalFils),
+      refundedFils: Value(refundedFils),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      createdBy: createdBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdBy),
+      version: Value(version),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory CreditNote.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CreditNote(
+      id: serializer.fromJson<String>(json['id']),
+      tenantId: serializer.fromJson<String>(json['tenantId']),
+      branchId: serializer.fromJson<String?>(json['branchId']),
+      invoiceId: serializer.fromJson<String>(json['invoiceId']),
+      number: serializer.fromJson<String>(json['number']),
+      issuedAt: serializer.fromJson<DateTime>(json['issuedAt']),
+      reason: serializer.fromJson<String>(json['reason']),
+      subtotalFils: serializer.fromJson<int>(json['subtotalFils']),
+      vatBps: serializer.fromJson<int>(json['vatBps']),
+      vatFils: serializer.fromJson<int>(json['vatFils']),
+      totalFils: serializer.fromJson<int>(json['totalFils']),
+      refundedFils: serializer.fromJson<int>(json['refundedFils']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      createdBy: serializer.fromJson<String?>(json['createdBy']),
+      version: serializer.fromJson<int>(json['version']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'tenantId': serializer.toJson<String>(tenantId),
+      'branchId': serializer.toJson<String?>(branchId),
+      'invoiceId': serializer.toJson<String>(invoiceId),
+      'number': serializer.toJson<String>(number),
+      'issuedAt': serializer.toJson<DateTime>(issuedAt),
+      'reason': serializer.toJson<String>(reason),
+      'subtotalFils': serializer.toJson<int>(subtotalFils),
+      'vatBps': serializer.toJson<int>(vatBps),
+      'vatFils': serializer.toJson<int>(vatFils),
+      'totalFils': serializer.toJson<int>(totalFils),
+      'refundedFils': serializer.toJson<int>(refundedFils),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'createdBy': serializer.toJson<String?>(createdBy),
+      'version': serializer.toJson<int>(version),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  CreditNote copyWith({
+    String? id,
+    String? tenantId,
+    Value<String?> branchId = const Value.absent(),
+    String? invoiceId,
+    String? number,
+    DateTime? issuedAt,
+    String? reason,
+    int? subtotalFils,
+    int? vatBps,
+    int? vatFils,
+    int? totalFils,
+    int? refundedFils,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<String?> createdBy = const Value.absent(),
+    int? version,
+    Value<DateTime?> deletedAt = const Value.absent(),
+  }) => CreditNote(
+    id: id ?? this.id,
+    tenantId: tenantId ?? this.tenantId,
+    branchId: branchId.present ? branchId.value : this.branchId,
+    invoiceId: invoiceId ?? this.invoiceId,
+    number: number ?? this.number,
+    issuedAt: issuedAt ?? this.issuedAt,
+    reason: reason ?? this.reason,
+    subtotalFils: subtotalFils ?? this.subtotalFils,
+    vatBps: vatBps ?? this.vatBps,
+    vatFils: vatFils ?? this.vatFils,
+    totalFils: totalFils ?? this.totalFils,
+    refundedFils: refundedFils ?? this.refundedFils,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    createdBy: createdBy.present ? createdBy.value : this.createdBy,
+    version: version ?? this.version,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  CreditNote copyWithCompanion(CreditNotesCompanion data) {
+    return CreditNote(
+      id: data.id.present ? data.id.value : this.id,
+      tenantId: data.tenantId.present ? data.tenantId.value : this.tenantId,
+      branchId: data.branchId.present ? data.branchId.value : this.branchId,
+      invoiceId: data.invoiceId.present ? data.invoiceId.value : this.invoiceId,
+      number: data.number.present ? data.number.value : this.number,
+      issuedAt: data.issuedAt.present ? data.issuedAt.value : this.issuedAt,
+      reason: data.reason.present ? data.reason.value : this.reason,
+      subtotalFils: data.subtotalFils.present
+          ? data.subtotalFils.value
+          : this.subtotalFils,
+      vatBps: data.vatBps.present ? data.vatBps.value : this.vatBps,
+      vatFils: data.vatFils.present ? data.vatFils.value : this.vatFils,
+      totalFils: data.totalFils.present ? data.totalFils.value : this.totalFils,
+      refundedFils: data.refundedFils.present
+          ? data.refundedFils.value
+          : this.refundedFils,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      createdBy: data.createdBy.present ? data.createdBy.value : this.createdBy,
+      version: data.version.present ? data.version.value : this.version,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CreditNote(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('branchId: $branchId, ')
+          ..write('invoiceId: $invoiceId, ')
+          ..write('number: $number, ')
+          ..write('issuedAt: $issuedAt, ')
+          ..write('reason: $reason, ')
+          ..write('subtotalFils: $subtotalFils, ')
+          ..write('vatBps: $vatBps, ')
+          ..write('vatFils: $vatFils, ')
+          ..write('totalFils: $totalFils, ')
+          ..write('refundedFils: $refundedFils, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('createdBy: $createdBy, ')
+          ..write('version: $version, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    tenantId,
+    branchId,
+    invoiceId,
+    number,
+    issuedAt,
+    reason,
+    subtotalFils,
+    vatBps,
+    vatFils,
+    totalFils,
+    refundedFils,
+    createdAt,
+    updatedAt,
+    createdBy,
+    version,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CreditNote &&
+          other.id == this.id &&
+          other.tenantId == this.tenantId &&
+          other.branchId == this.branchId &&
+          other.invoiceId == this.invoiceId &&
+          other.number == this.number &&
+          other.issuedAt == this.issuedAt &&
+          other.reason == this.reason &&
+          other.subtotalFils == this.subtotalFils &&
+          other.vatBps == this.vatBps &&
+          other.vatFils == this.vatFils &&
+          other.totalFils == this.totalFils &&
+          other.refundedFils == this.refundedFils &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.createdBy == this.createdBy &&
+          other.version == this.version &&
+          other.deletedAt == this.deletedAt);
+}
+
+class CreditNotesCompanion extends UpdateCompanion<CreditNote> {
+  final Value<String> id;
+  final Value<String> tenantId;
+  final Value<String?> branchId;
+  final Value<String> invoiceId;
+  final Value<String> number;
+  final Value<DateTime> issuedAt;
+  final Value<String> reason;
+  final Value<int> subtotalFils;
+  final Value<int> vatBps;
+  final Value<int> vatFils;
+  final Value<int> totalFils;
+  final Value<int> refundedFils;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String?> createdBy;
+  final Value<int> version;
+  final Value<DateTime?> deletedAt;
+  final Value<int> rowid;
+  const CreditNotesCompanion({
+    this.id = const Value.absent(),
+    this.tenantId = const Value.absent(),
+    this.branchId = const Value.absent(),
+    this.invoiceId = const Value.absent(),
+    this.number = const Value.absent(),
+    this.issuedAt = const Value.absent(),
+    this.reason = const Value.absent(),
+    this.subtotalFils = const Value.absent(),
+    this.vatBps = const Value.absent(),
+    this.vatFils = const Value.absent(),
+    this.totalFils = const Value.absent(),
+    this.refundedFils = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.createdBy = const Value.absent(),
+    this.version = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CreditNotesCompanion.insert({
+    required String id,
+    required String tenantId,
+    this.branchId = const Value.absent(),
+    required String invoiceId,
+    required String number,
+    required DateTime issuedAt,
+    required String reason,
+    required int subtotalFils,
+    this.vatBps = const Value.absent(),
+    required int vatFils,
+    required int totalFils,
+    this.refundedFils = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.createdBy = const Value.absent(),
+    this.version = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       tenantId = Value(tenantId),
+       invoiceId = Value(invoiceId),
+       number = Value(number),
+       issuedAt = Value(issuedAt),
+       reason = Value(reason),
+       subtotalFils = Value(subtotalFils),
+       vatFils = Value(vatFils),
+       totalFils = Value(totalFils),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<CreditNote> custom({
+    Expression<String>? id,
+    Expression<String>? tenantId,
+    Expression<String>? branchId,
+    Expression<String>? invoiceId,
+    Expression<String>? number,
+    Expression<DateTime>? issuedAt,
+    Expression<String>? reason,
+    Expression<int>? subtotalFils,
+    Expression<int>? vatBps,
+    Expression<int>? vatFils,
+    Expression<int>? totalFils,
+    Expression<int>? refundedFils,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? createdBy,
+    Expression<int>? version,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (tenantId != null) 'tenant_id': tenantId,
+      if (branchId != null) 'branch_id': branchId,
+      if (invoiceId != null) 'invoice_id': invoiceId,
+      if (number != null) 'number': number,
+      if (issuedAt != null) 'issued_at': issuedAt,
+      if (reason != null) 'reason': reason,
+      if (subtotalFils != null) 'subtotal_fils': subtotalFils,
+      if (vatBps != null) 'vat_bps': vatBps,
+      if (vatFils != null) 'vat_fils': vatFils,
+      if (totalFils != null) 'total_fils': totalFils,
+      if (refundedFils != null) 'refunded_fils': refundedFils,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (createdBy != null) 'created_by': createdBy,
+      if (version != null) 'version': version,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CreditNotesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? tenantId,
+    Value<String?>? branchId,
+    Value<String>? invoiceId,
+    Value<String>? number,
+    Value<DateTime>? issuedAt,
+    Value<String>? reason,
+    Value<int>? subtotalFils,
+    Value<int>? vatBps,
+    Value<int>? vatFils,
+    Value<int>? totalFils,
+    Value<int>? refundedFils,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String?>? createdBy,
+    Value<int>? version,
+    Value<DateTime?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return CreditNotesCompanion(
+      id: id ?? this.id,
+      tenantId: tenantId ?? this.tenantId,
+      branchId: branchId ?? this.branchId,
+      invoiceId: invoiceId ?? this.invoiceId,
+      number: number ?? this.number,
+      issuedAt: issuedAt ?? this.issuedAt,
+      reason: reason ?? this.reason,
+      subtotalFils: subtotalFils ?? this.subtotalFils,
+      vatBps: vatBps ?? this.vatBps,
+      vatFils: vatFils ?? this.vatFils,
+      totalFils: totalFils ?? this.totalFils,
+      refundedFils: refundedFils ?? this.refundedFils,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      createdBy: createdBy ?? this.createdBy,
+      version: version ?? this.version,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (tenantId.present) {
+      map['tenant_id'] = Variable<String>(tenantId.value);
+    }
+    if (branchId.present) {
+      map['branch_id'] = Variable<String>(branchId.value);
+    }
+    if (invoiceId.present) {
+      map['invoice_id'] = Variable<String>(invoiceId.value);
+    }
+    if (number.present) {
+      map['number'] = Variable<String>(number.value);
+    }
+    if (issuedAt.present) {
+      map['issued_at'] = Variable<DateTime>(issuedAt.value);
+    }
+    if (reason.present) {
+      map['reason'] = Variable<String>(reason.value);
+    }
+    if (subtotalFils.present) {
+      map['subtotal_fils'] = Variable<int>(subtotalFils.value);
+    }
+    if (vatBps.present) {
+      map['vat_bps'] = Variable<int>(vatBps.value);
+    }
+    if (vatFils.present) {
+      map['vat_fils'] = Variable<int>(vatFils.value);
+    }
+    if (totalFils.present) {
+      map['total_fils'] = Variable<int>(totalFils.value);
+    }
+    if (refundedFils.present) {
+      map['refunded_fils'] = Variable<int>(refundedFils.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (createdBy.present) {
+      map['created_by'] = Variable<String>(createdBy.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CreditNotesCompanion(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('branchId: $branchId, ')
+          ..write('invoiceId: $invoiceId, ')
+          ..write('number: $number, ')
+          ..write('issuedAt: $issuedAt, ')
+          ..write('reason: $reason, ')
+          ..write('subtotalFils: $subtotalFils, ')
+          ..write('vatBps: $vatBps, ')
+          ..write('vatFils: $vatFils, ')
+          ..write('totalFils: $totalFils, ')
+          ..write('refundedFils: $refundedFils, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('createdBy: $createdBy, ')
+          ..write('version: $version, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $RefundsTable extends Refunds with TableInfo<$RefundsTable, Refund> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RefundsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tenantIdMeta = const VerificationMeta(
+    'tenantId',
+  );
+  @override
+  late final GeneratedColumn<String> tenantId = GeneratedColumn<String>(
+    'tenant_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _branchIdMeta = const VerificationMeta(
+    'branchId',
+  );
+  @override
+  late final GeneratedColumn<String> branchId = GeneratedColumn<String>(
+    'branch_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _creditNoteIdMeta = const VerificationMeta(
+    'creditNoteId',
+  );
+  @override
+  late final GeneratedColumn<String> creditNoteId = GeneratedColumn<String>(
+    'credit_note_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _invoiceIdMeta = const VerificationMeta(
+    'invoiceId',
+  );
+  @override
+  late final GeneratedColumn<String> invoiceId = GeneratedColumn<String>(
+    'invoice_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _amountFilsMeta = const VerificationMeta(
+    'amountFils',
+  );
+  @override
+  late final GeneratedColumn<int> amountFils = GeneratedColumn<int>(
+    'amount_fils',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _methodMeta = const VerificationMeta('method');
+  @override
+  late final GeneratedColumn<String> method = GeneratedColumn<String>(
+    'method',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _referenceMeta = const VerificationMeta(
+    'reference',
+  );
+  @override
+  late final GeneratedColumn<String> reference = GeneratedColumn<String>(
+    'reference',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _refundedAtMeta = const VerificationMeta(
+    'refundedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> refundedAt = GeneratedColumn<DateTime>(
+    'refunded_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _refundedByMeta = const VerificationMeta(
+    'refundedBy',
+  );
+  @override
+  late final GeneratedColumn<String> refundedBy = GeneratedColumn<String>(
+    'refunded_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdByMeta = const VerificationMeta(
+    'createdBy',
+  );
+  @override
+  late final GeneratedColumn<String> createdBy = GeneratedColumn<String>(
+    'created_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _versionMeta = const VerificationMeta(
+    'version',
+  );
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+    'version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    tenantId,
+    branchId,
+    creditNoteId,
+    invoiceId,
+    amountFils,
+    method,
+    reference,
+    refundedAt,
+    refundedBy,
+    createdAt,
+    updatedAt,
+    createdBy,
+    version,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'refunds';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Refund> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('tenant_id')) {
+      context.handle(
+        _tenantIdMeta,
+        tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tenantIdMeta);
+    }
+    if (data.containsKey('branch_id')) {
+      context.handle(
+        _branchIdMeta,
+        branchId.isAcceptableOrUnknown(data['branch_id']!, _branchIdMeta),
+      );
+    }
+    if (data.containsKey('credit_note_id')) {
+      context.handle(
+        _creditNoteIdMeta,
+        creditNoteId.isAcceptableOrUnknown(
+          data['credit_note_id']!,
+          _creditNoteIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_creditNoteIdMeta);
+    }
+    if (data.containsKey('invoice_id')) {
+      context.handle(
+        _invoiceIdMeta,
+        invoiceId.isAcceptableOrUnknown(data['invoice_id']!, _invoiceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_invoiceIdMeta);
+    }
+    if (data.containsKey('amount_fils')) {
+      context.handle(
+        _amountFilsMeta,
+        amountFils.isAcceptableOrUnknown(data['amount_fils']!, _amountFilsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_amountFilsMeta);
+    }
+    if (data.containsKey('method')) {
+      context.handle(
+        _methodMeta,
+        method.isAcceptableOrUnknown(data['method']!, _methodMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_methodMeta);
+    }
+    if (data.containsKey('reference')) {
+      context.handle(
+        _referenceMeta,
+        reference.isAcceptableOrUnknown(data['reference']!, _referenceMeta),
+      );
+    }
+    if (data.containsKey('refunded_at')) {
+      context.handle(
+        _refundedAtMeta,
+        refundedAt.isAcceptableOrUnknown(data['refunded_at']!, _refundedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_refundedAtMeta);
+    }
+    if (data.containsKey('refunded_by')) {
+      context.handle(
+        _refundedByMeta,
+        refundedBy.isAcceptableOrUnknown(data['refunded_by']!, _refundedByMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('created_by')) {
+      context.handle(
+        _createdByMeta,
+        createdBy.isAcceptableOrUnknown(data['created_by']!, _createdByMeta),
+      );
+    }
+    if (data.containsKey('version')) {
+      context.handle(
+        _versionMeta,
+        version.isAcceptableOrUnknown(data['version']!, _versionMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Refund map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Refund(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      tenantId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tenant_id'],
+      )!,
+      branchId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}branch_id'],
+      ),
+      creditNoteId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}credit_note_id'],
+      )!,
+      invoiceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}invoice_id'],
+      )!,
+      amountFils: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}amount_fils'],
+      )!,
+      method: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}method'],
+      )!,
+      reference: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reference'],
+      ),
+      refundedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}refunded_at'],
+      )!,
+      refundedBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}refunded_by'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      createdBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}created_by'],
+      ),
+      version: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}version'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $RefundsTable createAlias(String alias) {
+    return $RefundsTable(attachedDatabase, alias);
+  }
+}
+
+class Refund extends DataClass implements Insertable<Refund> {
+  final String id;
+  final String tenantId;
+  final String? branchId;
+  final String creditNoteId;
+  final String invoiceId;
+  final int amountFils;
+  final String method;
+  final String? reference;
+  final DateTime refundedAt;
+  final String? refundedBy;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String? createdBy;
+  final int version;
+  final DateTime? deletedAt;
+  const Refund({
+    required this.id,
+    required this.tenantId,
+    this.branchId,
+    required this.creditNoteId,
+    required this.invoiceId,
+    required this.amountFils,
+    required this.method,
+    this.reference,
+    required this.refundedAt,
+    this.refundedBy,
+    required this.createdAt,
+    required this.updatedAt,
+    this.createdBy,
+    required this.version,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['tenant_id'] = Variable<String>(tenantId);
+    if (!nullToAbsent || branchId != null) {
+      map['branch_id'] = Variable<String>(branchId);
+    }
+    map['credit_note_id'] = Variable<String>(creditNoteId);
+    map['invoice_id'] = Variable<String>(invoiceId);
+    map['amount_fils'] = Variable<int>(amountFils);
+    map['method'] = Variable<String>(method);
+    if (!nullToAbsent || reference != null) {
+      map['reference'] = Variable<String>(reference);
+    }
+    map['refunded_at'] = Variable<DateTime>(refundedAt);
+    if (!nullToAbsent || refundedBy != null) {
+      map['refunded_by'] = Variable<String>(refundedBy);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || createdBy != null) {
+      map['created_by'] = Variable<String>(createdBy);
+    }
+    map['version'] = Variable<int>(version);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  RefundsCompanion toCompanion(bool nullToAbsent) {
+    return RefundsCompanion(
+      id: Value(id),
+      tenantId: Value(tenantId),
+      branchId: branchId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(branchId),
+      creditNoteId: Value(creditNoteId),
+      invoiceId: Value(invoiceId),
+      amountFils: Value(amountFils),
+      method: Value(method),
+      reference: reference == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reference),
+      refundedAt: Value(refundedAt),
+      refundedBy: refundedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(refundedBy),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      createdBy: createdBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdBy),
+      version: Value(version),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory Refund.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Refund(
+      id: serializer.fromJson<String>(json['id']),
+      tenantId: serializer.fromJson<String>(json['tenantId']),
+      branchId: serializer.fromJson<String?>(json['branchId']),
+      creditNoteId: serializer.fromJson<String>(json['creditNoteId']),
+      invoiceId: serializer.fromJson<String>(json['invoiceId']),
+      amountFils: serializer.fromJson<int>(json['amountFils']),
+      method: serializer.fromJson<String>(json['method']),
+      reference: serializer.fromJson<String?>(json['reference']),
+      refundedAt: serializer.fromJson<DateTime>(json['refundedAt']),
+      refundedBy: serializer.fromJson<String?>(json['refundedBy']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      createdBy: serializer.fromJson<String?>(json['createdBy']),
+      version: serializer.fromJson<int>(json['version']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'tenantId': serializer.toJson<String>(tenantId),
+      'branchId': serializer.toJson<String?>(branchId),
+      'creditNoteId': serializer.toJson<String>(creditNoteId),
+      'invoiceId': serializer.toJson<String>(invoiceId),
+      'amountFils': serializer.toJson<int>(amountFils),
+      'method': serializer.toJson<String>(method),
+      'reference': serializer.toJson<String?>(reference),
+      'refundedAt': serializer.toJson<DateTime>(refundedAt),
+      'refundedBy': serializer.toJson<String?>(refundedBy),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'createdBy': serializer.toJson<String?>(createdBy),
+      'version': serializer.toJson<int>(version),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  Refund copyWith({
+    String? id,
+    String? tenantId,
+    Value<String?> branchId = const Value.absent(),
+    String? creditNoteId,
+    String? invoiceId,
+    int? amountFils,
+    String? method,
+    Value<String?> reference = const Value.absent(),
+    DateTime? refundedAt,
+    Value<String?> refundedBy = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<String?> createdBy = const Value.absent(),
+    int? version,
+    Value<DateTime?> deletedAt = const Value.absent(),
+  }) => Refund(
+    id: id ?? this.id,
+    tenantId: tenantId ?? this.tenantId,
+    branchId: branchId.present ? branchId.value : this.branchId,
+    creditNoteId: creditNoteId ?? this.creditNoteId,
+    invoiceId: invoiceId ?? this.invoiceId,
+    amountFils: amountFils ?? this.amountFils,
+    method: method ?? this.method,
+    reference: reference.present ? reference.value : this.reference,
+    refundedAt: refundedAt ?? this.refundedAt,
+    refundedBy: refundedBy.present ? refundedBy.value : this.refundedBy,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    createdBy: createdBy.present ? createdBy.value : this.createdBy,
+    version: version ?? this.version,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  Refund copyWithCompanion(RefundsCompanion data) {
+    return Refund(
+      id: data.id.present ? data.id.value : this.id,
+      tenantId: data.tenantId.present ? data.tenantId.value : this.tenantId,
+      branchId: data.branchId.present ? data.branchId.value : this.branchId,
+      creditNoteId: data.creditNoteId.present
+          ? data.creditNoteId.value
+          : this.creditNoteId,
+      invoiceId: data.invoiceId.present ? data.invoiceId.value : this.invoiceId,
+      amountFils: data.amountFils.present
+          ? data.amountFils.value
+          : this.amountFils,
+      method: data.method.present ? data.method.value : this.method,
+      reference: data.reference.present ? data.reference.value : this.reference,
+      refundedAt: data.refundedAt.present
+          ? data.refundedAt.value
+          : this.refundedAt,
+      refundedBy: data.refundedBy.present
+          ? data.refundedBy.value
+          : this.refundedBy,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      createdBy: data.createdBy.present ? data.createdBy.value : this.createdBy,
+      version: data.version.present ? data.version.value : this.version,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Refund(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('branchId: $branchId, ')
+          ..write('creditNoteId: $creditNoteId, ')
+          ..write('invoiceId: $invoiceId, ')
+          ..write('amountFils: $amountFils, ')
+          ..write('method: $method, ')
+          ..write('reference: $reference, ')
+          ..write('refundedAt: $refundedAt, ')
+          ..write('refundedBy: $refundedBy, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('createdBy: $createdBy, ')
+          ..write('version: $version, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    tenantId,
+    branchId,
+    creditNoteId,
+    invoiceId,
+    amountFils,
+    method,
+    reference,
+    refundedAt,
+    refundedBy,
+    createdAt,
+    updatedAt,
+    createdBy,
+    version,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Refund &&
+          other.id == this.id &&
+          other.tenantId == this.tenantId &&
+          other.branchId == this.branchId &&
+          other.creditNoteId == this.creditNoteId &&
+          other.invoiceId == this.invoiceId &&
+          other.amountFils == this.amountFils &&
+          other.method == this.method &&
+          other.reference == this.reference &&
+          other.refundedAt == this.refundedAt &&
+          other.refundedBy == this.refundedBy &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.createdBy == this.createdBy &&
+          other.version == this.version &&
+          other.deletedAt == this.deletedAt);
+}
+
+class RefundsCompanion extends UpdateCompanion<Refund> {
+  final Value<String> id;
+  final Value<String> tenantId;
+  final Value<String?> branchId;
+  final Value<String> creditNoteId;
+  final Value<String> invoiceId;
+  final Value<int> amountFils;
+  final Value<String> method;
+  final Value<String?> reference;
+  final Value<DateTime> refundedAt;
+  final Value<String?> refundedBy;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String?> createdBy;
+  final Value<int> version;
+  final Value<DateTime?> deletedAt;
+  final Value<int> rowid;
+  const RefundsCompanion({
+    this.id = const Value.absent(),
+    this.tenantId = const Value.absent(),
+    this.branchId = const Value.absent(),
+    this.creditNoteId = const Value.absent(),
+    this.invoiceId = const Value.absent(),
+    this.amountFils = const Value.absent(),
+    this.method = const Value.absent(),
+    this.reference = const Value.absent(),
+    this.refundedAt = const Value.absent(),
+    this.refundedBy = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.createdBy = const Value.absent(),
+    this.version = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RefundsCompanion.insert({
+    required String id,
+    required String tenantId,
+    this.branchId = const Value.absent(),
+    required String creditNoteId,
+    required String invoiceId,
+    required int amountFils,
+    required String method,
+    this.reference = const Value.absent(),
+    required DateTime refundedAt,
+    this.refundedBy = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.createdBy = const Value.absent(),
+    this.version = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       tenantId = Value(tenantId),
+       creditNoteId = Value(creditNoteId),
+       invoiceId = Value(invoiceId),
+       amountFils = Value(amountFils),
+       method = Value(method),
+       refundedAt = Value(refundedAt),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<Refund> custom({
+    Expression<String>? id,
+    Expression<String>? tenantId,
+    Expression<String>? branchId,
+    Expression<String>? creditNoteId,
+    Expression<String>? invoiceId,
+    Expression<int>? amountFils,
+    Expression<String>? method,
+    Expression<String>? reference,
+    Expression<DateTime>? refundedAt,
+    Expression<String>? refundedBy,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? createdBy,
+    Expression<int>? version,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (tenantId != null) 'tenant_id': tenantId,
+      if (branchId != null) 'branch_id': branchId,
+      if (creditNoteId != null) 'credit_note_id': creditNoteId,
+      if (invoiceId != null) 'invoice_id': invoiceId,
+      if (amountFils != null) 'amount_fils': amountFils,
+      if (method != null) 'method': method,
+      if (reference != null) 'reference': reference,
+      if (refundedAt != null) 'refunded_at': refundedAt,
+      if (refundedBy != null) 'refunded_by': refundedBy,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (createdBy != null) 'created_by': createdBy,
+      if (version != null) 'version': version,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RefundsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? tenantId,
+    Value<String?>? branchId,
+    Value<String>? creditNoteId,
+    Value<String>? invoiceId,
+    Value<int>? amountFils,
+    Value<String>? method,
+    Value<String?>? reference,
+    Value<DateTime>? refundedAt,
+    Value<String?>? refundedBy,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String?>? createdBy,
+    Value<int>? version,
+    Value<DateTime?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return RefundsCompanion(
+      id: id ?? this.id,
+      tenantId: tenantId ?? this.tenantId,
+      branchId: branchId ?? this.branchId,
+      creditNoteId: creditNoteId ?? this.creditNoteId,
+      invoiceId: invoiceId ?? this.invoiceId,
+      amountFils: amountFils ?? this.amountFils,
+      method: method ?? this.method,
+      reference: reference ?? this.reference,
+      refundedAt: refundedAt ?? this.refundedAt,
+      refundedBy: refundedBy ?? this.refundedBy,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      createdBy: createdBy ?? this.createdBy,
+      version: version ?? this.version,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (tenantId.present) {
+      map['tenant_id'] = Variable<String>(tenantId.value);
+    }
+    if (branchId.present) {
+      map['branch_id'] = Variable<String>(branchId.value);
+    }
+    if (creditNoteId.present) {
+      map['credit_note_id'] = Variable<String>(creditNoteId.value);
+    }
+    if (invoiceId.present) {
+      map['invoice_id'] = Variable<String>(invoiceId.value);
+    }
+    if (amountFils.present) {
+      map['amount_fils'] = Variable<int>(amountFils.value);
+    }
+    if (method.present) {
+      map['method'] = Variable<String>(method.value);
+    }
+    if (reference.present) {
+      map['reference'] = Variable<String>(reference.value);
+    }
+    if (refundedAt.present) {
+      map['refunded_at'] = Variable<DateTime>(refundedAt.value);
+    }
+    if (refundedBy.present) {
+      map['refunded_by'] = Variable<String>(refundedBy.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (createdBy.present) {
+      map['created_by'] = Variable<String>(createdBy.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RefundsCompanion(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('branchId: $branchId, ')
+          ..write('creditNoteId: $creditNoteId, ')
+          ..write('invoiceId: $invoiceId, ')
+          ..write('amountFils: $amountFils, ')
+          ..write('method: $method, ')
+          ..write('reference: $reference, ')
+          ..write('refundedAt: $refundedAt, ')
+          ..write('refundedBy: $refundedBy, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('createdBy: $createdBy, ')
@@ -13722,6 +15579,8 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
   late final $InvoicesTable invoices = $InvoicesTable(this);
   late final $InvoiceLinesTable invoiceLines = $InvoiceLinesTable(this);
   late final $PaymentsTable payments = $PaymentsTable(this);
+  late final $CreditNotesTable creditNotes = $CreditNotesTable(this);
+  late final $RefundsTable refunds = $RefundsTable(this);
   late final $ProductsTable products = $ProductsTable(this);
   late final $MaterialsTable materials = $MaterialsTable(this);
   late final $PriceRulesTable priceRules = $PriceRulesTable(this);
@@ -13745,6 +15604,8 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
     invoices,
     invoiceLines,
     payments,
+    creditNotes,
+    refunds,
     products,
     materials,
     priceRules,
@@ -16184,6 +18045,7 @@ typedef $$InvoicesTableCreateCompanionBuilder = InvoicesCompanion Function({
   required int vatFils,
   required int totalFils,
   Value<int> paidFils,
+  Value<int> creditedFils,
   Value<String> status,
   Value<String?> notes,
   Value<String?> voidReason,
@@ -16212,6 +18074,7 @@ typedef $$InvoicesTableUpdateCompanionBuilder = InvoicesCompanion Function({
   Value<int> vatFils,
   Value<int> totalFils,
   Value<int> paidFils,
+  Value<int> creditedFils,
   Value<String> status,
   Value<String?> notes,
   Value<String?> voidReason,
@@ -16314,6 +18177,11 @@ class $$InvoicesTableFilterComposer
 
   ColumnFilters<int> get paidFils => $composableBuilder(
     column: $table.paidFils,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get creditedFils => $composableBuilder(
+    column: $table.creditedFils,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -16452,6 +18320,11 @@ class $$InvoicesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get creditedFils => $composableBuilder(
+    column: $table.creditedFils,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get status => $composableBuilder(
     column: $table.status,
     builder: (column) => ColumnOrderings(column),
@@ -16565,6 +18438,11 @@ class $$InvoicesTableAnnotationComposer
   GeneratedColumn<int> get paidFils =>
       $composableBuilder(column: $table.paidFils, builder: (column) => column);
 
+  GeneratedColumn<int> get creditedFils => $composableBuilder(
+    column: $table.creditedFils,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
 
@@ -16637,6 +18515,7 @@ class $$InvoicesTableTableManager
                 Value<int> vatFils = const Value.absent(),
                 Value<int> totalFils = const Value.absent(),
                 Value<int> paidFils = const Value.absent(),
+                Value<int> creditedFils = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<String?> voidReason = const Value.absent(),
@@ -16664,6 +18543,7 @@ class $$InvoicesTableTableManager
                 vatFils: vatFils,
                 totalFils: totalFils,
                 paidFils: paidFils,
+                creditedFils: creditedFils,
                 status: status,
                 notes: notes,
                 voidReason: voidReason,
@@ -16693,6 +18573,7 @@ class $$InvoicesTableTableManager
                 required int vatFils,
                 required int totalFils,
                 Value<int> paidFils = const Value.absent(),
+                Value<int> creditedFils = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<String?> voidReason = const Value.absent(),
@@ -16720,6 +18601,7 @@ class $$InvoicesTableTableManager
                 vatFils: vatFils,
                 totalFils: totalFils,
                 paidFils: paidFils,
+                creditedFils: creditedFils,
                 status: status,
                 notes: notes,
                 voidReason: voidReason,
@@ -17498,6 +19380,846 @@ typedef $$PaymentsTableProcessedTableManager =
       $$PaymentsTableUpdateCompanionBuilder,
       (Payment, BaseReferences<_$LocalDatabase, $PaymentsTable, Payment>),
       Payment,
+      PrefetchHooks Function()
+    >;
+typedef $$CreditNotesTableCreateCompanionBuilder =
+    CreditNotesCompanion Function({
+      required String id,
+      required String tenantId,
+      Value<String?> branchId,
+      required String invoiceId,
+      required String number,
+      required DateTime issuedAt,
+      required String reason,
+      required int subtotalFils,
+      Value<int> vatBps,
+      required int vatFils,
+      required int totalFils,
+      Value<int> refundedFils,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<String?> createdBy,
+      Value<int> version,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+typedef $$CreditNotesTableUpdateCompanionBuilder =
+    CreditNotesCompanion Function({
+      Value<String> id,
+      Value<String> tenantId,
+      Value<String?> branchId,
+      Value<String> invoiceId,
+      Value<String> number,
+      Value<DateTime> issuedAt,
+      Value<String> reason,
+      Value<int> subtotalFils,
+      Value<int> vatBps,
+      Value<int> vatFils,
+      Value<int> totalFils,
+      Value<int> refundedFils,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String?> createdBy,
+      Value<int> version,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+
+class $$CreditNotesTableFilterComposer
+    extends Composer<_$LocalDatabase, $CreditNotesTable> {
+  $$CreditNotesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tenantId => $composableBuilder(
+    column: $table.tenantId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get branchId => $composableBuilder(
+    column: $table.branchId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get invoiceId => $composableBuilder(
+    column: $table.invoiceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get number => $composableBuilder(
+    column: $table.number,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get issuedAt => $composableBuilder(
+    column: $table.issuedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get subtotalFils => $composableBuilder(
+    column: $table.subtotalFils,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get vatBps => $composableBuilder(
+    column: $table.vatBps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get vatFils => $composableBuilder(
+    column: $table.vatFils,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get totalFils => $composableBuilder(
+    column: $table.totalFils,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get refundedFils => $composableBuilder(
+    column: $table.refundedFils,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get createdBy => $composableBuilder(
+    column: $table.createdBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CreditNotesTableOrderingComposer
+    extends Composer<_$LocalDatabase, $CreditNotesTable> {
+  $$CreditNotesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tenantId => $composableBuilder(
+    column: $table.tenantId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get branchId => $composableBuilder(
+    column: $table.branchId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get invoiceId => $composableBuilder(
+    column: $table.invoiceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get number => $composableBuilder(
+    column: $table.number,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get issuedAt => $composableBuilder(
+    column: $table.issuedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get subtotalFils => $composableBuilder(
+    column: $table.subtotalFils,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get vatBps => $composableBuilder(
+    column: $table.vatBps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get vatFils => $composableBuilder(
+    column: $table.vatFils,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get totalFils => $composableBuilder(
+    column: $table.totalFils,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get refundedFils => $composableBuilder(
+    column: $table.refundedFils,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get createdBy => $composableBuilder(
+    column: $table.createdBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CreditNotesTableAnnotationComposer
+    extends Composer<_$LocalDatabase, $CreditNotesTable> {
+  $$CreditNotesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get tenantId =>
+      $composableBuilder(column: $table.tenantId, builder: (column) => column);
+
+  GeneratedColumn<String> get branchId =>
+      $composableBuilder(column: $table.branchId, builder: (column) => column);
+
+  GeneratedColumn<String> get invoiceId =>
+      $composableBuilder(column: $table.invoiceId, builder: (column) => column);
+
+  GeneratedColumn<String> get number =>
+      $composableBuilder(column: $table.number, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get issuedAt =>
+      $composableBuilder(column: $table.issuedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get reason =>
+      $composableBuilder(column: $table.reason, builder: (column) => column);
+
+  GeneratedColumn<int> get subtotalFils => $composableBuilder(
+    column: $table.subtotalFils,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get vatBps =>
+      $composableBuilder(column: $table.vatBps, builder: (column) => column);
+
+  GeneratedColumn<int> get vatFils =>
+      $composableBuilder(column: $table.vatFils, builder: (column) => column);
+
+  GeneratedColumn<int> get totalFils =>
+      $composableBuilder(column: $table.totalFils, builder: (column) => column);
+
+  GeneratedColumn<int> get refundedFils => $composableBuilder(
+    column: $table.refundedFils,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get createdBy =>
+      $composableBuilder(column: $table.createdBy, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+}
+
+class $$CreditNotesTableTableManager
+    extends
+        RootTableManager<
+          _$LocalDatabase,
+          $CreditNotesTable,
+          CreditNote,
+          $$CreditNotesTableFilterComposer,
+          $$CreditNotesTableOrderingComposer,
+          $$CreditNotesTableAnnotationComposer,
+          $$CreditNotesTableCreateCompanionBuilder,
+          $$CreditNotesTableUpdateCompanionBuilder,
+          (
+            CreditNote,
+            BaseReferences<_$LocalDatabase, $CreditNotesTable, CreditNote>,
+          ),
+          CreditNote,
+          PrefetchHooks Function()
+        > {
+  $$CreditNotesTableTableManager(_$LocalDatabase db, $CreditNotesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CreditNotesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CreditNotesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CreditNotesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> tenantId = const Value.absent(),
+                Value<String?> branchId = const Value.absent(),
+                Value<String> invoiceId = const Value.absent(),
+                Value<String> number = const Value.absent(),
+                Value<DateTime> issuedAt = const Value.absent(),
+                Value<String> reason = const Value.absent(),
+                Value<int> subtotalFils = const Value.absent(),
+                Value<int> vatBps = const Value.absent(),
+                Value<int> vatFils = const Value.absent(),
+                Value<int> totalFils = const Value.absent(),
+                Value<int> refundedFils = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String?> createdBy = const Value.absent(),
+                Value<int> version = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CreditNotesCompanion(
+                id: id,
+                tenantId: tenantId,
+                branchId: branchId,
+                invoiceId: invoiceId,
+                number: number,
+                issuedAt: issuedAt,
+                reason: reason,
+                subtotalFils: subtotalFils,
+                vatBps: vatBps,
+                vatFils: vatFils,
+                totalFils: totalFils,
+                refundedFils: refundedFils,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                createdBy: createdBy,
+                version: version,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String tenantId,
+                Value<String?> branchId = const Value.absent(),
+                required String invoiceId,
+                required String number,
+                required DateTime issuedAt,
+                required String reason,
+                required int subtotalFils,
+                Value<int> vatBps = const Value.absent(),
+                required int vatFils,
+                required int totalFils,
+                Value<int> refundedFils = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<String?> createdBy = const Value.absent(),
+                Value<int> version = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CreditNotesCompanion.insert(
+                id: id,
+                tenantId: tenantId,
+                branchId: branchId,
+                invoiceId: invoiceId,
+                number: number,
+                issuedAt: issuedAt,
+                reason: reason,
+                subtotalFils: subtotalFils,
+                vatBps: vatBps,
+                vatFils: vatFils,
+                totalFils: totalFils,
+                refundedFils: refundedFils,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                createdBy: createdBy,
+                version: version,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$CreditNotesTable, CreditNote>(table),
+                  BaseReferences<
+                    _$LocalDatabase,
+                    $CreditNotesTable,
+                    CreditNote
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CreditNotesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$LocalDatabase,
+      $CreditNotesTable,
+      CreditNote,
+      $$CreditNotesTableFilterComposer,
+      $$CreditNotesTableOrderingComposer,
+      $$CreditNotesTableAnnotationComposer,
+      $$CreditNotesTableCreateCompanionBuilder,
+      $$CreditNotesTableUpdateCompanionBuilder,
+      (
+        CreditNote,
+        BaseReferences<_$LocalDatabase, $CreditNotesTable, CreditNote>,
+      ),
+      CreditNote,
+      PrefetchHooks Function()
+    >;
+typedef $$RefundsTableCreateCompanionBuilder = RefundsCompanion Function({
+  required String id,
+  required String tenantId,
+  Value<String?> branchId,
+  required String creditNoteId,
+  required String invoiceId,
+  required int amountFils,
+  required String method,
+  Value<String?> reference,
+  required DateTime refundedAt,
+  Value<String?> refundedBy,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  Value<String?> createdBy,
+  Value<int> version,
+  Value<DateTime?> deletedAt,
+  Value<int> rowid,
+});
+typedef $$RefundsTableUpdateCompanionBuilder = RefundsCompanion Function({
+  Value<String> id,
+  Value<String> tenantId,
+  Value<String?> branchId,
+  Value<String> creditNoteId,
+  Value<String> invoiceId,
+  Value<int> amountFils,
+  Value<String> method,
+  Value<String?> reference,
+  Value<DateTime> refundedAt,
+  Value<String?> refundedBy,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<String?> createdBy,
+  Value<int> version,
+  Value<DateTime?> deletedAt,
+  Value<int> rowid,
+});
+
+class $$RefundsTableFilterComposer
+    extends Composer<_$LocalDatabase, $RefundsTable> {
+  $$RefundsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tenantId => $composableBuilder(
+    column: $table.tenantId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get branchId => $composableBuilder(
+    column: $table.branchId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get creditNoteId => $composableBuilder(
+    column: $table.creditNoteId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get invoiceId => $composableBuilder(
+    column: $table.invoiceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get amountFils => $composableBuilder(
+    column: $table.amountFils,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get method => $composableBuilder(
+    column: $table.method,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reference => $composableBuilder(
+    column: $table.reference,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get refundedAt => $composableBuilder(
+    column: $table.refundedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get refundedBy => $composableBuilder(
+    column: $table.refundedBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get createdBy => $composableBuilder(
+    column: $table.createdBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$RefundsTableOrderingComposer
+    extends Composer<_$LocalDatabase, $RefundsTable> {
+  $$RefundsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tenantId => $composableBuilder(
+    column: $table.tenantId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get branchId => $composableBuilder(
+    column: $table.branchId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get creditNoteId => $composableBuilder(
+    column: $table.creditNoteId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get invoiceId => $composableBuilder(
+    column: $table.invoiceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get amountFils => $composableBuilder(
+    column: $table.amountFils,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get method => $composableBuilder(
+    column: $table.method,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reference => $composableBuilder(
+    column: $table.reference,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get refundedAt => $composableBuilder(
+    column: $table.refundedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get refundedBy => $composableBuilder(
+    column: $table.refundedBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get createdBy => $composableBuilder(
+    column: $table.createdBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$RefundsTableAnnotationComposer
+    extends Composer<_$LocalDatabase, $RefundsTable> {
+  $$RefundsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get tenantId =>
+      $composableBuilder(column: $table.tenantId, builder: (column) => column);
+
+  GeneratedColumn<String> get branchId =>
+      $composableBuilder(column: $table.branchId, builder: (column) => column);
+
+  GeneratedColumn<String> get creditNoteId => $composableBuilder(
+    column: $table.creditNoteId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get invoiceId =>
+      $composableBuilder(column: $table.invoiceId, builder: (column) => column);
+
+  GeneratedColumn<int> get amountFils => $composableBuilder(
+    column: $table.amountFils,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get method =>
+      $composableBuilder(column: $table.method, builder: (column) => column);
+
+  GeneratedColumn<String> get reference =>
+      $composableBuilder(column: $table.reference, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get refundedAt => $composableBuilder(
+    column: $table.refundedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get refundedBy => $composableBuilder(
+    column: $table.refundedBy,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get createdBy =>
+      $composableBuilder(column: $table.createdBy, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+}
+
+class $$RefundsTableTableManager
+    extends
+        RootTableManager<
+          _$LocalDatabase,
+          $RefundsTable,
+          Refund,
+          $$RefundsTableFilterComposer,
+          $$RefundsTableOrderingComposer,
+          $$RefundsTableAnnotationComposer,
+          $$RefundsTableCreateCompanionBuilder,
+          $$RefundsTableUpdateCompanionBuilder,
+          (Refund, BaseReferences<_$LocalDatabase, $RefundsTable, Refund>),
+          Refund,
+          PrefetchHooks Function()
+        > {
+  $$RefundsTableTableManager(_$LocalDatabase db, $RefundsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RefundsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RefundsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RefundsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> tenantId = const Value.absent(),
+                Value<String?> branchId = const Value.absent(),
+                Value<String> creditNoteId = const Value.absent(),
+                Value<String> invoiceId = const Value.absent(),
+                Value<int> amountFils = const Value.absent(),
+                Value<String> method = const Value.absent(),
+                Value<String?> reference = const Value.absent(),
+                Value<DateTime> refundedAt = const Value.absent(),
+                Value<String?> refundedBy = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String?> createdBy = const Value.absent(),
+                Value<int> version = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RefundsCompanion(
+                id: id,
+                tenantId: tenantId,
+                branchId: branchId,
+                creditNoteId: creditNoteId,
+                invoiceId: invoiceId,
+                amountFils: amountFils,
+                method: method,
+                reference: reference,
+                refundedAt: refundedAt,
+                refundedBy: refundedBy,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                createdBy: createdBy,
+                version: version,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String tenantId,
+                Value<String?> branchId = const Value.absent(),
+                required String creditNoteId,
+                required String invoiceId,
+                required int amountFils,
+                required String method,
+                Value<String?> reference = const Value.absent(),
+                required DateTime refundedAt,
+                Value<String?> refundedBy = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<String?> createdBy = const Value.absent(),
+                Value<int> version = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RefundsCompanion.insert(
+                id: id,
+                tenantId: tenantId,
+                branchId: branchId,
+                creditNoteId: creditNoteId,
+                invoiceId: invoiceId,
+                amountFils: amountFils,
+                method: method,
+                reference: reference,
+                refundedAt: refundedAt,
+                refundedBy: refundedBy,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                createdBy: createdBy,
+                version: version,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$RefundsTable, Refund>(table),
+                  BaseReferences<_$LocalDatabase, $RefundsTable, Refund>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$RefundsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$LocalDatabase,
+      $RefundsTable,
+      Refund,
+      $$RefundsTableFilterComposer,
+      $$RefundsTableOrderingComposer,
+      $$RefundsTableAnnotationComposer,
+      $$RefundsTableCreateCompanionBuilder,
+      $$RefundsTableUpdateCompanionBuilder,
+      (Refund, BaseReferences<_$LocalDatabase, $RefundsTable, Refund>),
+      Refund,
       PrefetchHooks Function()
     >;
 typedef $$ProductsTableCreateCompanionBuilder = ProductsCompanion Function({
@@ -20228,6 +22950,10 @@ class $LocalDatabaseManager {
       $$InvoiceLinesTableTableManager(_db, _db.invoiceLines);
   $$PaymentsTableTableManager get payments =>
       $$PaymentsTableTableManager(_db, _db.payments);
+  $$CreditNotesTableTableManager get creditNotes =>
+      $$CreditNotesTableTableManager(_db, _db.creditNotes);
+  $$RefundsTableTableManager get refunds =>
+      $$RefundsTableTableManager(_db, _db.refunds);
   $$ProductsTableTableManager get products =>
       $$ProductsTableTableManager(_db, _db.products);
   $$MaterialsTableTableManager get materials =>

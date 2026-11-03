@@ -342,6 +342,9 @@ class Invoices extends Table {
   IntColumn get vatFils => integer()();
   IntColumn get totalFils => integer()();
   IntColumn get paidFils => integer().withDefault(const Constant(0))();
+
+  /// Credit notes issued against this invoice, mirrored from the server.
+  IntColumn get creditedFils => integer().withDefault(const Constant(0))();
   TextColumn get status => text().withDefault(const Constant('issued'))();
   TextColumn get notes => text().nullable()();
   TextColumn get voidReason => text().nullable()();
@@ -394,6 +397,52 @@ class Payments extends Table {
   Set<Column<Object>> get primaryKey => <Column<Object>>{id};
 }
 
+/// A credit note against an invoice. The only way money is given back: the
+/// invoice itself never changes.
+class CreditNotes extends Table {
+  TextColumn get id => text()();
+  TextColumn get tenantId => text()();
+  TextColumn get branchId => text().nullable()();
+  TextColumn get invoiceId => text()();
+  TextColumn get number => text()();
+  DateTimeColumn get issuedAt => dateTime()();
+  TextColumn get reason => text()();
+  IntColumn get subtotalFils => integer()();
+  IntColumn get vatBps => integer().withDefault(const Constant(500))();
+  IntColumn get vatFils => integer()();
+  IntColumn get totalFils => integer()();
+  IntColumn get refundedFils => integer().withDefault(const Constant(0))();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  TextColumn get createdBy => text().nullable()();
+  IntColumn get version => integer().withDefault(const Constant(0))();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
+class Refunds extends Table {
+  TextColumn get id => text()();
+  TextColumn get tenantId => text()();
+  TextColumn get branchId => text().nullable()();
+  TextColumn get creditNoteId => text()();
+  TextColumn get invoiceId => text()();
+  IntColumn get amountFils => integer()();
+  TextColumn get method => text()();
+  TextColumn get reference => text().nullable()();
+  DateTimeColumn get refundedAt => dateTime()();
+  TextColumn get refundedBy => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  TextColumn get createdBy => text().nullable()();
+  IntColumn get version => integer().withDefault(const Constant(0))();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
 /// Sync bookkeeping: cursor, last sync, last head.
 class SyncMeta extends Table {
   TextColumn get key => text()();
@@ -414,6 +463,8 @@ class SyncMeta extends Table {
     Invoices,
     InvoiceLines,
     Payments,
+    CreditNotes,
+    Refunds,
     Products,
     Materials,
     PriceRules,
@@ -427,7 +478,7 @@ class LocalDatabase extends _$LocalDatabase {
   LocalDatabase(super.executor);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -459,6 +510,13 @@ class LocalDatabase extends _$LocalDatabase {
         await m.createTable(invoices);
         await m.createTable(invoiceLines);
         await m.createTable(payments);
+      }
+      if (from < 6) {
+        await m.createTable(creditNotes);
+        await m.createTable(refunds);
+        if (from >= 5) {
+          await m.addColumn(invoices, invoices.creditedFils);
+        }
       }
     },
   );
@@ -677,9 +735,65 @@ class LocalDatabase extends _$LocalDatabase {
         await _upsertInvoiceLine(data);
       case 'payments':
         await _upsertPayment(data);
+      case 'credit_notes':
+        await _upsertCreditNote(data);
+      case 'refunds':
+        await _upsertRefund(data);
       default:
         break;
     }
+  }
+
+  Future<void> _upsertCreditNote(Map<String, Object?> data) async {
+    final id = data['id'] as String?;
+    if (id == null) return;
+    await into(creditNotes).insertOnConflictUpdate(
+      CreditNotesCompanion(
+        id: Value(id),
+        tenantId: Value(data['tenant_id'] as String? ?? ''),
+        branchId: Value(data['branch_id'] as String?),
+        invoiceId: Value(data['invoice_id'] as String? ?? ''),
+        number: Value(data['number'] as String? ?? ''),
+        issuedAt: Value(_asDate(data['issued_at']) ?? DateTime.now().toUtc()),
+        reason: Value(data['reason'] as String? ?? ''),
+        subtotalFils: Value((data['subtotal_fils'] as num?)?.toInt() ?? 0),
+        vatBps: Value((data['vat_bps'] as num?)?.toInt() ?? 500),
+        vatFils: Value((data['vat_fils'] as num?)?.toInt() ?? 0),
+        totalFils: Value((data['total_fils'] as num?)?.toInt() ?? 0),
+        refundedFils: Value((data['refunded_fils'] as num?)?.toInt() ?? 0),
+        createdAt: Value(_asDate(data['created_at']) ?? DateTime.now().toUtc()),
+        updatedAt: Value(_asDate(data['updated_at']) ?? DateTime.now().toUtc()),
+        createdBy: Value(data['created_by'] as String?),
+        version: Value((data['version'] as num?)?.toInt() ?? 0),
+        deletedAt: Value(_asDate(data['deleted_at'])),
+      ),
+    );
+  }
+
+  Future<void> _upsertRefund(Map<String, Object?> data) async {
+    final id = data['id'] as String?;
+    if (id == null) return;
+    await into(refunds).insertOnConflictUpdate(
+      RefundsCompanion(
+        id: Value(id),
+        tenantId: Value(data['tenant_id'] as String? ?? ''),
+        branchId: Value(data['branch_id'] as String?),
+        creditNoteId: Value(data['credit_note_id'] as String? ?? ''),
+        invoiceId: Value(data['invoice_id'] as String? ?? ''),
+        amountFils: Value((data['amount_fils'] as num?)?.toInt() ?? 0),
+        method: Value(data['method'] as String? ?? 'cash'),
+        reference: Value(data['reference'] as String?),
+        refundedAt: Value(
+          _asDate(data['refunded_at']) ?? DateTime.now().toUtc(),
+        ),
+        refundedBy: Value(data['refunded_by'] as String?),
+        createdAt: Value(_asDate(data['created_at']) ?? DateTime.now().toUtc()),
+        updatedAt: Value(_asDate(data['updated_at']) ?? DateTime.now().toUtc()),
+        createdBy: Value(data['created_by'] as String?),
+        version: Value((data['version'] as num?)?.toInt() ?? 0),
+        deletedAt: Value(_asDate(data['deleted_at'])),
+      ),
+    );
   }
 
   Future<void> _upsertInvoice(Map<String, Object?> data) async {
@@ -704,6 +818,7 @@ class LocalDatabase extends _$LocalDatabase {
         vatFils: Value((data['vat_fils'] as num?)?.toInt() ?? 0),
         totalFils: Value((data['total_fils'] as num?)?.toInt() ?? 0),
         paidFils: Value((data['paid_fils'] as num?)?.toInt() ?? 0),
+        creditedFils: Value((data['credited_fils'] as num?)?.toInt() ?? 0),
         status: Value(data['status'] as String? ?? 'issued'),
         notes: Value(data['notes'] as String?),
         voidReason: Value(data['void_reason'] as String?),
@@ -2086,6 +2201,174 @@ class LocalDatabase extends _$LocalDatabase {
           'reference': reference,
           'taken_at': now.toIso8601String(),
           'taken_by': userId,
+        },
+      );
+    });
+  }
+
+  Stream<List<CreditNote>> watchCreditNotes(String invoiceId) {
+    return (select(creditNotes)
+          ..where((t) => t.invoiceId.equals(invoiceId) & t.deletedAt.isNull())
+          ..orderBy(<OrderClauseGenerator<$CreditNotesTable>>[
+            (t) => OrderingTerm(expression: t.issuedAt),
+          ]))
+        .watch();
+  }
+
+  /// Issues a credit note and mirrors the credit onto the invoice. The VAT is
+  /// split back out of the gross at the invoice's own rate, so a credited
+  /// invoice and its notes always add up.
+  Future<String> issueCreditNoteLocal({
+    required Invoice invoice,
+    required String tenantId,
+    required String? branchId,
+    required String userId,
+    required String number,
+    required int amountFils,
+    required String reason,
+  }) async {
+    if (amountFils <= 0) {
+      throw StateError('A credit note must be more than zero.');
+    }
+    if (reason.trim().length < 3) {
+      throw StateError('Say why the credit note is being issued.');
+    }
+    final creditable = invoice.totalFils - invoice.creditedFils;
+    if (amountFils > creditable) {
+      throw StateError(
+        'Only ${(creditable / 100).toStringAsFixed(2)} AED can still be credited.',
+      );
+    }
+
+    final id = Uuid7.generate();
+    final now = DateTime.now().toUtc();
+    final subtotal = (amountFils * 10000 / (10000 + invoice.vatBps)).round();
+    final vat = amountFils - subtotal;
+
+    await transaction(() async {
+      await into(creditNotes).insert(
+        CreditNotesCompanion.insert(
+          id: id,
+          tenantId: tenantId,
+          branchId: Value(branchId),
+          invoiceId: invoice.id,
+          number: number,
+          issuedAt: now,
+          reason: reason.trim(),
+          subtotalFils: subtotal,
+          vatBps: Value(invoice.vatBps),
+          vatFils: vat,
+          totalFils: amountFils,
+          createdAt: now,
+          updatedAt: now,
+          createdBy: Value(userId),
+        ),
+      );
+
+      await (update(invoices)..where((t) => t.id.equals(invoice.id))).write(
+        InvoicesCompanion(
+          creditedFils: Value(invoice.creditedFils + amountFils),
+          updatedAt: Value(now),
+        ),
+      );
+
+      await _enqueue(
+        entity: 'credit_notes',
+        rowId: id,
+        op: 'insert',
+        baseVersion: 0,
+        fields: <String, Object?>{
+          'invoice_id': invoice.id,
+          'number': number,
+          'issued_at': now.toIso8601String(),
+          'reason': reason.trim(),
+          'subtotal_fils': subtotal,
+          'vat_bps': invoice.vatBps,
+          'vat_fils': vat,
+          'total_fils': amountFils,
+        },
+      );
+    });
+
+    return id;
+  }
+
+  Stream<List<Refund>> watchRefunds(String creditNoteId) {
+    return (select(refunds)
+          ..where(
+            (t) => t.creditNoteId.equals(creditNoteId) & t.deletedAt.isNull(),
+          )
+          ..orderBy(<OrderClauseGenerator<$RefundsTable>>[
+            (t) => OrderingTerm(expression: t.refundedAt),
+          ]))
+        .watch();
+  }
+
+  /// Cash back to the customer against a credit note. Managers only, and never
+  /// more than the note still has left.
+  Future<void> refundLocal({
+    required CreditNote note,
+    required int amountFils,
+    required String method,
+    required String userId,
+    String? reference,
+  }) async {
+    const methods = <String>['cash', 'card', 'transfer', 'cheque'];
+    if (!methods.contains(method)) {
+      throw StateError('Unknown refund method: $method');
+    }
+    if (amountFils <= 0) {
+      throw StateError('A refund must be more than zero.');
+    }
+    final refundable = note.totalFils - note.refundedFils;
+    if (amountFils > refundable) {
+      throw StateError(
+        'Only ${(refundable / 100).toStringAsFixed(2)} AED is left to refund.',
+      );
+    }
+
+    final id = Uuid7.generate();
+    final now = DateTime.now().toUtc();
+
+    await transaction(() async {
+      await into(refunds).insert(
+        RefundsCompanion.insert(
+          id: id,
+          tenantId: note.tenantId,
+          branchId: Value(note.branchId),
+          creditNoteId: note.id,
+          invoiceId: note.invoiceId,
+          amountFils: amountFils,
+          method: method,
+          reference: Value(reference),
+          refundedAt: now,
+          refundedBy: Value(userId),
+          createdAt: now,
+          updatedAt: now,
+          createdBy: Value(userId),
+        ),
+      );
+
+      await (update(creditNotes)..where((t) => t.id.equals(note.id))).write(
+        CreditNotesCompanion(
+          refundedFils: Value(note.refundedFils + amountFils),
+          updatedAt: Value(now),
+        ),
+      );
+
+      await _enqueue(
+        entity: 'refunds',
+        rowId: id,
+        op: 'insert',
+        baseVersion: 0,
+        fields: <String, Object?>{
+          'credit_note_id': note.id,
+          'invoice_id': note.invoiceId,
+          'amount_fils': amountFils,
+          'method': method,
+          'reference': reference,
+          'refunded_at': now.toIso8601String(),
+          'refunded_by': userId,
         },
       );
     });
