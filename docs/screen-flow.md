@@ -114,10 +114,14 @@ device works offline until the refresh token expires.
 ### 4.2 PIN — BUILT
 Four digits for a signed-in device. Five wrong attempts drop back to the password screen.
 
-### 4.3 Today (Home) — PARTIAL
-Now: a few role-shaped counts and the sync chip.
-Should be: today's jobs by stage, overdue, money taken, unclaimed work for your role, proofs waiting
-on the customer, and a "pick up where you left off" list.
+### 4.3 Today (Home) — BUILT
+Greeting, then four figures that are all doors: **in production**, **overdue**, **due today**,
+**waiting for you**. Below them: overdue and due-today task lists, unclaimed work for your role,
+proofs waiting on the customer, and cash in the drawer while a shift is open. Everything is read from
+the local database, so it is right on a dead connection.
+
+Still missing from Today: money taken today (needs the payments roll-up), and a "pick up where you
+left off" list.
 
 ### 4.4 Customers — BUILT
 List, search by name/phone, add a customer with two phone numbers (WhatsApp + landline). Opens a
