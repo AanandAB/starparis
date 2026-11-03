@@ -10,6 +10,7 @@ import 'package:starparis_sync/starparis_sync.dart';
 
 import '../app_config.dart';
 import '../providers.dart';
+import '../sales/number_prefixes.dart';
 import '../sales/pricer.dart';
 
 /// The order builder — the screen the whole product is judged by.
@@ -145,16 +146,21 @@ class _OrderBuilderScreenState extends ConsumerState<OrderBuilderScreen> {
 
     try {
       final bootstrap = ref.read(bootstrapProvider);
-      final series =
-          '${asQuote ? 'QT' : 'JOB'}-${AppConfig.branchCode}-${AppConfig.deviceCode}';
+      // Quote or job: the kind decides which prefix Settings supplies, so a
+      // shop that calls its jobs "ORD" gets ORD-… without a code change.
       final issued = await NumberSeries(
         db: bootstrap.db,
         api: bootstrap.api,
-        series: series,
+        kind: asQuote ? NumberKind.quote : NumberKind.job,
+        branchCode: AppConfig.branchCode,
+        deviceCode: AppConfig.deviceCode,
+        prefixes:
+            ref.read(shopSettingsProvider).value?.numberPrefixes ??
+            const NumberPrefixes(),
       ).next();
-      final display = issued.isTemporary
-          ? issued.display
-          : formatNumber(series, issued.number!);
+      // Already prefixed and padded by the series; the string is stored as-is
+      // below so a later Settings change cannot rewrite it.
+      final display = issued.display;
 
       final description = ProductPricer.describe(
         product: product,

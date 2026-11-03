@@ -12,6 +12,7 @@ import '../app_config.dart';
 import '../providers.dart';
 import '../sales/documents_service.dart';
 import '../sales/invoice_section.dart';
+import '../sales/number_prefixes.dart';
 import '../sales/proofs_section.dart';
 import '../sales/whatsapp.dart';
 import 'order_builder_screen.dart';
@@ -296,7 +297,12 @@ class _OrderSheetState extends ConsumerState<_OrderSheet> {
       final issued = await NumberSeries(
         db: bootstrap.db,
         api: bootstrap.api,
-        series: 'JOB-${AppConfig.branchCode}-${AppConfig.deviceCode}',
+        kind: NumberKind.job,
+        branchCode: AppConfig.branchCode,
+        deviceCode: AppConfig.deviceCode,
+        prefixes:
+            ref.read(shopSettingsProvider).value?.numberPrefixes ??
+            const NumberPrefixes(),
       ).next();
 
       await bootstrap.db.convertQuoteToOrder(

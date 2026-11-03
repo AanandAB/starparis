@@ -97,6 +97,19 @@ Future<void> main(List<String> args) async {
     exit(1);
   }
 
+  // ---- settings (the shop's number prefixes) ------------------------------
+  final settingsResponse = await client.get(
+    Uri.parse('$base/v1/settings'),
+    headers: <String, String>{'authorization': 'Bearer $token'},
+  );
+  if (settingsResponse.statusCode != 200) {
+    stderr.writeln('settings failed: ${settingsResponse.body}');
+    exit(1);
+  }
+  final prefixes = NumberPrefixes.fromSettingsJson(
+    (jsonDecode(settingsResponse.body) as Map).cast<String, Object?>(),
+  );
+
   // ---- place an order ----------------------------------------------------
   final customerId = await db.createCustomerLocal(
     tenantId: tenantId,
@@ -107,11 +120,15 @@ Future<void> main(List<String> args) async {
     userId: userId,
   );
 
-  final jobSeries = 'JOB-SHJ1-PC1';
-  final issued = await NumberSeries(db: db, api: api, series: jobSeries).next();
-  final jobDisplay = issued.isTemporary
-      ? issued.display
-      : formatNumber(jobSeries, issued.number!);
+  final issued = await NumberSeries(
+    db: db,
+    api: api,
+    kind: NumberKind.job,
+    branchCode: 'SHJ1',
+    deviceCode: 'PC1',
+    prefixes: prefixes,
+  ).next();
+  final jobDisplay = issued.display;
   final orderId = await db.createOrderLocal(
     tenantId: tenantId,
     branchId: branchId,
@@ -255,16 +272,20 @@ Future<void> main(List<String> args) async {
 
   // ---- invoice and payments ----------------------------------------------
   final placedOrder = (await db.orderById(orderId))!;
-  const invoiceSeries = 'INV-SHJ1-PC1';
-  final invoiceNumber = await NumberSeries(db: db, api: api, series: invoiceSeries).next();
+  final invoiceNumber = await NumberSeries(
+    db: db,
+    api: api,
+    kind: NumberKind.invoice,
+    branchCode: 'SHJ1',
+    deviceCode: 'PC1',
+    prefixes: prefixes,
+  ).next();
   await db.issueInvoiceLocal(
     order: placedOrder,
     tenantId: tenantId,
     branchId: branchId,
     userId: userId,
-    number: invoiceNumber.isTemporary
-        ? 'INV-${invoiceNumber.display}'
-        : formatNumber(invoiceSeries, invoiceNumber.number!),
+    number: invoiceNumber.display,
   );
 
   var invoice = (await db.invoiceForOrder(orderId))!;
@@ -310,20 +331,19 @@ Future<void> main(List<String> args) async {
   }
 
   // ---- credit note, then cash back ---------------------------------------
-  const creditSeries = 'CN-SHJ1-PC1';
   final creditNumber = await NumberSeries(
     db: db,
     api: api,
-    series: creditSeries,
+    kind: NumberKind.creditNote,
+    branchCode: 'SHJ1',
+    deviceCode: 'PC1',
   ).next();
   await db.issueCreditNoteLocal(
     invoice: invoice,
     tenantId: tenantId,
     branchId: branchId,
     userId: userId,
-    number: creditNumber.isTemporary
-        ? 'CN-${creditNumber.display}'
-        : formatNumber(creditSeries, creditNumber.number!),
+    number: creditNumber.display,
     amountFils: 5000,
     reason: 'Smoke: 100 cards damaged in finishing',
   );

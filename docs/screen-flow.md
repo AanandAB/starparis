@@ -191,6 +191,7 @@ job they belong to. Everything is answered from the local database, so it works 
 
 ### 4.17 Settings — **TO BUILD**
 Company profile for documents (name, TRN, address), VAT rate, number series, backup/export.
+The number prefixes (`INV`, `QT`, `JOB`) are saved here and used for every number issued from then on; a document already issued keeps the number it was printed with.
 
 ---
 

@@ -11,6 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../app_config.dart';
 import '../providers.dart';
 import 'documents_service.dart';
+import 'number_prefixes.dart';
 import 'whatsapp.dart';
 
 /// The invoice for one order: issue it, take money against it, print it.
@@ -64,7 +65,16 @@ class _InvoiceSectionState extends ConsumerState<InvoiceSection> {
       final issued = await NumberSeries(
         db: bootstrap.db,
         api: bootstrap.api,
-        series: 'INV-${AppConfig.branchCode}-${AppConfig.deviceCode}',
+        kind: NumberKind.invoice,
+        branchCode: AppConfig.branchCode,
+        deviceCode: AppConfig.deviceCode,
+        // The prefix is the shop's, read from Settings: a shop that renames
+        // `INV` to `BILL` prints BILL-… on the very next invoice. Before the
+        // first settings read this is the worker's default, which is what the
+        // server would have used anyway.
+        prefixes:
+            ref.read(shopSettingsProvider).value?.numberPrefixes ??
+            const NumberPrefixes(),
       ).next();
 
       await bootstrap.db.issueInvoiceLocal(
@@ -72,19 +82,17 @@ class _InvoiceSectionState extends ConsumerState<InvoiceSection> {
         tenantId: session.tenantId,
         branchId: session.branchId,
         userId: session.userId,
-        number: issued.isTemporary
-            ? 'INV-${issued.display}'
-            : formatNumber(
-                'INV-${AppConfig.branchCode}-${AppConfig.deviceCode}',
-                issued.number!,
-              ),
+        // The issued string is stored exactly as printed. Rebuilding it from a
+        // prefix later would let a Settings change rewrite an old invoice, and
+        // a tax invoice number must never move.
+        number: issued.display,
         dueAt: DateTime.now().add(const Duration(days: 30)),
       );
       unawaited(bootstrap.engine?.syncNow());
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            'Invoice INV-${issued.display} issued.'
+            'Invoice ${issued.display} issued.'
             '${issued.isTemporary ? ' It gets a server number when the internet returns.' : ''}',
           ),
         ),
@@ -154,11 +162,12 @@ class _InvoiceSectionState extends ConsumerState<InvoiceSection> {
       final session = ref.read(sessionProvider);
       if (session == null) throw StateError('Session expired');
 
-      const series = 'CN-SHJ1-PC1';
       final issued = await NumberSeries(
         db: bootstrap.db,
         api: bootstrap.api,
-        series: series,
+        kind: NumberKind.creditNote,
+        branchCode: AppConfig.branchCode,
+        deviceCode: AppConfig.deviceCode,
       ).next();
 
       await bootstrap.db.issueCreditNoteLocal(
@@ -166,9 +175,7 @@ class _InvoiceSectionState extends ConsumerState<InvoiceSection> {
         tenantId: session.tenantId,
         branchId: session.branchId,
         userId: session.userId,
-        number: issued.isTemporary
-            ? 'CN-${issued.display}'
-            : formatNumber(series, issued.number!),
+        number: issued.display,
         amountFils: draft.amountFils,
         reason: draft.reason,
       );

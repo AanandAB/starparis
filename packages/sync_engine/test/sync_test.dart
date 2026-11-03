@@ -360,13 +360,15 @@ void main() {
       final series = NumberSeries(
         db: db,
         api: api,
-        series: 'JOB',
+        kind: NumberKind.job,
+        branchCode: 'SHJ1',
+        deviceCode: 'PC1',
         blockSize: 100,
       );
       final first = await series.next();
       final second = await series.next();
-      expect(first.display, '1');
-      expect(second.display, '2');
+      expect(first.display, 'JOB-SHJ1-PC1-00001');
+      expect(second.display, 'JOB-SHJ1-PC1-00002');
       expect(await series.remaining(), 98);
     });
 
@@ -374,13 +376,66 @@ void main() {
       'falls back to a temporary number when there is no connection',
       () async {
         api.failLeases = true;
-        final series = NumberSeries(db: db, api: api, series: 'JOB');
+        final series = NumberSeries(
+          db: db,
+          api: api,
+          kind: NumberKind.job,
+          branchCode: 'SHJ1',
+          deviceCode: 'PC1',
+        );
         final issued = await series.next();
         expect(issued.isTemporary, isTrue);
         expect(issued.number, isNull);
-        expect(issued.display, 'T-0001');
+        expect(issued.display, 'JOB-T-0001');
       },
     );
+
+    test('prints the prefix Settings has saved, not a constant', () async {
+      // What the device receives from `GET /v1/settings` after the owner typed
+      // BILL into the invoice prefix field. The numbering code must use it —
+      // that is the bug the settings screen could not fix on its own.
+      final prefixes = NumberPrefixes.fromSettingsJson(<String, Object?>{
+        'numbers': <String, Object?>{
+          'invoice_prefix': 'BILL',
+          'quote_prefix': 'QUO',
+          'order_prefix': 'ORD',
+        },
+      });
+
+      final invoice = NumberSeries(
+        db: db,
+        api: api,
+        kind: NumberKind.invoice,
+        branchCode: 'SHJ1',
+        deviceCode: 'PC1',
+        prefixes: prefixes,
+      );
+
+      // The leased series key carries the prefix too, so the server counts the
+      // numbers under the name the customer reads.
+      expect(invoice.series, 'BILL-SHJ1-PC1');
+      expect((await invoice.next()).display, 'BILL-SHJ1-PC1-00001');
+
+      // The same payload renames the other series independently.
+      final job = NumberSeries(
+        db: db,
+        api: api,
+        kind: NumberKind.job,
+        branchCode: 'SHJ1',
+        deviceCode: 'PC1',
+        prefixes: prefixes,
+      );
+      expect(job.series, 'ORD-SHJ1-PC1');
+    });
+
+    test('a blank or missing payload falls back to the worker defaults', () {
+      final prefixes = NumberPrefixes.fromSettingsJson(<String, Object?>{
+        'numbers': <String, Object?>{'invoice_prefix': '  '},
+      });
+      expect(prefixes.invoice, 'INV', reason: 'a blank prefix is not a prefix');
+      expect(prefixes.quote, 'QT');
+      expect(prefixes.job, 'JOB');
+    });
   });
 
   group('catalogue', () {
@@ -949,6 +1004,42 @@ void main() {
           number: 'INV-SHJ1-PC1-00002',
         ),
         throwsA(isA<StateError>()),
+      );
+    });
+
+    test('a renamed prefix changes the next number, never an issued one', () async {
+      final placed = await order();
+      const issuedBefore = 'INV-SHJ1-PC1-00042';
+      await db.issueInvoiceLocal(
+        order: placed,
+        tenantId: 't1',
+        branchId: 'b1',
+        userId: 'u1',
+        number: issuedBefore,
+      );
+
+      // The owner renames INV to BILL in Settings, and this device has pulled
+      // the new payload. Only numbers issued from now on use it.
+      final series = NumberSeries(
+        db: db,
+        api: api,
+        kind: NumberKind.invoice,
+        branchCode: 'SHJ1',
+        deviceCode: 'PC1',
+        prefixes: const NumberPrefixes(invoice: 'BILL'),
+      );
+      final next = await series.next();
+      expect(
+        next.display,
+        'BILL-SHJ1-PC1-00001',
+        reason: 'the next invoice carries the prefix Settings has today',
+      );
+
+      final invoice = await db.invoiceForOrder(placed.id);
+      expect(
+        invoice!.number,
+        issuedBefore,
+        reason: 'an issued number is history — it is stored, not rebuilt',
       );
     });
 

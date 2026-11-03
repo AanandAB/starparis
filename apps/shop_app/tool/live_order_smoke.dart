@@ -157,6 +157,25 @@ Future<void> main(List<String> args) async {
     exit(1);
   }
 
+  // ---- settings ----------------------------------------------------------
+  // The prefix on every number below is the shop's, so a tenant that renamed
+  // `JOB` to `ORD` is proven here too — not just on the happy-path default.
+  final settingsResponse = await client.get(
+    Uri.parse('$base/v1/settings'),
+    headers: <String, String>{'authorization': 'Bearer $token'},
+  );
+  if (settingsResponse.statusCode != 200) {
+    stderr.writeln('settings failed: ${settingsResponse.body}');
+    exit(1);
+  }
+  final prefixes = NumberPrefixes.fromSettingsJson(
+    (jsonDecode(settingsResponse.body) as Map).cast<String, Object?>(),
+  );
+  stdout.writeln(
+    'settings         ok  job=${prefixes.job} invoice=${prefixes.invoice} '
+    'quote=${prefixes.quote}',
+  );
+
   // ---- create an order offline-style ------------------------------------
   final customerId = await db.createCustomerLocal(
     tenantId: tenantId,
@@ -167,8 +186,14 @@ Future<void> main(List<String> args) async {
     userId: userId,
   );
 
-  const jobSeries = 'JOB-SHJ1-PC1';
-  final issued = await NumberSeries(db: db, api: api, series: jobSeries).next();
+  final issued = await NumberSeries(
+    db: db,
+    api: api,
+    kind: NumberKind.job,
+    branchCode: 'SHJ1',
+    deviceCode: 'PC1',
+    prefixes: prefixes,
+  ).next();
   stdout.writeln('job number       ok  ${issued.display}');
 
   final orderId = await db.createOrderLocal(
@@ -177,9 +202,7 @@ Future<void> main(List<String> args) async {
     customerId: customerId,
     customerName: 'Live Smoke Customer',
     userId: userId,
-    numberDisplay: issued.isTemporary
-        ? issued.display
-        : formatNumber(jobSeries, issued.number!),
+    numberDisplay: issued.display,
     number: issued.number,
     lines: <OrderLineDraft>[
       OrderLineDraft(
