@@ -166,3 +166,59 @@ class StatementDocument {
   final int closingBalanceFils;
   final DateTime generatedAt;
 }
+
+/// One line of an 80 mm receipt. A receipt line has no unit price of its own —
+/// the counter states what and how many and the amount, and the till slip keeps
+/// it legible at 42 characters.
+class ReceiptLine {
+  const ReceiptLine({
+    required this.description,
+    required this.quantity,
+    required this.amountFils,
+  });
+
+  final String description;
+  final int quantity;
+
+  /// Line total in fils, VAT already inside the sale's rolled-up VAT line.
+  final int amountFils;
+}
+
+/// An 80 mm thermal receipt for a walk-in sale. Built from the sale row at the
+/// moment it is rung, so a later price change cannot alter a slip already
+/// handed over.
+class ReceiptDocument {
+  const ReceiptDocument({
+    required this.shopName,
+    required this.number,
+    required this.issuedAt,
+    required this.lines,
+    required this.subtotalFils,
+    required this.vatFils,
+    required this.totalFils,
+    required this.paymentMethod,
+    this.tenderedFils,
+    this.branchName,
+    this.address,
+    this.phone,
+    this.thankYou = 'Thank you',
+  });
+
+  final String shopName;
+  final String number;
+  final DateTime issuedAt;
+  final List<ReceiptLine> lines;
+  final int subtotalFils;
+  final int vatFils;
+  final int totalFils;
+
+  /// 'cash' | 'card' | 'transfer'.
+  final String paymentMethod;
+
+  /// Cash only: the amount handed over, so the slip can print the change.
+  final int? tenderedFils;
+  final String? branchName;
+  final String? address;
+  final String? phone;
+  final String thankYou;
+}
