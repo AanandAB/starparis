@@ -2437,3 +2437,142 @@ describe('audit log', () => {
     ).toBe(true);
   });
 });
+
+describe('catalogue editors', () => {
+  it('lets the owner add a material, list it and advance the version', async () => {
+    const before = (await (
+      await api('/v1/catalogue', authed(counter.access_token))
+    ).json()) as { catalogue_version: string };
+
+    const created = await api(
+      '/v1/catalogue/materials',
+      authed(
+        owner.access_token,
+        {
+          code: 'paper_170',
+          name: 'Art paper 170 gsm',
+          type: 'sheet',
+          gsm: 170,
+          sheet_width_mm: 320,
+          sheet_height_mm: 450,
+          cost_per_sheet_fils: 42,
+          supplier_id: 'supplier-1',
+        },
+        'POST',
+      ),
+    );
+    expect(created.status).toBe(201);
+    const body = (await created.json()) as { material: Record<string, unknown> };
+    expect(body.material['code']).toBe('paper_170');
+    expect(body.material['cost_per_sheet_fils']).toBe(42);
+
+    const list = await api('/v1/catalogue/materials', authed(counter.access_token));
+    expect(list.status).toBe(200);
+    const listBody = (await list.json()) as {
+      materials: Array<Record<string, unknown>>;
+    };
+    expect(listBody.materials.map((row) => row['code'])).toContain('paper_170');
+
+    const after = (await (
+      await api('/v1/catalogue', authed(counter.access_token))
+    ).json()) as { catalogue_version: string };
+    expect(after.catalogue_version > before.catalogue_version).toBe(true);
+  });
+
+  it('refuses a counter clerk on a material write', async () => {
+    const response = await api(
+      '/v1/catalogue/materials',
+      authed(
+        counter.access_token,
+        { code: 'sneaky_paper', name: 'Sneaky', cost_per_sheet_fils: 1 },
+        'POST',
+      ),
+    );
+    expect(response.status).toBe(403);
+    const body = (await response.json()) as { error: { code: string } };
+    expect(body.error.code).toBe('PERMISSION_DENIED');
+  });
+
+  it('patches a machine rate and writes an audit row', async () => {
+    const created = await api(
+      '/v1/catalogue/machines',
+      authed(
+        owner.access_token,
+        {
+          name: 'Xerox 3100',
+          type: 'digital',
+          hourly_rate_fils: 30000,
+          setup_minutes: 5,
+          sheets_per_hour: 1500,
+          click_fils: 25,
+        },
+        'POST',
+      ),
+    );
+    expect(created.status).toBe(201);
+    const machine = ((await created.json()) as { machine: { id: string } }).machine;
+
+    const patched = await api(
+      `/v1/catalogue/machines/${machine.id}`,
+      patchRequest(owner.access_token, { click_fils: 30 }),
+    );
+    expect(patched.status).toBe(200);
+
+    // The write is audited old -> new, like every price edit.
+    const audit = await env.DB.prepare(
+      "SELECT old_json, new_json FROM audit_log WHERE action = 'price.machine.update' ORDER BY at DESC LIMIT 1",
+    ).first<{ old_json: string; new_json: string }>();
+    expect(audit).toBeTruthy();
+    expect(audit!.old_json).toContain('"click_fils":25');
+    expect(audit!.new_json).toContain('"click_fils":30');
+
+    const row = (await env.DB.prepare(
+      'SELECT click_fils FROM machines WHERE id = ?',
+    )
+      .bind(machine.id)
+      .first()) as { click_fils: number };
+    expect(row.click_fils).toBe(30);
+  });
+
+  it('creates an operation and a soft delete still moves the version', async () => {
+    const created = await api(
+      '/v1/catalogue/operations',
+      authed(
+        owner.access_token,
+        {
+          code: 'lam_matt_two',
+          name_en: 'Matt lamination (both sides)',
+          basis: 'per_sqm',
+          rate_fils: 900,
+          waste_bps: 50,
+        },
+        'POST',
+      ),
+    );
+    expect(created.status).toBe(201);
+    const operation = ((await created.json()) as { operation: { id: string } })
+      .operation;
+
+    const before = (await (
+      await api('/v1/catalogue', authed(counter.access_token))
+    ).json()) as { catalogue_version: string };
+
+    const deleted = await api(
+      `/v1/catalogue/operations/${operation.id}`,
+      authed(owner.access_token, undefined, 'DELETE'),
+    );
+    expect(deleted.status).toBe(200);
+
+    // The row is gone from the list, so the settings marker is what advances
+    // the version — a delete must not leave devices holding the old catalogue.
+    const after = (await (
+      await api('/v1/catalogue', authed(counter.access_token))
+    ).json()) as { catalogue_version: string };
+    expect(after.catalogue_version > before.catalogue_version).toBe(true);
+
+    const list = (await (
+      await api('/v1/catalogue/operations', authed(counter.access_token))
+    ).json()) as { operations: Array<Record<string, unknown>> };
+    expect(list.operations.map((row) => row['id'])).not.toContain(operation.id);
+  });
+});

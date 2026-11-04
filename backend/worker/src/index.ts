@@ -7,7 +7,7 @@
  * internet does not.
  */
 
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import type { RoleKey } from './policy';
 import { conflictForbidden, listConflicts, resolveConflict } from './conflicts';
 import { z } from 'zod';
@@ -15,6 +15,26 @@ import { z } from 'zod';
 import { error, loadSession, login, loginSchema, refreshSchema, refreshSession, revokeDevice } from './auth';
 import { canReadAudit, listAudit } from './audit';
 import { loadCatalogue } from './catalogue';
+import {
+  createMachine,
+  createMaterial,
+  createOperation,
+  deleteMachine,
+  deleteMaterial,
+  deleteOperation,
+  listMachines,
+  listMaterials,
+  listOperations,
+  machineCreateSchema,
+  machinePatchSchema,
+  materialCreateSchema,
+  materialPatchSchema,
+  operationCreateSchema,
+  operationPatchSchema,
+  updateMachine,
+  updateMaterial,
+  updateOperation,
+} from './catalogue_admin';
 import {
   bulkAdjust,
   bulkAdjustSchema,
@@ -303,6 +323,131 @@ app.post('/v1/price-book/bulk-adjust', async (c) => {
   return c.json(result.body, result.status as 200);
 });
 
+// --- catalogue editing: materials, machines, operations --------------------
+// The three reference tables the pricing engine reads. Same contract as the
+// price book: `price.edit` to write, audited old->new, and every write bumps
+// catalogue_version so the change reaches every device on its next poll.
+
+app.get('/v1/catalogue/materials', async (c) => {
+  const ctx = c.get('auth');
+  return c.json({ materials: await listMaterials(c.env, ctx.tenantId) });
+});
+
+app.post('/v1/catalogue/materials', async (c) => {
+  const gate = await requirePriceEdit(c);
+  if (!gate.ok) return gate.response;
+
+  const parsed = materialCreateSchema.safeParse(await safeJson(c));
+  if (!parsed.success) {
+    return c.json(
+      error('BAD_REQUEST', parsed.error.issues[0]?.message ?? 'Check the material.'),
+      400,
+    );
+  }
+  const result = await createMaterial(c.env, gate.ctx, parsed.data);
+  return c.json(result.body, result.status as 201);
+});
+
+app.patch('/v1/catalogue/materials/:id', async (c) => {
+  const gate = await requirePriceEdit(c);
+  if (!gate.ok) return gate.response;
+
+  const parsed = materialPatchSchema.safeParse(await safeJson(c));
+  if (!parsed.success) {
+    return c.json(error('BAD_REQUEST', 'Nothing valid to change.'), 400);
+  }
+  const result = await updateMaterial(c.env, gate.ctx, c.req.param('id'), parsed.data);
+  return c.json(result.body, result.status as 200);
+});
+
+app.delete('/v1/catalogue/materials/:id', async (c) => {
+  const gate = await requirePriceEdit(c);
+  if (!gate.ok) return gate.response;
+
+  const result = await deleteMaterial(c.env, gate.ctx, c.req.param('id'));
+  return c.json(result.body, result.status as 200);
+});
+
+app.get('/v1/catalogue/machines', async (c) => {
+  const ctx = c.get('auth');
+  return c.json({ machines: await listMachines(c.env, ctx.tenantId) });
+});
+
+app.post('/v1/catalogue/machines', async (c) => {
+  const gate = await requirePriceEdit(c);
+  if (!gate.ok) return gate.response;
+
+  const parsed = machineCreateSchema.safeParse(await safeJson(c));
+  if (!parsed.success) {
+    return c.json(
+      error('BAD_REQUEST', parsed.error.issues[0]?.message ?? 'Check the machine.'),
+      400,
+    );
+  }
+  const result = await createMachine(c.env, gate.ctx, parsed.data);
+  return c.json(result.body, result.status as 201);
+});
+
+app.patch('/v1/catalogue/machines/:id', async (c) => {
+  const gate = await requirePriceEdit(c);
+  if (!gate.ok) return gate.response;
+
+  const parsed = machinePatchSchema.safeParse(await safeJson(c));
+  if (!parsed.success) {
+    return c.json(error('BAD_REQUEST', 'Nothing valid to change.'), 400);
+  }
+  const result = await updateMachine(c.env, gate.ctx, c.req.param('id'), parsed.data);
+  return c.json(result.body, result.status as 200);
+});
+
+app.delete('/v1/catalogue/machines/:id', async (c) => {
+  const gate = await requirePriceEdit(c);
+  if (!gate.ok) return gate.response;
+
+  const result = await deleteMachine(c.env, gate.ctx, c.req.param('id'));
+  return c.json(result.body, result.status as 200);
+});
+
+app.get('/v1/catalogue/operations', async (c) => {
+  const ctx = c.get('auth');
+  return c.json({ operations: await listOperations(c.env, ctx.tenantId) });
+});
+
+app.post('/v1/catalogue/operations', async (c) => {
+  const gate = await requirePriceEdit(c);
+  if (!gate.ok) return gate.response;
+
+  const parsed = operationCreateSchema.safeParse(await safeJson(c));
+  if (!parsed.success) {
+    return c.json(
+      error('BAD_REQUEST', parsed.error.issues[0]?.message ?? 'Check the operation.'),
+      400,
+    );
+  }
+  const result = await createOperation(c.env, gate.ctx, parsed.data);
+  return c.json(result.body, result.status as 201);
+});
+
+app.patch('/v1/catalogue/operations/:id', async (c) => {
+  const gate = await requirePriceEdit(c);
+  if (!gate.ok) return gate.response;
+
+  const parsed = operationPatchSchema.safeParse(await safeJson(c));
+  if (!parsed.success) {
+    return c.json(error('BAD_REQUEST', 'Nothing valid to change.'), 400);
+  }
+  const result = await updateOperation(c.env, gate.ctx, c.req.param('id'), parsed.data);
+  return c.json(result.body, result.status as 200);
+});
+
+app.delete('/v1/catalogue/operations/:id', async (c) => {
+  const gate = await requirePriceEdit(c);
+  if (!gate.ok) return gate.response;
+
+  const result = await deleteOperation(c.env, gate.ctx, c.req.param('id'));
+  return c.json(result.body, result.status as 200);
+});
+
 // --- reports (read-only) ---------------------------------------------------
 
 app.get('/v1/settings', async (c) => {
@@ -575,6 +720,26 @@ function rejectLargeBody(contentLength: string | undefined): Response | null {
     );
   }
   return null;
+}
+
+/**
+ * The gate shared by every catalogue write: the token must still be a live
+ * session AND hold `price.edit`. Returns the auth context or the response to
+ * hand back, so a route is one check instead of three.
+ */
+async function requirePriceEdit(
+  c: Context<{ Bindings: Env; Variables: Variables }>,
+): Promise<{ ok: true; ctx: AuthContext } | { ok: false; response: Response }> {
+  const ctx = c.get('auth');
+  const session = await loadSession(c.env, ctx);
+  if (!session.ok) return { ok: false, response: c.json(error(session.code, session.message), 401) };
+  if (!can(ctx.role as never, 'price.edit')) {
+    return {
+      ok: false,
+      response: c.json(error('PERMISSION_DENIED', 'Only an owner changes the catalogue.'), 403),
+    };
+  }
+  return { ok: true, ctx };
 }
 
 export default app;

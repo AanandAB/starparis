@@ -49,7 +49,7 @@ export const DEFAULT_WORKFLOW: ReadonlyArray<{
 ];
 
 export async function loadCatalogue(env: Env, tenantId: string): Promise<CatalogueResponse> {
-  const [products, materials, rules, machines, operations, priceBreaks, versionRow, taxRow, stages] =
+  const [products, materials, rules, machines, operations, priceBreaks, versionRow, taxRow, stages, versionMarker] =
     await Promise.all([
     env.DB.prepare(
       `SELECT * FROM products
@@ -116,6 +116,12 @@ export async function loadCatalogue(env: Env, tenantId: string): Promise<Catalog
     )
       .bind(tenantId)
       .all<Record<string, unknown>>(),
+
+    env.DB.prepare(
+      "SELECT value_json FROM settings WHERE tenant_id = ? AND key = 'catalogue_version'",
+    )
+      .bind(tenantId)
+      .first<{ value_json: string }>(),
   ]);
 
   let vatBps = 500;
@@ -128,6 +134,19 @@ export async function loadCatalogue(env: Env, tenantId: string): Promise<Catalog
     }
   }
 
+  // A soft-deleted row drops out of the SELECTs above, so the write path stamps
+  // a settings marker to keep the version moving even when the newest row is
+  // deleted. Fold that marker into the high-water mark here.
+  let markerTs = '';
+  if (versionMarker?.value_json) {
+    try {
+      const parsed = JSON.parse(versionMarker.value_json) as { at?: string };
+      if (typeof parsed.at === 'string') markerTs = parsed.at;
+    } catch {
+      // A malformed marker must not take the catalogue down.
+    }
+  }
+
   const newestUpdate = [
     ...(products.results ?? []),
     ...(materials.results ?? []),
@@ -137,6 +156,7 @@ export async function loadCatalogue(env: Env, tenantId: string): Promise<Catalog
     ...(priceBreaks.results ?? []),
   ]
     .map((row) => String(row['updated_at'] ?? ''))
+    .concat(markerTs ? [markerTs] : [])
     .sort()
     .at(-1);
 

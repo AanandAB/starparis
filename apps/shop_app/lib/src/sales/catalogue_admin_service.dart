@@ -94,11 +94,174 @@ class CatalogueAdminService {
     });
   }
 
+  // --- materials ----------------------------------------------------------
+
+  /// Materials as the server stores them — full rows, so the editor can show
+  /// sheet size and supplier, which the local Material model does not carry.
+  Future<List<Map<String, Object?>>> listMaterials() =>
+      _list('/v1/catalogue/materials', 'materials');
+
+  Future<void> createMaterial({
+    required String code,
+    required String name,
+    String? type,
+    int? gsm,
+    int? sheetWidthMm,
+    int? sheetHeightMm,
+    int costPerSheetFils = 0,
+    String? supplierId,
+  }) async {
+    await _send('POST', '/v1/catalogue/materials', <String, Object?>{
+      'code': code,
+      'name': name,
+      'type': ?type,
+      'gsm': ?gsm,
+      'sheet_width_mm': ?sheetWidthMm,
+      'sheet_height_mm': ?sheetHeightMm,
+      'cost_per_sheet_fils': costPerSheetFils,
+      'supplier_id': ?supplierId,
+    });
+  }
+
+  Future<void> updateMaterial(
+    String id, {
+    String? name,
+    String? type,
+    int? gsm,
+    int? sheetWidthMm,
+    int? sheetHeightMm,
+    int? costPerSheetFils,
+    String? supplierId,
+  }) async {
+    await _send('PATCH', '/v1/catalogue/materials/$id', <String, Object?>{
+      'name': ?name,
+      'type': ?type,
+      'gsm': ?gsm,
+      'sheet_width_mm': ?sheetWidthMm,
+      'sheet_height_mm': ?sheetHeightMm,
+      'cost_per_sheet_fils': ?costPerSheetFils,
+      'supplier_id': ?supplierId,
+    });
+  }
+
+  Future<void> deleteMaterial(String id) =>
+      _send('DELETE', '/v1/catalogue/materials/$id');
+
+  // --- machines -----------------------------------------------------------
+
+  Future<List<Map<String, Object?>>> listMachines() =>
+      _list('/v1/catalogue/machines', 'machines');
+
+  Future<void> createMachine({
+    required String name,
+    String type = 'digital',
+    int hourlyRateFils = 0,
+    int setupMinutes = 0,
+    int sheetsPerHour = 0,
+    int plateCostFils = 0,
+    int clickFils = 0,
+  }) async {
+    await _send('POST', '/v1/catalogue/machines', <String, Object?>{
+      'name': name,
+      'type': type,
+      'hourly_rate_fils': hourlyRateFils,
+      'setup_minutes': setupMinutes,
+      'sheets_per_hour': sheetsPerHour,
+      'plate_cost_fils': plateCostFils,
+      'click_fils': clickFils,
+    });
+  }
+
+  Future<void> updateMachine(
+    String id, {
+    String? name,
+    String? type,
+    int? hourlyRateFils,
+    int? setupMinutes,
+    int? sheetsPerHour,
+    int? plateCostFils,
+    int? clickFils,
+  }) async {
+    await _send('PATCH', '/v1/catalogue/machines/$id', <String, Object?>{
+      'name': ?name,
+      'type': ?type,
+      'hourly_rate_fils': ?hourlyRateFils,
+      'setup_minutes': ?setupMinutes,
+      'sheets_per_hour': ?sheetsPerHour,
+      'plate_cost_fils': ?plateCostFils,
+      'click_fils': ?clickFils,
+    });
+  }
+
+  Future<void> deleteMachine(String id) =>
+      _send('DELETE', '/v1/catalogue/machines/$id');
+
+  // --- operations ---------------------------------------------------------
+
+  Future<List<Map<String, Object?>>> listOperations() =>
+      _list('/v1/catalogue/operations', 'operations');
+
+  Future<void> createOperation({
+    required String code,
+    required String nameEn,
+    String phase = 'finishing',
+    required String basis,
+    int rateFils = 0,
+    int setupFils = 0,
+    int wasteBps = 0,
+    int minChargeFils = 0,
+  }) async {
+    await _send('POST', '/v1/catalogue/operations', <String, Object?>{
+      'code': code,
+      'name_en': nameEn,
+      'phase': phase,
+      'basis': basis,
+      'rate_fils': rateFils,
+      'setup_fils': setupFils,
+      'waste_bps': wasteBps,
+      'min_charge_fils': minChargeFils,
+    });
+  }
+
+  Future<void> updateOperation(
+    String id, {
+    String? nameEn,
+    String? phase,
+    String? basis,
+    int? rateFils,
+    int? setupFils,
+    int? wasteBps,
+    int? minChargeFils,
+  }) async {
+    await _send('PATCH', '/v1/catalogue/operations/$id', <String, Object?>{
+      'name_en': ?nameEn,
+      'phase': ?phase,
+      'basis': ?basis,
+      'rate_fils': ?rateFils,
+      'setup_fils': ?setupFils,
+      'waste_bps': ?wasteBps,
+      'min_charge_fils': ?minChargeFils,
+    });
+  }
+
+  Future<void> deleteOperation(String id) =>
+      _send('DELETE', '/v1/catalogue/operations/$id');
+
+  /// The `rows` key of a list endpoint, as decoded maps (or empty when absent).
+  Future<List<Map<String, Object?>>> _list(String path, String key) async {
+    final body = await _send('GET', path);
+    final rows = body[key];
+    if (rows is! List) return const <Map<String, Object?>>[];
+    return <Map<String, Object?>>[
+      for (final row in rows) (row! as Map).cast<String, Object?>(),
+    ];
+  }
+
   Future<Map<String, Object?>> _send(
     String method,
-    String path,
-    Map<String, Object?> body,
-  ) async {
+    String path, [
+    Map<String, Object?>? body,
+  ]) async {
     final token = await tokenProvider();
     if (token == null) {
       throw StateError('Sign in again to change the rate card.');
@@ -106,8 +269,10 @@ class CatalogueAdminService {
 
     final request = http.Request(method, Uri.parse('$baseUrl$path'))
       ..headers['content-type'] = 'application/json'
-      ..headers['authorization'] = 'Bearer $token'
-      ..body = jsonEncode(body);
+      ..headers['authorization'] = 'Bearer $token';
+    if (body != null) {
+      request.body = jsonEncode(body);
+    }
 
     final response = await http.Response.fromStream(
       await _client.send(request).timeout(const Duration(seconds: 20)),

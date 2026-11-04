@@ -18,6 +18,7 @@ import 'home_screen.dart';
 import 'log_sheet.dart';
 import 'orders_screen.dart';
 import 'price_book_screen.dart';
+import 'production_setup_screen.dart';
 import 'reports_screen.dart';
 import 'settings_screen.dart';
 import 'staff_screen.dart';
@@ -116,6 +117,17 @@ class _AppShellState extends ConsumerState<AppShell> {
         ),
       );
       optionalPages.add(const CatalogueScreen());
+    }
+    if (ref.watch(canEditPricesProvider)) {
+      business.add(
+        _Dest(
+          t('nav.productionSetup'),
+          Icons.tune_outlined,
+          Icons.tune,
+          nextPage++,
+        ),
+      );
+      optionalPages.add(const ProductionSetupScreen());
     }
     if (ref.watch(canEditPricesProvider)) {
       business.add(

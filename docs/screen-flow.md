@@ -147,6 +147,10 @@ legal next moves: claim, start, pause, finish, rework (reason required), cancel 
 Edit a rate and see the effect on a sample quote before saving; bulk adjust in basis points; both
 writes go to `audit_log` with the old and new value. No developer needed, which was the promise.
 
+The catalogue's paper (materials), presses (machines) and finishing steps (operations) are edited the
+same way on **Production setup** (owner only): each write is audited old → new and bumps
+`catalogue_version`, so every device picks the change up on its next sync.
+
 ### 4.9 Reports — BUILT (owner, manager, accountant)
 VAT for the month (sales, output VAT, credits, VAT due), ageing by customer, cash drawer history with
 variances, purchases by category with input VAT. Server-side by design: a VAT return spans branches.
