@@ -28,6 +28,8 @@ import {
   prepareInvoicePatch,
   preparePayment,
   prepareRefund,
+  DEPOSIT_METHODS,
+  enforceCreditLimit,
 } from './money';
 
 interface EntityDef {
@@ -313,6 +315,25 @@ export const ENTITIES: Record<string, EntityDef> = {
       },
     }),
   },
+  customer_deposits: {
+    table: 'customer_deposits',
+    // `allocated_fils` is deliberately absent: the server advances it when a
+    // deposit is applied to an invoice, never the device.
+    columns: new Set(['customer_id', 'amount_fils', 'method', 'note']),
+    required: ['customer_id', 'amount_fils', 'method'],
+    permission: 'payment.take',
+    mergeable: false,
+    branchScoped: true,
+    // A deposit is money handed over at the counter, so it is a fact once
+    // taken — never edited or deleted, only allocated to invoices later.
+    softDelete: false,
+    mutate: () => ({
+      error: {
+        code: 'DEPOSIT_IMMUTABLE',
+        message: 'A deposit cannot be edited or removed. Allocate it to an invoice instead.',
+      },
+    }),
+  },
   vendors: {
     table: 'vendors',
     columns: new Set(['name', 'trade', 'phone_e164', 'notes', 'active', 'branch_id']),
@@ -569,9 +590,49 @@ async function insertRow(
     if (duplicate) {
       return reject(mutation, 'DUPLICATE_INVOICE', 'This order already has an invoice.');
     }
+    // A credit limit is checked before anything is written: a counter clerk can
+    // only be refused at this point, while an owner or manager overrides it.
+    const creditError = await enforceCreditLimit(
+      env,
+      ctx,
+      String(fields['customer_id'] ?? ''),
+      Number(fields['total_fils'] ?? 0),
+    );
+    if (creditError) {
+      return reject(mutation, creditError.code, creditError.message);
+    }
     // An invoice is issued now, whatever the device's clock says.
     (fields as Record<string, unknown>)['issued_at'] =
       (fields as Record<string, unknown>)['issued_at'] ?? nowIso();
+  }
+
+  if (mutation.entity === 'customer_deposits') {
+    const amount = Number(fields['amount_fils'] ?? 0);
+    if (!Number.isInteger(amount) || amount <= 0) {
+      return reject(mutation, 'INVALID_AMOUNT', 'A deposit must be more than zero.');
+    }
+    const method = String(fields['method'] ?? '');
+    if (!DEPOSIT_METHODS.has(method)) {
+      return reject(
+        mutation,
+        'INVALID_METHOD',
+        `Deposit method must be one of ${[...DEPOSIT_METHODS].join(', ')}.`,
+      );
+    }
+    // A deposit with no customer is money with no owner, so refuse it up front
+    // rather than leave an orphan row a statement could never reach.
+    const customer = await env.DB.prepare(
+      'SELECT 1 AS present FROM customers WHERE id = ? AND tenant_id = ?',
+    )
+      .bind(String(fields['customer_id'] ?? ''), ctx.tenantId)
+      .first<{ present: number }>();
+    if (!customer) {
+      return reject(mutation, 'NOT_FOUND', 'That customer does not exist.');
+    }
+    // A fresh deposit starts unallocated. Setting it here (not relying on the
+    // column default) keeps the change-log projection complete, so a device
+    // pulling the row sees `allocated_fils = 0` instead of a missing field.
+    fields['allocated_fils'] = 0;
   }
 
   if (mutation.entity === 'expenses') {

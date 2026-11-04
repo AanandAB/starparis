@@ -22299,6 +22299,761 @@ class QuickSaleLinesCompanion extends UpdateCompanion<QuickSaleLine> {
   }
 }
 
+class $CustomerDepositsTable extends CustomerDeposits
+    with TableInfo<$CustomerDepositsTable, CustomerDeposit> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CustomerDepositsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tenantIdMeta = const VerificationMeta(
+    'tenantId',
+  );
+  @override
+  late final GeneratedColumn<String> tenantId = GeneratedColumn<String>(
+    'tenant_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _branchIdMeta = const VerificationMeta(
+    'branchId',
+  );
+  @override
+  late final GeneratedColumn<String> branchId = GeneratedColumn<String>(
+    'branch_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _customerIdMeta = const VerificationMeta(
+    'customerId',
+  );
+  @override
+  late final GeneratedColumn<String> customerId = GeneratedColumn<String>(
+    'customer_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _amountFilsMeta = const VerificationMeta(
+    'amountFils',
+  );
+  @override
+  late final GeneratedColumn<int> amountFils = GeneratedColumn<int>(
+    'amount_fils',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _methodMeta = const VerificationMeta('method');
+  @override
+  late final GeneratedColumn<String> method = GeneratedColumn<String>(
+    'method',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _allocatedFilsMeta = const VerificationMeta(
+    'allocatedFils',
+  );
+  @override
+  late final GeneratedColumn<int> allocatedFils = GeneratedColumn<int>(
+    'allocated_fils',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdByMeta = const VerificationMeta(
+    'createdBy',
+  );
+  @override
+  late final GeneratedColumn<String> createdBy = GeneratedColumn<String>(
+    'created_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _versionMeta = const VerificationMeta(
+    'version',
+  );
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+    'version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    tenantId,
+    branchId,
+    customerId,
+    amountFils,
+    method,
+    note,
+    allocatedFils,
+    createdAt,
+    updatedAt,
+    createdBy,
+    version,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'customer_deposits';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CustomerDeposit> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('tenant_id')) {
+      context.handle(
+        _tenantIdMeta,
+        tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tenantIdMeta);
+    }
+    if (data.containsKey('branch_id')) {
+      context.handle(
+        _branchIdMeta,
+        branchId.isAcceptableOrUnknown(data['branch_id']!, _branchIdMeta),
+      );
+    }
+    if (data.containsKey('customer_id')) {
+      context.handle(
+        _customerIdMeta,
+        customerId.isAcceptableOrUnknown(data['customer_id']!, _customerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_customerIdMeta);
+    }
+    if (data.containsKey('amount_fils')) {
+      context.handle(
+        _amountFilsMeta,
+        amountFils.isAcceptableOrUnknown(data['amount_fils']!, _amountFilsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_amountFilsMeta);
+    }
+    if (data.containsKey('method')) {
+      context.handle(
+        _methodMeta,
+        method.isAcceptableOrUnknown(data['method']!, _methodMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_methodMeta);
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('allocated_fils')) {
+      context.handle(
+        _allocatedFilsMeta,
+        allocatedFils.isAcceptableOrUnknown(
+          data['allocated_fils']!,
+          _allocatedFilsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('created_by')) {
+      context.handle(
+        _createdByMeta,
+        createdBy.isAcceptableOrUnknown(data['created_by']!, _createdByMeta),
+      );
+    }
+    if (data.containsKey('version')) {
+      context.handle(
+        _versionMeta,
+        version.isAcceptableOrUnknown(data['version']!, _versionMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CustomerDeposit map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CustomerDeposit(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      tenantId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tenant_id'],
+      )!,
+      branchId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}branch_id'],
+      ),
+      customerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}customer_id'],
+      )!,
+      amountFils: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}amount_fils'],
+      )!,
+      method: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}method'],
+      )!,
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+      allocatedFils: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}allocated_fils'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      createdBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}created_by'],
+      ),
+      version: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}version'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $CustomerDepositsTable createAlias(String alias) {
+    return $CustomerDepositsTable(attachedDatabase, alias);
+  }
+}
+
+class CustomerDeposit extends DataClass implements Insertable<CustomerDeposit> {
+  final String id;
+  final String tenantId;
+  final String? branchId;
+  final String customerId;
+  final int amountFils;
+  final String method;
+  final String? note;
+  final int allocatedFils;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String? createdBy;
+  final int version;
+  final DateTime? deletedAt;
+  const CustomerDeposit({
+    required this.id,
+    required this.tenantId,
+    this.branchId,
+    required this.customerId,
+    required this.amountFils,
+    required this.method,
+    this.note,
+    required this.allocatedFils,
+    required this.createdAt,
+    required this.updatedAt,
+    this.createdBy,
+    required this.version,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['tenant_id'] = Variable<String>(tenantId);
+    if (!nullToAbsent || branchId != null) {
+      map['branch_id'] = Variable<String>(branchId);
+    }
+    map['customer_id'] = Variable<String>(customerId);
+    map['amount_fils'] = Variable<int>(amountFils);
+    map['method'] = Variable<String>(method);
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    map['allocated_fils'] = Variable<int>(allocatedFils);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || createdBy != null) {
+      map['created_by'] = Variable<String>(createdBy);
+    }
+    map['version'] = Variable<int>(version);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  CustomerDepositsCompanion toCompanion(bool nullToAbsent) {
+    return CustomerDepositsCompanion(
+      id: Value(id),
+      tenantId: Value(tenantId),
+      branchId: branchId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(branchId),
+      customerId: Value(customerId),
+      amountFils: Value(amountFils),
+      method: Value(method),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      allocatedFils: Value(allocatedFils),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      createdBy: createdBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdBy),
+      version: Value(version),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory CustomerDeposit.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CustomerDeposit(
+      id: serializer.fromJson<String>(json['id']),
+      tenantId: serializer.fromJson<String>(json['tenantId']),
+      branchId: serializer.fromJson<String?>(json['branchId']),
+      customerId: serializer.fromJson<String>(json['customerId']),
+      amountFils: serializer.fromJson<int>(json['amountFils']),
+      method: serializer.fromJson<String>(json['method']),
+      note: serializer.fromJson<String?>(json['note']),
+      allocatedFils: serializer.fromJson<int>(json['allocatedFils']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      createdBy: serializer.fromJson<String?>(json['createdBy']),
+      version: serializer.fromJson<int>(json['version']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'tenantId': serializer.toJson<String>(tenantId),
+      'branchId': serializer.toJson<String?>(branchId),
+      'customerId': serializer.toJson<String>(customerId),
+      'amountFils': serializer.toJson<int>(amountFils),
+      'method': serializer.toJson<String>(method),
+      'note': serializer.toJson<String?>(note),
+      'allocatedFils': serializer.toJson<int>(allocatedFils),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'createdBy': serializer.toJson<String?>(createdBy),
+      'version': serializer.toJson<int>(version),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  CustomerDeposit copyWith({
+    String? id,
+    String? tenantId,
+    Value<String?> branchId = const Value.absent(),
+    String? customerId,
+    int? amountFils,
+    String? method,
+    Value<String?> note = const Value.absent(),
+    int? allocatedFils,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<String?> createdBy = const Value.absent(),
+    int? version,
+    Value<DateTime?> deletedAt = const Value.absent(),
+  }) => CustomerDeposit(
+    id: id ?? this.id,
+    tenantId: tenantId ?? this.tenantId,
+    branchId: branchId.present ? branchId.value : this.branchId,
+    customerId: customerId ?? this.customerId,
+    amountFils: amountFils ?? this.amountFils,
+    method: method ?? this.method,
+    note: note.present ? note.value : this.note,
+    allocatedFils: allocatedFils ?? this.allocatedFils,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    createdBy: createdBy.present ? createdBy.value : this.createdBy,
+    version: version ?? this.version,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  CustomerDeposit copyWithCompanion(CustomerDepositsCompanion data) {
+    return CustomerDeposit(
+      id: data.id.present ? data.id.value : this.id,
+      tenantId: data.tenantId.present ? data.tenantId.value : this.tenantId,
+      branchId: data.branchId.present ? data.branchId.value : this.branchId,
+      customerId: data.customerId.present
+          ? data.customerId.value
+          : this.customerId,
+      amountFils: data.amountFils.present
+          ? data.amountFils.value
+          : this.amountFils,
+      method: data.method.present ? data.method.value : this.method,
+      note: data.note.present ? data.note.value : this.note,
+      allocatedFils: data.allocatedFils.present
+          ? data.allocatedFils.value
+          : this.allocatedFils,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      createdBy: data.createdBy.present ? data.createdBy.value : this.createdBy,
+      version: data.version.present ? data.version.value : this.version,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CustomerDeposit(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('branchId: $branchId, ')
+          ..write('customerId: $customerId, ')
+          ..write('amountFils: $amountFils, ')
+          ..write('method: $method, ')
+          ..write('note: $note, ')
+          ..write('allocatedFils: $allocatedFils, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('createdBy: $createdBy, ')
+          ..write('version: $version, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    tenantId,
+    branchId,
+    customerId,
+    amountFils,
+    method,
+    note,
+    allocatedFils,
+    createdAt,
+    updatedAt,
+    createdBy,
+    version,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CustomerDeposit &&
+          other.id == this.id &&
+          other.tenantId == this.tenantId &&
+          other.branchId == this.branchId &&
+          other.customerId == this.customerId &&
+          other.amountFils == this.amountFils &&
+          other.method == this.method &&
+          other.note == this.note &&
+          other.allocatedFils == this.allocatedFils &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.createdBy == this.createdBy &&
+          other.version == this.version &&
+          other.deletedAt == this.deletedAt);
+}
+
+class CustomerDepositsCompanion extends UpdateCompanion<CustomerDeposit> {
+  final Value<String> id;
+  final Value<String> tenantId;
+  final Value<String?> branchId;
+  final Value<String> customerId;
+  final Value<int> amountFils;
+  final Value<String> method;
+  final Value<String?> note;
+  final Value<int> allocatedFils;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String?> createdBy;
+  final Value<int> version;
+  final Value<DateTime?> deletedAt;
+  final Value<int> rowid;
+  const CustomerDepositsCompanion({
+    this.id = const Value.absent(),
+    this.tenantId = const Value.absent(),
+    this.branchId = const Value.absent(),
+    this.customerId = const Value.absent(),
+    this.amountFils = const Value.absent(),
+    this.method = const Value.absent(),
+    this.note = const Value.absent(),
+    this.allocatedFils = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.createdBy = const Value.absent(),
+    this.version = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CustomerDepositsCompanion.insert({
+    required String id,
+    required String tenantId,
+    this.branchId = const Value.absent(),
+    required String customerId,
+    required int amountFils,
+    required String method,
+    this.note = const Value.absent(),
+    this.allocatedFils = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.createdBy = const Value.absent(),
+    this.version = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       tenantId = Value(tenantId),
+       customerId = Value(customerId),
+       amountFils = Value(amountFils),
+       method = Value(method),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<CustomerDeposit> custom({
+    Expression<String>? id,
+    Expression<String>? tenantId,
+    Expression<String>? branchId,
+    Expression<String>? customerId,
+    Expression<int>? amountFils,
+    Expression<String>? method,
+    Expression<String>? note,
+    Expression<int>? allocatedFils,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? createdBy,
+    Expression<int>? version,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (tenantId != null) 'tenant_id': tenantId,
+      if (branchId != null) 'branch_id': branchId,
+      if (customerId != null) 'customer_id': customerId,
+      if (amountFils != null) 'amount_fils': amountFils,
+      if (method != null) 'method': method,
+      if (note != null) 'note': note,
+      if (allocatedFils != null) 'allocated_fils': allocatedFils,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (createdBy != null) 'created_by': createdBy,
+      if (version != null) 'version': version,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CustomerDepositsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? tenantId,
+    Value<String?>? branchId,
+    Value<String>? customerId,
+    Value<int>? amountFils,
+    Value<String>? method,
+    Value<String?>? note,
+    Value<int>? allocatedFils,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String?>? createdBy,
+    Value<int>? version,
+    Value<DateTime?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return CustomerDepositsCompanion(
+      id: id ?? this.id,
+      tenantId: tenantId ?? this.tenantId,
+      branchId: branchId ?? this.branchId,
+      customerId: customerId ?? this.customerId,
+      amountFils: amountFils ?? this.amountFils,
+      method: method ?? this.method,
+      note: note ?? this.note,
+      allocatedFils: allocatedFils ?? this.allocatedFils,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      createdBy: createdBy ?? this.createdBy,
+      version: version ?? this.version,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (tenantId.present) {
+      map['tenant_id'] = Variable<String>(tenantId.value);
+    }
+    if (branchId.present) {
+      map['branch_id'] = Variable<String>(branchId.value);
+    }
+    if (customerId.present) {
+      map['customer_id'] = Variable<String>(customerId.value);
+    }
+    if (amountFils.present) {
+      map['amount_fils'] = Variable<int>(amountFils.value);
+    }
+    if (method.present) {
+      map['method'] = Variable<String>(method.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (allocatedFils.present) {
+      map['allocated_fils'] = Variable<int>(allocatedFils.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (createdBy.present) {
+      map['created_by'] = Variable<String>(createdBy.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CustomerDepositsCompanion(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('branchId: $branchId, ')
+          ..write('customerId: $customerId, ')
+          ..write('amountFils: $amountFils, ')
+          ..write('method: $method, ')
+          ..write('note: $note, ')
+          ..write('allocatedFils: $allocatedFils, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('createdBy: $createdBy, ')
+          ..write('version: $version, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $OutboxMutationsTable extends OutboxMutations
     with TableInfo<$OutboxMutationsTable, OutboxMutation> {
   @override
@@ -23150,6 +23905,9 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
   late final $OrderItemsTable orderItems = $OrderItemsTable(this);
   late final $QuickSalesTable quickSales = $QuickSalesTable(this);
   late final $QuickSaleLinesTable quickSaleLines = $QuickSaleLinesTable(this);
+  late final $CustomerDepositsTable customerDeposits = $CustomerDepositsTable(
+    this,
+  );
   late final $OutboxMutationsTable outboxMutations = $OutboxMutationsTable(
     this,
   );
@@ -23184,6 +23942,7 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
     orderItems,
     quickSales,
     quickSaleLines,
+    customerDeposits,
     outboxMutations,
     syncMeta,
   ];
@@ -33600,6 +34359,383 @@ typedef $$QuickSaleLinesTableProcessedTableManager =
       QuickSaleLine,
       PrefetchHooks Function()
     >;
+typedef $$CustomerDepositsTableCreateCompanionBuilder =
+    CustomerDepositsCompanion Function({
+      required String id,
+      required String tenantId,
+      Value<String?> branchId,
+      required String customerId,
+      required int amountFils,
+      required String method,
+      Value<String?> note,
+      Value<int> allocatedFils,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<String?> createdBy,
+      Value<int> version,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+typedef $$CustomerDepositsTableUpdateCompanionBuilder =
+    CustomerDepositsCompanion Function({
+      Value<String> id,
+      Value<String> tenantId,
+      Value<String?> branchId,
+      Value<String> customerId,
+      Value<int> amountFils,
+      Value<String> method,
+      Value<String?> note,
+      Value<int> allocatedFils,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String?> createdBy,
+      Value<int> version,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+
+class $$CustomerDepositsTableFilterComposer
+    extends Composer<_$LocalDatabase, $CustomerDepositsTable> {
+  $$CustomerDepositsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tenantId => $composableBuilder(
+    column: $table.tenantId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get branchId => $composableBuilder(
+    column: $table.branchId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get customerId => $composableBuilder(
+    column: $table.customerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get amountFils => $composableBuilder(
+    column: $table.amountFils,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get method => $composableBuilder(
+    column: $table.method,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get allocatedFils => $composableBuilder(
+    column: $table.allocatedFils,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get createdBy => $composableBuilder(
+    column: $table.createdBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CustomerDepositsTableOrderingComposer
+    extends Composer<_$LocalDatabase, $CustomerDepositsTable> {
+  $$CustomerDepositsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tenantId => $composableBuilder(
+    column: $table.tenantId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get branchId => $composableBuilder(
+    column: $table.branchId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get customerId => $composableBuilder(
+    column: $table.customerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get amountFils => $composableBuilder(
+    column: $table.amountFils,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get method => $composableBuilder(
+    column: $table.method,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get allocatedFils => $composableBuilder(
+    column: $table.allocatedFils,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get createdBy => $composableBuilder(
+    column: $table.createdBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CustomerDepositsTableAnnotationComposer
+    extends Composer<_$LocalDatabase, $CustomerDepositsTable> {
+  $$CustomerDepositsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get tenantId =>
+      $composableBuilder(column: $table.tenantId, builder: (column) => column);
+
+  GeneratedColumn<String> get branchId =>
+      $composableBuilder(column: $table.branchId, builder: (column) => column);
+
+  GeneratedColumn<String> get customerId => $composableBuilder(
+    column: $table.customerId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get amountFils => $composableBuilder(
+    column: $table.amountFils,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get method =>
+      $composableBuilder(column: $table.method, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<int> get allocatedFils => $composableBuilder(
+    column: $table.allocatedFils,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get createdBy =>
+      $composableBuilder(column: $table.createdBy, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+}
+
+class $$CustomerDepositsTableTableManager
+    extends
+        RootTableManager<
+          _$LocalDatabase,
+          $CustomerDepositsTable,
+          CustomerDeposit,
+          $$CustomerDepositsTableFilterComposer,
+          $$CustomerDepositsTableOrderingComposer,
+          $$CustomerDepositsTableAnnotationComposer,
+          $$CustomerDepositsTableCreateCompanionBuilder,
+          $$CustomerDepositsTableUpdateCompanionBuilder,
+          (
+            CustomerDeposit,
+            BaseReferences<
+              _$LocalDatabase,
+              $CustomerDepositsTable,
+              CustomerDeposit
+            >,
+          ),
+          CustomerDeposit,
+          PrefetchHooks Function()
+        > {
+  $$CustomerDepositsTableTableManager(
+    _$LocalDatabase db,
+    $CustomerDepositsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CustomerDepositsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CustomerDepositsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CustomerDepositsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> tenantId = const Value.absent(),
+                Value<String?> branchId = const Value.absent(),
+                Value<String> customerId = const Value.absent(),
+                Value<int> amountFils = const Value.absent(),
+                Value<String> method = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<int> allocatedFils = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String?> createdBy = const Value.absent(),
+                Value<int> version = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CustomerDepositsCompanion(
+                id: id,
+                tenantId: tenantId,
+                branchId: branchId,
+                customerId: customerId,
+                amountFils: amountFils,
+                method: method,
+                note: note,
+                allocatedFils: allocatedFils,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                createdBy: createdBy,
+                version: version,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String tenantId,
+                Value<String?> branchId = const Value.absent(),
+                required String customerId,
+                required int amountFils,
+                required String method,
+                Value<String?> note = const Value.absent(),
+                Value<int> allocatedFils = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<String?> createdBy = const Value.absent(),
+                Value<int> version = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CustomerDepositsCompanion.insert(
+                id: id,
+                tenantId: tenantId,
+                branchId: branchId,
+                customerId: customerId,
+                amountFils: amountFils,
+                method: method,
+                note: note,
+                allocatedFils: allocatedFils,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                createdBy: createdBy,
+                version: version,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$CustomerDepositsTable, CustomerDeposit>(table),
+                  BaseReferences<
+                    _$LocalDatabase,
+                    $CustomerDepositsTable,
+                    CustomerDeposit
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CustomerDepositsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$LocalDatabase,
+      $CustomerDepositsTable,
+      CustomerDeposit,
+      $$CustomerDepositsTableFilterComposer,
+      $$CustomerDepositsTableOrderingComposer,
+      $$CustomerDepositsTableAnnotationComposer,
+      $$CustomerDepositsTableCreateCompanionBuilder,
+      $$CustomerDepositsTableUpdateCompanionBuilder,
+      (
+        CustomerDeposit,
+        BaseReferences<
+          _$LocalDatabase,
+          $CustomerDepositsTable,
+          CustomerDeposit
+        >,
+      ),
+      CustomerDeposit,
+      PrefetchHooks Function()
+    >;
 typedef $$OutboxMutationsTableCreateCompanionBuilder =
     OutboxMutationsCompanion Function({
       required String mutationId,
@@ -34110,6 +35246,8 @@ class $LocalDatabaseManager {
       $$QuickSalesTableTableManager(_db, _db.quickSales);
   $$QuickSaleLinesTableTableManager get quickSaleLines =>
       $$QuickSaleLinesTableTableManager(_db, _db.quickSaleLines);
+  $$CustomerDepositsTableTableManager get customerDeposits =>
+      $$CustomerDepositsTableTableManager(_db, _db.customerDeposits);
   $$OutboxMutationsTableTableManager get outboxMutations =>
       $$OutboxMutationsTableTableManager(_db, _db.outboxMutations);
   $$SyncMetaTableTableManager get syncMeta =>

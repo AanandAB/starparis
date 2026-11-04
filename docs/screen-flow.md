@@ -129,6 +129,9 @@ customer's orders and their balance.
 The customer sheet shows address, TRN, notes, jobs and the statement of account; a **Statement PDF**
 writes that statement to the shop's documents folder. An **Export** button writes the customer list to
 `Documents/StarParis/StarParis_Customers_<date>_<time>.xlsx` (frozen header, filterable columns, offline).
+The sheet also shows the customer's credit limit and deposit balance, and a **Take deposit** action
+records an advance; issuing an invoice that would push a customer past a non-zero credit limit is
+refused for a counter clerk (owner/manager override), with the over-limit balance flagged in red.
 
 ### 4.5 Orders — BUILT
 List of orders with status, total, due date. Actions per order: quote PDF, job ticket PDF, invoice,

@@ -10,6 +10,7 @@ import { SELF, env } from 'cloudflare:test';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { hashPassword, toBase64 } from '../src/crypto';
+import { allocateDeposit, depositBalanceFils } from '../src/money';
 
 const TENANT = '0193f0b1-0000-7000-8000-000000000001';
 const BRANCH_SHJ = '0193f0b1-0000-7000-8000-0000000000b1';
@@ -2888,5 +2889,162 @@ describe('proof files and approvals', () => {
       body: JSON.stringify({ decision: 'approved' }),
     });
     expect(decide.status).toBe(404);
+  });
+});
+
+describe('customer deposits and credit limits', () => {
+  const depositCustomer = '0193f0b1-0000-7000-8000-0000000000b3';
+  const limitCustomer = '0193f0b1-0000-7000-8000-0000000000b4';
+  const depositId = '0193f0b1-0000-7000-8000-0000000000b5';
+  const invoiceId = '0193f0b1-0000-7000-8000-0000000000b6';
+
+  beforeAll(async () => {
+    const now = new Date().toISOString();
+    await env.DB.batch([
+      env.DB.prepare(
+        'INSERT INTO customers (id, tenant_id, branch_id, name, credit_limit_fils, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      ).bind(depositCustomer, TENANT, BRANCH_SHJ, 'Deposit Payer', 0, now, now),
+      env.DB.prepare(
+        'INSERT INTO customers (id, tenant_id, branch_id, name, credit_limit_fils, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      ).bind(limitCustomer, TENANT, BRANCH_SHJ, 'Credit Buyer', 5000, now, now),
+    ]);
+  });
+
+  async function push(session: Session, mutations: Array<Record<string, unknown>>) {
+    const response = await api(
+      '/v1/push',
+      authed(session.access_token, {
+        device_id: session.device_id,
+        mutations,
+      }),
+    );
+    return (await response.json()) as {
+      results: Array<{ status: string; error?: { code: string } }>;
+    };
+  }
+
+  it('a deposit raises the balance and reaches the customer statement', async () => {
+    const body = await push(counter, [
+      mutation({
+        mutation_id: 'm-deposit-1',
+        entity: 'customer_deposits',
+        row_id: depositId,
+        fields: {
+          customer_id: depositCustomer,
+          amount_fils: 5000,
+          method: 'cash',
+          note: 'Advance for business cards',
+        },
+      }),
+    ]);
+    expect(body.results[0]!.status).toBe('applied');
+
+    expect(await depositBalanceFils(env, TENANT, depositCustomer)).toBe(5000);
+
+    // The deposit is a synced row like any other, so a pull carries it to the
+    // device where the statement is built from it.
+    const pull = await api('/v1/pull?since=0&limit=500', authed(counter.access_token));
+    const pullBody = (await pull.json()) as {
+      rows: Array<{ entity: string; row_id: string; data: Record<string, unknown> }>;
+    };
+    const deposit = pullBody.rows.find((row) => row.row_id === depositId);
+    expect(deposit).toBeDefined();
+    expect(deposit!.entity).toBe('customer_deposits');
+    expect(deposit!.data['amount_fils']).toBe(5000);
+    expect(deposit!.data['allocated_fils']).toBe(0);
+  });
+
+  it('allocateDeposit moves money from a deposit to an invoice', async () => {
+    // The zero-limit customer is invoiced freely (see the next two tests), so
+    // there is a real invoice to allocate the deposit against.
+    const invoice = await push(counter, [
+      mutation({
+        mutation_id: 'm-dep-invoice-1',
+        entity: 'invoices',
+        row_id: invoiceId,
+        fields: {
+          order_id: '0193f0b1-0000-7000-8000-0000000000b7',
+          number: 'INV-SHJ1-PC1-00100',
+          customer_id: depositCustomer,
+          customer_name: 'Deposit Payer',
+          subtotal_fils: 3000,
+          vat_fils: 150,
+          total_fils: 3150,
+        },
+      }),
+    ]);
+    expect(invoice.results[0]!.status).toBe('applied');
+
+    const allocated = await allocateDeposit(env, TENANT, depositId, invoiceId, 2000);
+    expect('ok' in allocated).toBe(true);
+
+    // The unallocated balance drops by the applied amount, never the whole
+    // deposit.
+    expect(await depositBalanceFils(env, TENANT, depositCustomer)).toBe(3000);
+
+    const deposit = await env.DB.prepare(
+      'SELECT allocated_fils FROM customer_deposits WHERE id = ?',
+    ).bind(depositId).first<{ allocated_fils: number }>();
+    expect(Number(deposit!.allocated_fils)).toBe(2000);
+
+    // A retried allocation for the same invoice is refused, so the money can
+    // never be applied twice.
+    const retry = await allocateDeposit(env, TENANT, depositId, invoiceId, 2000);
+    expect('error' in retry).toBe(true);
+    expect(await depositBalanceFils(env, TENANT, depositCustomer)).toBe(3000);
+  });
+
+  it('refuses an invoice over a non-zero credit limit for a counter, not the owner', async () => {
+    const fields = {
+      order_id: '0193f0b1-0000-7000-8000-0000000000b8',
+      number: 'INV-SHJ1-PC1-00101',
+      customer_id: limitCustomer,
+      customer_name: 'Credit Buyer',
+      subtotal_fils: 5714,
+      vat_fils: 286,
+      total_fils: 6000,
+    };
+
+    const byCounter = await push(counter, [
+      mutation({
+        mutation_id: 'm-credit-counter',
+        entity: 'invoices',
+        row_id: '0193f0b1-0000-7000-8000-0000000000b9',
+        fields,
+      }),
+    ]);
+    expect(byCounter.results[0]!.status).toBe('rejected');
+    expect(byCounter.results[0]!.error!.code).toBe('CREDIT_LIMIT_EXCEEDED');
+
+    // The owner is the override: the same invoice, same row id, is accepted.
+    const byOwner = await push(owner, [
+      mutation({
+        mutation_id: 'm-credit-owner',
+        entity: 'invoices',
+        row_id: '0193f0b1-0000-7000-8000-0000000000b9',
+        fields,
+      }),
+    ]);
+    expect(byOwner.results[0]!.status).toBe('applied');
+  });
+
+  it('never blocks a zero-limit customer, however large the invoice', async () => {
+    const body = await push(counter, [
+      mutation({
+        mutation_id: 'm-zero-limit',
+        entity: 'invoices',
+        row_id: '0193f0b1-0000-7000-8000-0000000000c0',
+        fields: {
+          order_id: '0193f0b1-0000-7000-8000-0000000000c4',
+          number: 'INV-SHJ1-PC1-00102',
+          customer_id: depositCustomer,
+          customer_name: 'Deposit Payer',
+          subtotal_fils: 999900,
+          vat_fils: 100,
+          total_fils: 1000000,
+        },
+      }),
+    ]);
+    expect(body.results[0]!.status).toBe('applied');
   });
 });

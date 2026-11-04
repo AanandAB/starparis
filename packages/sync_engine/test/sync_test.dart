@@ -1196,6 +1196,50 @@ void main() {
       );
     });
 
+    test('a deposit is queued as a whole insert with its method and note', () async {
+      final id = await db.createDepositLocal(
+        tenantId: 't1',
+        branchId: 'b1',
+        userId: 'u1',
+        customerId: 'c1',
+        amountFils: 5000,
+        method: 'cash',
+        note: 'Advance for business cards',
+      );
+
+      final row = await (db.select(
+        db.customerDeposits,
+      )..where((t) => t.id.equals(id))).getSingle();
+      expect(row.amountFils, 5000);
+      expect(row.method, 'cash');
+      expect(row.allocatedFils, 0);
+      expect(row.customerId, 'c1');
+
+      final batch = await db.nextBatch();
+      expect(batch, hasLength(1));
+      expect(batch.single.entity, 'customer_deposits');
+      expect(batch.single.op, 'insert');
+      final payload =
+          jsonDecode(batch.single.payloadJson) as Map<String, dynamic>;
+      expect(payload['customer_id'], 'c1');
+      expect(payload['amount_fils'], 5000);
+      expect(payload['method'], 'cash');
+      expect(payload['note'], 'Advance for business cards');
+
+      await expectLater(
+        db.createDepositLocal(
+          tenantId: 't1',
+          branchId: 'b1',
+          userId: 'u1',
+          customerId: 'c1',
+          amountFils: 0,
+          method: 'cash',
+        ),
+        throwsA(isA<StateError>()),
+        reason: 'money that was not handed over is not a deposit',
+      );
+    });
+
     test(
       'a payment moves the balance but only the payment is queued',
       () async {

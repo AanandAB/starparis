@@ -508,6 +508,30 @@ class Refunds extends Table {
   Set<Column<Object>> get primaryKey => <Column<Object>>{id};
 }
 
+/// Money taken before an invoice exists: an advance, a booking fee. The row is
+/// a fact once taken — never edited or deleted — and the only thing that ever
+/// changes is [allocatedFils], which the server advances as the deposit is
+/// applied to invoices later. The balance still available is
+/// `amount_fils - allocated_fils`.
+class CustomerDeposits extends Table {
+  TextColumn get id => text()();
+  TextColumn get tenantId => text()();
+  TextColumn get branchId => text().nullable()();
+  TextColumn get customerId => text()();
+  IntColumn get amountFils => integer()();
+  TextColumn get method => text()();
+  TextColumn get note => text().nullable()();
+  IntColumn get allocatedFils => integer().withDefault(const Constant(0))();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  TextColumn get createdBy => text().nullable()();
+  IntColumn get version => integer().withDefault(const Constant(0))();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
 /// A shift at the counter: opening float in, counted cash out.
 class TillSessions extends Table {
   TextColumn get id => text()();
@@ -693,6 +717,7 @@ class SyncMeta extends Table {
     OrderItems,
     QuickSales,
     QuickSaleLines,
+    CustomerDeposits,
     OutboxMutations,
     SyncMeta,
   ],
@@ -701,7 +726,7 @@ class LocalDatabase extends _$LocalDatabase {
   LocalDatabase(super.executor);
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -758,6 +783,9 @@ class LocalDatabase extends _$LocalDatabase {
       if (from < 14) {
         await m.createTable(quickSales);
         await m.createTable(quickSaleLines);
+      }
+      if (from < 15) {
+        await m.createTable(customerDeposits);
       }
       if (from < 11) {
         if (from >= 1) {
@@ -1053,6 +1081,8 @@ class LocalDatabase extends _$LocalDatabase {
         await _upsertVendor(data);
       case 'vendor_jobs':
         await _upsertVendorJob(data);
+      case 'customer_deposits':
+        await _upsertCustomerDeposit(data);
       default:
         break;
     }
@@ -1106,6 +1136,29 @@ class LocalDatabase extends _$LocalDatabase {
         updatedAt: Value(_asDate(data['updated_at']) ?? now),
         createdBy: Value(data['created_by'] as String?),
         updatedBy: Value(data['updated_by'] as String?),
+        version: Value((data['version'] as num?)?.toInt() ?? 0),
+        deletedAt: Value(_asDate(data['deleted_at'])),
+      ),
+    );
+  }
+
+  Future<void> _upsertCustomerDeposit(Map<String, Object?> data) async {
+    final id = data['id'] as String?;
+    if (id == null) return;
+    final now = DateTime.now().toUtc();
+    await into(customerDeposits).insertOnConflictUpdate(
+      CustomerDepositsCompanion(
+        id: Value(id),
+        tenantId: Value(data['tenant_id'] as String? ?? ''),
+        branchId: Value(data['branch_id'] as String?),
+        customerId: Value(data['customer_id'] as String? ?? ''),
+        amountFils: Value((data['amount_fils'] as num?)?.toInt() ?? 0),
+        method: Value(data['method'] as String? ?? 'cash'),
+        note: Value(data['note'] as String?),
+        allocatedFils: Value((data['allocated_fils'] as num?)?.toInt() ?? 0),
+        createdAt: Value(_asDate(data['created_at']) ?? now),
+        updatedAt: Value(_asDate(data['updated_at']) ?? now),
+        createdBy: Value(data['created_by'] as String?),
         version: Value((data['version'] as num?)?.toInt() ?? 0),
         deletedAt: Value(_asDate(data['deleted_at'])),
       ),
@@ -3216,6 +3269,61 @@ class LocalDatabase extends _$LocalDatabase {
     return id;
   }
 
+  /// Records money a customer paid before any invoice exists: an advance or a
+  /// booking fee. The row and its outbox insert are written in one transaction,
+  /// so a crash cannot leave one without the other. The server stamps the
+  /// branch from the token, so it is deliberately not sent.
+  Future<String> createDepositLocal({
+    required String tenantId,
+    required String? branchId,
+    required String userId,
+    required String customerId,
+    required int amountFils,
+    required String method,
+    String? note,
+  }) async {
+    if (amountFils <= 0) {
+      throw StateError('A deposit must be more than zero.');
+    }
+
+    final id = Uuid7.generate();
+    final now = DateTime.now().toUtc();
+    final trimmedNote = (note ?? '').trim().isEmpty ? null : note!.trim();
+
+    await transaction(() async {
+      await into(customerDeposits).insert(
+        CustomerDepositsCompanion.insert(
+          id: id,
+          tenantId: tenantId,
+          branchId: Value(branchId),
+          customerId: customerId,
+          amountFils: amountFils,
+          method: method,
+          note: Value(trimmedNote),
+          allocatedFils: const Value(0),
+          createdAt: now,
+          updatedAt: now,
+          createdBy: Value(userId),
+          version: const Value(1),
+        ),
+      );
+      await _enqueue(
+        entity: 'customer_deposits',
+        rowId: id,
+        op: 'insert',
+        baseVersion: 0,
+        fields: <String, Object?>{
+          'customer_id': customerId,
+          'amount_fils': amountFils,
+          'method': method,
+          'note': trimmedNote,
+        },
+      );
+    });
+
+    return id;
+  }
+
   /// Money paid out since a moment — shown beside the drawer, never added to it:
   /// the server decides which of these the shift actually paid.
   Stream<List<Expense>> watchExpensesSince(DateTime since) {
@@ -3424,6 +3532,19 @@ class LocalDatabase extends _$LocalDatabase {
           )
           ..orderBy(<OrderClauseGenerator<$InvoicesTable>>[
             (t) => OrderingTerm.desc(t.issuedAt),
+          ]))
+        .watch();
+  }
+
+  /// The customer's deposits, newest first. The sheet shows the unallocated
+  /// balance (`amount_fils - allocated_fils`) alongside what is owed.
+  Stream<List<CustomerDeposit>> watchDepositsForCustomer(String customerId) {
+    return (select(customerDeposits)
+          ..where(
+            (t) => t.customerId.equals(customerId) & t.deletedAt.isNull(),
+          )
+          ..orderBy(<OrderClauseGenerator<$CustomerDepositsTable>>[
+            (t) => OrderingTerm.desc(t.createdAt),
           ]))
         .watch();
   }

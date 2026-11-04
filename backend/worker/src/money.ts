@@ -23,6 +23,16 @@ export const PAYMENT_METHODS: ReadonlySet<string> = new Set([
   'cheque',
 ]);
 
+/**
+ * The methods a deposit may be taken by. Narrower than payments: an advance
+ * over a cheque would be money the shop does not hold, so it is excluded.
+ */
+export const DEPOSIT_METHODS: ReadonlySet<string> = new Set([
+  'cash',
+  'card',
+  'transfer',
+]);
+
 export interface MoneyError {
   code: string;
   message: string;
@@ -326,4 +336,141 @@ export async function expectedCash(
     Number(row?.refunded ?? 0) -
     Number(row?.spent ?? 0)
   );
+}
+
+/**
+ * What a customer still owes, across every live invoice. The same arithmetic
+ * the ageing report and the invoice card use — `total - paid - credited` — so
+ * the three places can never disagree about the same number.
+ */
+export async function customerOutstandingFils(
+  env: Env,
+  tenantId: string,
+  customerId: string,
+): Promise<number> {
+  const row = await env.DB.prepare(
+    `SELECT COALESCE(SUM(total_fils - paid_fils - credited_fils), 0) AS outstanding
+       FROM invoices
+      WHERE tenant_id = ? AND customer_id = ? AND deleted_at IS NULL AND status <> 'void'`,
+  )
+    .bind(tenantId, customerId)
+    .first<{ outstanding: number }>();
+  return Number(row?.outstanding ?? 0);
+}
+
+/**
+ * How much of a customer's deposits has not yet been applied to an invoice.
+ * `amount_fils - allocated_fils` summed over every live deposit.
+ */
+export async function depositBalanceFils(
+  env: Env,
+  tenantId: string,
+  customerId: string,
+): Promise<number> {
+  const row = await env.DB.prepare(
+    `SELECT COALESCE(SUM(amount_fils), 0) AS total,
+            COALESCE(SUM(allocated_fils), 0) AS allocated
+       FROM customer_deposits
+      WHERE tenant_id = ? AND customer_id = ? AND deleted_at IS NULL`,
+  )
+    .bind(tenantId, customerId)
+    .first<{ total: number; allocated: number }>();
+  return Number(row?.total ?? 0) - Number(row?.allocated ?? 0);
+}
+
+/**
+ * Applies [amountFils] of a deposit to an invoice: advances `allocated_fils`
+ * on the deposit and records the allocation. Idempotent against a retried
+ * batch — the `UNIQUE (deposit_id, invoice_id)` on `deposit_allocations` means
+ * a second call for the same pair finds the existing row and is refused rather
+ * than applying the money twice. It never updates the invoice: auto-applying
+ * deposits at invoice time is out of scope, so the caller owns that step.
+ */
+export async function allocateDeposit(
+  env: Env,
+  tenantId: string,
+  depositId: string,
+  invoiceId: string,
+  amountFils: number,
+): Promise<{ ok: true } | { error: MoneyError }> {
+  if (!Number.isInteger(amountFils) || amountFils <= 0) {
+    return { error: { code: 'INVALID_AMOUNT', message: 'An allocation must be more than zero.' } };
+  }
+
+  const deposit = await env.DB.prepare(
+    'SELECT * FROM customer_deposits WHERE id = ? AND tenant_id = ? AND deleted_at IS NULL',
+  )
+    .bind(depositId, tenantId)
+    .first<Row>();
+  if (!deposit) {
+    return { error: { code: 'NOT_FOUND', message: 'That deposit does not exist.' } };
+  }
+
+  const already = await env.DB.prepare(
+    'SELECT 1 AS present FROM deposit_allocations WHERE deposit_id = ? AND invoice_id = ?',
+  )
+    .bind(depositId, invoiceId)
+    .first<{ present: number }>();
+  if (already) {
+    return {
+      error: {
+        code: 'ALREADY_ALLOCATED',
+        message: 'This deposit was already applied to that invoice.',
+      },
+    };
+  }
+
+  const available = Number(deposit['amount_fils'] ?? 0) - Number(deposit['allocated_fils'] ?? 0);
+  if (amountFils > available) {
+    return {
+      error: {
+        code: 'OVER_ALLOCATION',
+        message: `Only ${(available / 100).toFixed(2)} is left unallocated on this deposit.`,
+      },
+    };
+  }
+
+  const now = new Date().toISOString();
+  await env.DB.batch([
+    env.DB.prepare(
+      'UPDATE customer_deposits SET allocated_fils = allocated_fils + ?, updated_at = ?, version = version + 1 WHERE id = ? AND tenant_id = ?',
+    ).bind(amountFils, now, depositId, tenantId),
+    env.DB.prepare(
+      'INSERT INTO deposit_allocations (id, tenant_id, deposit_id, invoice_id, amount_fils, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+    ).bind(crypto.randomUUID(), tenantId, depositId, invoiceId, amountFils, now),
+  ]);
+
+  return { ok: true };
+}
+
+/**
+ * The gate an invoice passes when it is issued: the customer's outstanding plus
+ * the new total must stay under their credit limit, unless the issuer is an
+ * owner or manager (the override). A zero limit is a cash customer — no credit
+ * to exceed — so they are never blocked.
+ */
+export async function enforceCreditLimit(
+  env: Env,
+  ctx: AuthContext,
+  customerId: string,
+  newTotalFils: number,
+): Promise<MoneyError | null> {
+  if (MANAGERS.has(ctx.role)) return null;
+
+  const customer = await env.DB.prepare(
+    'SELECT credit_limit_fils FROM customers WHERE id = ? AND tenant_id = ?',
+  )
+    .bind(customerId, ctx.tenantId)
+    .first<{ credit_limit_fils: number }>();
+  const limit = Number(customer?.credit_limit_fils ?? 0);
+  if (limit <= 0) return null;
+
+  const outstanding = await customerOutstandingFils(env, ctx.tenantId, customerId);
+  if (outstanding + newTotalFils > limit) {
+    return {
+      code: 'CREDIT_LIMIT_EXCEEDED',
+      message: `This invoice would take the customer to ${((outstanding + newTotalFils) / 100).toFixed(2)} against a ${(limit / 100).toFixed(2)} credit limit.`,
+    };
+  }
+  return null;
 }

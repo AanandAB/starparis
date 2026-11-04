@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -62,16 +63,33 @@ class _CustomerSheet extends ConsumerWidget {
               0,
               (sum, invoice) => sum + invoice.totalFils,
             );
+            // Over the limit means more than a non-zero limit: a zero limit is
+            // a cash customer with no credit to exceed, so they are never
+            // "over limit".
+            final overLimit =
+                customer.creditLimitFils > 0 &&
+                outstanding > customer.creditLimitFils;
 
             return StreamBuilder<List<Order>>(
               stream: db.watchOrdersForCustomer(customer.id),
               builder: (context, orderSnapshot) {
                 final orders = orderSnapshot.data ?? const <Order>[];
 
-                return ListView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.all(StarSpace.lg),
-                  children: <Widget>[
+                return StreamBuilder<List<CustomerDeposit>>(
+                  stream: db.watchDepositsForCustomer(customer.id),
+                  builder: (context, depositSnapshot) {
+                    final deposits =
+                        depositSnapshot.data ?? const <CustomerDeposit>[];
+                    final depositBalance = deposits.fold<int>(
+                      0,
+                      (sum, deposit) =>
+                          sum + (deposit.amountFils - deposit.allocatedFils),
+                    );
+
+                    return ListView(
+                      controller: scrollController,
+                      padding: const EdgeInsets.all(StarSpace.lg),
+                      children: <Widget>[
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
@@ -100,7 +118,13 @@ class _CustomerSheet extends ConsumerWidget {
                           StarStat(
                             label: 'Owed',
                             value: Fils(outstanding).aedLabel,
-                            tone: StarStatTone.danger,
+                            tone: overLimit
+                                ? StarStatTone.danger
+                                : StarStatTone.neutral,
+                            icon: overLimit
+                                ? Icons.warning_amber_rounded
+                                : null,
+                            hint: overLimit ? 'Over limit' : null,
                           ),
                       ],
                     ),
@@ -120,11 +144,31 @@ class _CustomerSheet extends ConsumerWidget {
                               ? 'on delivery'
                               : '${customer.paymentTermsDays} days',
                         ),
+                        _fact(
+                          theme,
+                          'Credit limit',
+                          customer.creditLimitFils == 0
+                              ? 'no credit'
+                              : Fils(customer.creditLimitFils).aedLabel,
+                        ),
+                        if (depositBalance > 0)
+                          _fact(
+                            theme,
+                            'Deposit balance',
+                            Fils(depositBalance).aedLabel,
+                          ),
                       ],
                     ),
                     const SizedBox(height: StarSpace.lg),
-                    Row(
+                    Wrap(
+                      spacing: StarSpace.md,
+                      runSpacing: StarSpace.sm,
                       children: <Widget>[
+                        FilledButton.tonalIcon(
+                          onPressed: () => _takeDeposit(context, customer),
+                          icon: const Icon(Icons.savings_outlined, size: 18),
+                          label: const Text('Take deposit'),
+                        ),
                         FilledButton.icon(
                           onPressed: () async {
                             final phone = await db.primaryPhoneFor(customer.id);
@@ -138,7 +182,6 @@ class _CustomerSheet extends ConsumerWidget {
                           icon: const Icon(Icons.chat_outlined, size: 18),
                           label: const Text('WhatsApp'),
                         ),
-                        const SizedBox(width: StarSpace.md),
                         OutlinedButton.icon(
                           onPressed: () async {
                             // Capture before the await so the snackbar is shown
@@ -236,7 +279,9 @@ class _CustomerSheet extends ConsumerWidget {
                       ),
                     ],
                     const SizedBox(height: StarSpace.xxl),
-                  ],
+                      ],
+                    );
+                  },
                 );
               },
             );
@@ -355,4 +400,134 @@ Future<File> _writeStatementPdf(
   );
   await file.writeAsBytes(bytes, flush: true);
   return file;
+}
+
+/// Asks for an amount, a method and an optional note, then records a deposit
+/// against [customer] with a local write that also queues the outbox insert.
+/// Nothing here touches an invoice: applying the deposit to one is a separate,
+/// later step (allocation), not part of taking it.
+Future<void> _takeDeposit(BuildContext context, Customer customer) {
+  return showDialog<void>(
+    context: context,
+    builder: (_) => _DepositDialog(customer: customer),
+  );
+}
+
+class _DepositDialog extends ConsumerStatefulWidget {
+  const _DepositDialog({required this.customer});
+
+  final Customer customer;
+
+  @override
+  ConsumerState<_DepositDialog> createState() => _DepositDialogState();
+}
+
+class _DepositDialogState extends ConsumerState<_DepositDialog> {
+  final TextEditingController _amount = TextEditingController();
+  final TextEditingController _note = TextEditingController();
+  String _method = 'cash';
+  bool _busy = false;
+
+  @override
+  void dispose() {
+    _amount.dispose();
+    _note.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final amount = double.tryParse(_amount.text.trim());
+    if (amount == null || amount <= 0) {
+      _say('Enter how much was deposited.');
+      return;
+    }
+
+    setState(() => _busy = true);
+    try {
+      final bootstrap = ref.read(bootstrapProvider);
+      final session = ref.read(sessionProvider);
+      if (session == null) throw StateError('Session expired');
+
+      await bootstrap.db.createDepositLocal(
+        tenantId: session.tenantId,
+        branchId: session.branchId,
+        userId: session.userId,
+        customerId: widget.customer.id,
+        amountFils: (amount * 100).round(),
+        method: _method,
+        note: _note.text.trim().isEmpty ? null : _note.text.trim(),
+      );
+      unawaited(bootstrap.engine?.syncNow());
+
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Deposit recorded — AED ${amount.toStringAsFixed(2)}'),
+        ),
+      );
+    } catch (error) {
+      _say('$error');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  void _say(String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Take deposit — ${widget.customer.name}'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          TextField(
+            controller: _amount,
+            autofocus: true,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
+              labelText: 'Amount',
+              prefixText: 'AED ',
+            ),
+          ),
+          const SizedBox(height: StarSpace.md),
+          SegmentedButton<String>(
+            segments: const <ButtonSegment<String>>[
+              ButtonSegment<String>(value: 'cash', label: Text('Cash')),
+              ButtonSegment<String>(value: 'card', label: Text('Card')),
+              ButtonSegment<String>(
+                value: 'transfer',
+                label: Text('Transfer'),
+              ),
+            ],
+            selected: <String>{_method},
+            onSelectionChanged: (selection) =>
+                setState(() => _method = selection.first),
+          ),
+          const SizedBox(height: StarSpace.md),
+          TextField(
+            controller: _note,
+            decoration: const InputDecoration(
+              labelText: 'Note (optional)',
+              hintText: 'Advance for business cards',
+            ),
+          ),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: _busy ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _busy ? null : _save,
+          child: const Text('Record deposit'),
+        ),
+      ],
+    );
+  }
 }
