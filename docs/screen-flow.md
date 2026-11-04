@@ -144,8 +144,10 @@ computed on the device by the same engine the tests pin to five golden vectors, 
 frozen breakdown so an old quote can always be reproduced.
 
 ### 4.7 Production board — BUILT
-Two modes: **Board** (one column per stage, all work) and **My work** (only what you may touch).
-Cards show status, quantity, due date, overdue marker, rework reason. The task sheet offers only the
+Three modes: **Board** (one column per stage, all work), **My work** (only what you may touch), and
+**Vendors** — open vendor jobs now appear on the board beside in-house work, so the vendor
+coordinator sees outsourced work in the same place. Cards show status, quantity, due date, overdue
+marker, rework reason. The task sheet offers only the
 legal next moves: claim, start, pause, finish, rework (reason required), cancel (manager only).
 
 ### 4.8 Prices — BUILT (owner only)

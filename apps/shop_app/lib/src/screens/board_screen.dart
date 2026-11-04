@@ -30,6 +30,28 @@ final StreamProvider<List<Task>> myTasksProvider = StreamProvider<List<Task>>((
   return db.watchMyTasks(userId: session.userId, role: session.role);
 });
 
+/// The three lenses on the same production floor: every stage (board), what I
+/// can touch (mine), and work out with other shops (vendors).
+enum _BoardMode { board, mine, vendors }
+
+/// Open vendor jobs — the Vendors lens of the board. Reads the same local
+/// table the vendors screen does, so the view works with no internet like the
+/// rest of the board. Kept here (not providers.dart) because the board owns
+/// this view end to end.
+final StreamProvider<List<VendorJob>> vendorJobsProvider =
+    StreamProvider<List<VendorJob>>((ref) {
+      final db = ref.watch(bootstrapProvider).db;
+      return db.watchOpenVendorJobs();
+    });
+
+/// Vendor rows, so a job card can print the vendor's name (the job row only
+/// carries the id). Kept beside the jobs provider for the same reason.
+final StreamProvider<List<Vendor>> boardVendorsProvider =
+    StreamProvider<List<Vendor>>((ref) {
+      final db = ref.watch(bootstrapProvider).db;
+      return db.watchVendors();
+    });
+
 class ProductionScreen extends ConsumerStatefulWidget {
   const ProductionScreen({super.key});
 
@@ -38,12 +60,19 @@ class ProductionScreen extends ConsumerStatefulWidget {
 }
 
 class _ProductionScreenState extends ConsumerState<ProductionScreen> {
-  bool _mineOnly = false;
+  _BoardMode _mode = _BoardMode.board;
 
   @override
   Widget build(BuildContext context) {
-    final tasks = ref.watch(_mineOnly ? myTasksProvider : activeTasksProvider);
+    final mode = _mode;
     final session = ref.watch(sessionProvider);
+
+    // Board and My work read the task tables; Vendors reads the vendor-job
+    // table. Every stream is local, so switching modes is instant and offline.
+    final tasks = ref.watch(
+      mode == _BoardMode.mine ? myTasksProvider : activeTasksProvider,
+    );
+    final vendorJobs = ref.watch(vendorJobsProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -62,53 +91,297 @@ class _ProductionScreenState extends ConsumerState<ProductionScreen> {
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(width: StarSpace.md),
-              SegmentedButton<bool>(
-                segments: const <ButtonSegment<bool>>[
-                  ButtonSegment<bool>(value: false, label: Text('Board')),
-                  ButtonSegment<bool>(value: true, label: Text('My work')),
+              SegmentedButton<_BoardMode>(
+                segments: const <ButtonSegment<_BoardMode>>[
+                  ButtonSegment<_BoardMode>(
+                    value: _BoardMode.board,
+                    label: Text('Board'),
+                  ),
+                  ButtonSegment<_BoardMode>(
+                    value: _BoardMode.mine,
+                    label: Text('My work'),
+                  ),
+                  ButtonSegment<_BoardMode>(
+                    value: _BoardMode.vendors,
+                    label: Text('Vendors'),
+                  ),
                 ],
-                selected: <bool>{_mineOnly},
+                selected: <_BoardMode>{mode},
                 onSelectionChanged: (selection) =>
-                    setState(() => _mineOnly = selection.first),
+                    setState(() => _mode = selection.first),
                 showSelectedIcon: false,
                 style: const ButtonStyle(visualDensity: VisualDensity.compact),
               ),
               const Spacer(),
-              tasks.maybeWhen(
-                data: (rows) => Text(
-                  '${rows.length} open',
-                  style: Theme.of(context).textTheme.bodySmall,
+              if (mode == _BoardMode.vendors)
+                vendorJobs.maybeWhen(
+                  data: (rows) => Text(
+                    '${rows.length} open',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  orElse: () => const SizedBox.shrink(),
+                )
+              else
+                tasks.maybeWhen(
+                  data: (rows) => Text(
+                    '${rows.length} open',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  orElse: () => const SizedBox.shrink(),
                 ),
-                orElse: () => const SizedBox.shrink(),
-              ),
             ],
           ),
         ),
         const Divider(height: 1),
         Expanded(
-          child: tasks.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, _) =>
-                Center(child: Text('Could not read tasks: $error')),
-            data: (rows) {
-              if (rows.isEmpty) {
-                return EmptyState(
-                  icon: Icons.checklist_rtl,
-                  title: _mineOnly
-                      ? 'Nothing on your plate'
-                      : 'Nothing in production',
-                  message: _mineOnly
-                      ? 'Work assigned to you, or waiting for your role, appears here.'
-                      : 'Confirm an order and its stages appear here, one column each.',
-                );
-              }
-              return _mineOnly
-                  ? _MyWorkList(tasks: rows, session: session)
-                  : _Board(tasks: rows, session: session);
-            },
-          ),
+          child: mode == _BoardMode.vendors
+              ? _VendorsView(
+                  jobs: vendorJobs,
+                  vendors: ref.watch(boardVendorsProvider),
+                  orders: ref.watch(ordersProvider),
+                )
+              : tasks.when(
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (error, _) =>
+                      Center(child: Text('Could not read tasks: $error')),
+                  data: (rows) {
+                    if (rows.isEmpty) {
+                      return EmptyState(
+                        icon: Icons.checklist_rtl,
+                        title: mode == _BoardMode.mine
+                            ? 'Nothing on your plate'
+                            : 'Nothing in production',
+                        message: mode == _BoardMode.mine
+                            ? 'Work assigned to you, or waiting for your role, appears here.'
+                            : 'Confirm an order and its stages appear here, one column each.',
+                      );
+                    }
+                    return mode == _BoardMode.mine
+                        ? _MyWorkList(tasks: rows, session: session)
+                        : _Board(tasks: rows, session: session);
+                  },
+                ),
         ),
       ],
+    );
+  }
+}
+
+/// The presentation order for open vendor jobs: what is out first, then what
+/// has come back, then what has not left yet — the order a coordinator actually
+/// works in.
+const List<String> _vendorStatusOrder = <String>['sent', 'received', 'draft'];
+
+/// How a vendor-job status is shown: a word, a tone and an icon. Colour is
+/// never the only signal (the chip carries all three), so the record holds all
+/// three together.
+typedef _VendorStatus = ({String label, StatusTone tone, IconData icon});
+
+_VendorStatus _vendorStatus(String status) => switch (status) {
+  'draft' => (
+    label: 'Draft',
+    tone: StatusTone.neutral,
+    icon: Icons.edit_note,
+  ),
+  'sent' => (
+    label: 'With vendor',
+    tone: StatusTone.active,
+    icon: Icons.outbox_outlined,
+  ),
+  'received' => (label: 'Back', tone: StatusTone.paused, icon: Icons.inbox_outlined),
+  'closed' => (
+    label: 'Closed',
+    tone: StatusTone.done,
+    icon: Icons.check_circle_outline,
+  ),
+  'cancelled' => (
+    label: 'Cancelled',
+    tone: StatusTone.problem,
+    icon: Icons.cancel_outlined,
+  ),
+  _ => (label: status, tone: StatusTone.neutral, icon: Icons.circle_outlined),
+};
+
+/// The Vendors lens of the board: open vendor jobs grouped by how far they have
+/// got. Read-only and local — actions (send / back / close) stay in the vendors
+/// screen, this view only makes the work visible beside in-house work.
+class _VendorsView extends StatelessWidget {
+  const _VendorsView({
+    required this.jobs,
+    required this.vendors,
+    required this.orders,
+  });
+
+  final AsyncValue<List<VendorJob>> jobs;
+  final AsyncValue<List<Vendor>> vendors;
+  final AsyncValue<List<Order>> orders;
+
+  @override
+  Widget build(BuildContext context) {
+    return jobs.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, _) =>
+          Center(child: Text('Could not read vendor jobs: $error')),
+      data: (rows) {
+        if (rows.isEmpty) {
+          return const EmptyState(
+            icon: Icons.inventory_2_outlined,
+            title: 'Nothing out with vendors',
+            message:
+                'Out-sourced jobs appear here once an item is sent to a vendor.',
+          );
+        }
+
+        // Name and order are separate tables keyed by id; resolve once so each
+        // card only looks up, never queries.
+        final vendorById = <String, Vendor>{
+          for (final vendor in vendors.value ?? const <Vendor>[])
+            vendor.id: vendor,
+        };
+        final orderById = <String, Order>{
+          for (final order in orders.value ?? const <Order>[])
+            order.id: order,
+        };
+
+        // Fixed order first, then any status the query returns that we did not
+        // anticipate — so a job is never silently hidden.
+        final statuses = <String>[..._vendorStatusOrder];
+        for (final job in rows) {
+          if (!statuses.contains(job.status)) statuses.add(job.status);
+        }
+        final groups = <String, List<VendorJob>>{
+          for (final status in statuses) status: <VendorJob>[],
+        };
+        for (final job in rows) {
+          groups[job.status]!.add(job);
+        }
+
+        return ListView(
+          padding: const EdgeInsets.all(StarSpace.lg),
+          children: <Widget>[
+            for (final status in statuses)
+              if (groups[status]!.isNotEmpty) ...<Widget>[
+                StarSectionHeader(
+                  title: _vendorStatus(status).label,
+                  count: groups[status]!.length,
+                ),
+                for (final job in groups[status]!)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: StarSpace.sm),
+                    child: _VendorJobCard(
+                      job: job,
+                      vendor: vendorById[job.vendorId],
+                      order: orderById[job.orderId],
+                    ),
+                  ),
+              ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _VendorJobCard extends StatelessWidget {
+  const _VendorJobCard({
+    required this.job,
+    required this.vendor,
+    required this.order,
+  });
+
+  final VendorJob job;
+  final Vendor? vendor;
+  final Order? order;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final status = _vendorStatus(job.status);
+
+    return PressableCard(
+      // Actions live in the vendors screen; here the card only reports, so it
+      // is deliberately not tappable.
+      onTap: null,
+      padding: const EdgeInsets.all(StarSpace.sm),
+      borderRadius: StarRadius.field,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Icon(
+                Icons.storefront_outlined,
+                size: 16,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: StarSpace.xs),
+              Expanded(
+                child: Text(
+                  vendor?.name ?? 'Vendor',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(width: StarSpace.xs),
+              StatusChip(
+                label: status.label,
+                tone: status.tone,
+                icon: status.icon,
+              ),
+            ],
+          ),
+          const SizedBox(height: StarSpace.xs),
+          Text(
+            job.description,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodyMedium,
+          ),
+          // The order this work belongs to, when the row is still around to
+          // name it — older jobs whose order has gone keep the card, not the
+          // broken line.
+          if (order != null) ...<Widget>[
+            const SizedBox(height: StarSpace.xs),
+            Row(
+              children: <Widget>[
+                Icon(
+                  Icons.receipt_long_outlined,
+                  size: 14,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 3),
+                Expanded(
+                  child: Text(
+                    '${order!.numberDisplay} · ${order!.customerName ?? ''}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          const SizedBox(height: StarSpace.sm),
+          Row(
+            children: <Widget>[
+              Text(
+                'Costs',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(width: StarSpace.xs),
+              MoneyText(Fils(job.costFils), emphasise: true),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
