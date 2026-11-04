@@ -47,13 +47,14 @@ class _QuickSaleScreenState extends ConsumerState<QuickSaleScreen> {
 
   // A quick-service line is a fixed menu of what a copy shop does all day.
   // Prices are editable starting points, not a rate card.
-  static const List<(String, IconData, int)> _services = <(String, IconData, int)>[
-    ('Copy', Icons.copy_outlined, 100),
-    ('Print', Icons.print_outlined, 150),
-    ('Scan', Icons.document_scanner_outlined, 200),
-    ('Laminate', Icons.layers_outlined, 300),
-    ('Binding', Icons.auto_stories_outlined, 500),
-  ];
+  static const List<(String, IconData, int)> _services =
+      <(String, IconData, int)>[
+        ('Copy', Icons.copy_outlined, 100),
+        ('Print', Icons.print_outlined, 150),
+        ('Scan', Icons.document_scanner_outlined, 200),
+        ('Laminate', Icons.layers_outlined, 300),
+        ('Binding', Icons.auto_stories_outlined, 500),
+      ];
 
   @override
   void dispose() {
@@ -138,7 +139,9 @@ class _QuickSaleScreenState extends ConsumerState<QuickSaleScreen> {
       final received = double.tryParse(_cashReceived.text.trim());
       if (received == null || (received * 100).round() < total) {
         messenger.showSnackBar(
-          const SnackBar(content: Text('Cash received is less than the total.')),
+          const SnackBar(
+            content: Text('Cash received is less than the total.'),
+          ),
         );
         return;
       }
@@ -232,7 +235,7 @@ class _QuickSaleScreenState extends ConsumerState<QuickSaleScreen> {
     final receivedFils = received == null ? 0 : (received * 100).round();
     final change = receivedFils > total ? receivedFils - total : 0;
 
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(StarSpace.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -255,25 +258,26 @@ class _QuickSaleScreenState extends ConsumerState<QuickSaleScreen> {
             ],
           ),
           const SizedBox(height: StarSpace.md),
-          Expanded(
-            child: _lines.isEmpty
-                ? _EmptyBasket()
-                : ListView.separated(
-                    itemCount: _lines.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: StarSpace.sm),
-                    itemBuilder: (context, index) {
-                      final line = _lines[index];
-                      return _BasketLineTile(
-                        line: line,
-                        onQuantity: (delta) => setState(() {
-                          line.quantity = (line.quantity + delta).clamp(1, 999);
-                        }),
-                        onEditPrice: () => _editUnitPrice(line),
-                        onRemove: () => setState(() => _lines.removeAt(index)),
-                      );
-                    },
-                  ),
-          ),
+          if (_lines.isEmpty)
+            SizedBox(height: 140, child: _EmptyBasket())
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _lines.length,
+              separatorBuilder: (_, _) => const SizedBox(height: StarSpace.sm),
+              itemBuilder: (context, index) {
+                final line = _lines[index];
+                return _BasketLineTile(
+                  line: line,
+                  onQuantity: (delta) => setState(() {
+                    line.quantity = (line.quantity + delta).clamp(1, 999);
+                  }),
+                  onEditPrice: () => _editUnitPrice(line),
+                  onRemove: () => setState(() => _lines.removeAt(index)),
+                );
+              },
+            ),
           const SizedBox(height: StarSpace.md),
           Row(
             children: <Widget>[
@@ -361,10 +365,7 @@ class _EmptyBasket extends StatelessWidget {
             color: theme.colorScheme.onSurfaceVariant,
           ),
           const SizedBox(height: StarSpace.sm),
-          Text(
-            'Nothing in the basket yet',
-            style: theme.textTheme.titleMedium,
-          ),
+          Text('Nothing in the basket yet', style: theme.textTheme.titleMedium),
           const SizedBox(height: 2),
           Text(
             'Tap a quick-service chip, or add another line.',
@@ -448,10 +449,7 @@ class _BasketLineTile extends StatelessWidget {
             ),
             SizedBox(
               width: 96,
-              child: MoneyText(
-                Fils(line.amountFils),
-                emphasise: true,
-              ),
+              child: MoneyText(Fils(line.amountFils), emphasise: true),
             ),
             IconButton(
               onPressed: onRemove,
@@ -501,9 +499,7 @@ class _TotalsPanel extends StatelessWidget {
         const Divider(height: StarSpace.lg),
         Row(
           children: <Widget>[
-            Expanded(
-              child: Text('Total', style: theme.textTheme.titleLarge),
-            ),
+            Expanded(child: Text('Total', style: theme.textTheme.titleLarge)),
             MoneyText(Fils(totalFils), emphasise: true),
           ],
         ),
