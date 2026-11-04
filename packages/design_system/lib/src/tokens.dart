@@ -6,11 +6,15 @@ import 'package:flutter/material.dart';
 /// (ink, trust, the colour of a press room) and warm sand (paper stock). Both
 /// are swappable here and nowhere else — no widget hard-codes a hex value.
 abstract final class StarColors {
-  /// Primary — deep petrol.
-  static const Color petrol = Color(0xFF0E3B43);
-  static const Color petrolDark = Color(0xFF08262C);
+  /// Primary — the deep steel blue from the Star Paris logo.
+  static const Color petrol = Color(0xFF164F71);
+  static const Color petrolDark = Color(0xFF10384F);
 
-  /// Secondary — warm sand, the colour of uncoated card stock.
+  /// Lighter brand blue, used as the secondary/accent against the deep blue.
+  static const Color blue = Color(0xFF2A7BB0);
+
+  /// Secondary — warm sand, the colour of uncoated card stock. Kept for paper
+  /// accents; the brand secondary is [blue] (the logo is blue on white).
   static const Color sand = Color(0xFFD9C7A7);
 
   /// Accent used sparingly: rush jobs, overdue, money due.
@@ -23,15 +27,15 @@ abstract final class StarColors {
   static const Color statusDone = Color(0xFF2E7D32);
   static const Color statusProblem = Color(0xFFB3261E);
 
-  /// Surfaces.
-  static const Color canvasLight = Color(0xFFF7F4EE);
+  /// Surfaces — cool blue-grey, matching the logo's white-on-blue.
+  static const Color canvasLight = Color(0xFFF4F6F8);
   static const Color canvasDark = Color(0xFF101416);
   static const Color surfaceDark = Color(0xFF1A2023);
 
   /// The surface ramp, light and dark. A card, a dialog and a sheet must read
   /// as three distinct depths, not one — this is what gives them figure/ground.
-  static const Color surfaceContainerLight = Color(0xFFEFEAE0);
-  static const Color surfaceContainerHighLight = Color(0xFFE9E3D7);
+  static const Color surfaceContainerLight = Color(0xFFEAF0F4);
+  static const Color surfaceContainerHighLight = Color(0xFFE2EAF0);
   static const Color surfaceContainerDark = Color(0xFF161C1F);
   static const Color surfaceContainerHighDark = Color(0xFF20282C);
 

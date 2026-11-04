@@ -21,7 +21,7 @@ abstract final class StarTheme {
           seedColor: StarColors.petrol,
           brightness: brightness,
         ).copyWith(
-          secondary: StarColors.sand,
+          secondary: StarColors.blue,
           error: StarColors.statusProblem,
           surface: isDark ? StarColors.surfaceDark : Colors.white,
           // A dialog, a sheet and a card must sit at three visible depths. The
