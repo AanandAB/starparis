@@ -11,6 +11,8 @@ export interface Env {
   JWT_SECRET: string;
   MIN_APP_VERSION: string;
   ENVIRONMENT: string;
+  /** The vendor's platform-admin token. Optional so tests don't need it. */
+  PLATFORM_TOKEN?: string;
   /** Applied by the test harness only; never present in production. */
   TEST_MIGRATIONS?: unknown;
 }

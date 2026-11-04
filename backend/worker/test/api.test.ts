@@ -3048,3 +3048,49 @@ describe('customer deposits and credit limits', () => {
     expect(body.results[0]!.status).toBe('applied');
   });
 });
+
+describe('platform admin', () => {
+  const token = 'test-platform-token-1234567890';
+
+  it('refuses without the platform token', async () => {
+    const response = await api('/platform/tenants');
+    expect(response.status).toBe(403);
+  });
+
+  it('refuses a wrong platform token', async () => {
+    const response = await api('/platform/tenants', {
+      headers: { 'x-platform-token': 'wrong-token-value' },
+    });
+    expect(response.status).toBe(403);
+  });
+
+  it('lists every tenant with stats for the vendor', async () => {
+    const response = await api('/platform/tenants', {
+      headers: { 'x-platform-token': token },
+    });
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      tenants: Array<{ id: string; name: string; order_count: number }>;
+    };
+    expect(body.tenants.length).toBeGreaterThan(0);
+    const demo = body.tenants.find((t) => t.id === TENANT);
+    expect(demo).toBeDefined();
+    expect(demo!.name).toBeTruthy();
+  });
+
+  it('serves a tenant audit log and the error log (empty until an error)', async () => {
+    const audit = await api('/platform/tenants/' + TENANT + '/audit', {
+      headers: { 'x-platform-token': token },
+    });
+    expect(audit.status).toBe(200);
+    const auditBody = (await audit.json()) as { entries: Array<{ action: string }> };
+    expect(Array.isArray(auditBody.entries)).toBe(true);
+
+    const errors = await api('/platform/errors', {
+      headers: { 'x-platform-token': token },
+    });
+    expect(errors.status).toBe(200);
+    const errorsBody = (await errors.json()) as { errors: Array<{ code: string }> };
+    expect(Array.isArray(errorsBody.errors)).toBe(true);
+  });
+});

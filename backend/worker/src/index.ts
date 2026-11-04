@@ -15,6 +15,13 @@ import { z } from 'zod';
 import { error, loadSession, login, loginSchema, refreshSchema, refreshSession, revokeDevice } from './auth';
 import { canReadAudit, listAudit } from './audit';
 import {
+  listPlatformErrors,
+  listTenants,
+  recordPlatformError,
+  requirePlatform,
+  tenantAudit,
+} from './platform';
+import {
   approveByToken,
   canUploadProof,
   ensureApprovalToken,
@@ -84,6 +91,15 @@ const MAX_BODY_BYTES = 262_144; // 256 KB: a full batch of 100 mutations fits ea
 
 app.onError((err, c) => {
   console.error(JSON.stringify({ level: 'error', message: err.message }));
+  // Record the failure for the platform admin (best effort: a logging error
+  // must never mask the real response or take the request down with it).
+  c.executionCtx.waitUntil(
+    recordPlatformError(c.env, {
+      code: 'INTERNAL',
+      message: err.message,
+      context: { path: c.req.path, method: c.req.method },
+    }).catch(() => {}),
+  );
   return c.json(
     error('INTERNAL', 'Something went wrong on the server. Please try again.'),
     500,
@@ -91,6 +107,36 @@ app.onError((err, c) => {
 });
 
 app.notFound((c) => c.json(error('NOT_FOUND', 'No such endpoint.'), 404));
+
+// ---------------------------------------------------------------------------
+// Platform admin — the vendor's own cross-tenant view, gated by a token that
+// is unrelated to tenant logins. Read-only: a fix is a code change, never a
+// data write through these routes.
+// ---------------------------------------------------------------------------
+
+app.get('/platform/tenants', async (c) => {
+  if (!requirePlatform(c.env, c)) {
+    return c.json(error('FORBIDDEN', 'Platform token required.'), 403);
+  }
+  return c.json({ tenants: await listTenants(c.env) });
+});
+
+app.get('/platform/tenants/:id/audit', async (c) => {
+  if (!requirePlatform(c.env, c)) {
+    return c.json(error('FORBIDDEN', 'Platform token required.'), 403);
+  }
+  const limit = Math.min(Number(c.req.query('limit') ?? 100), 500);
+  return c.json({ entries: await tenantAudit(c.env, c.req.param('id'), limit) });
+});
+
+app.get('/platform/errors', async (c) => {
+  if (!requirePlatform(c.env, c)) {
+    return c.json(error('FORBIDDEN', 'Platform token required.'), 403);
+  }
+  const tenantId = c.req.query('tenant_id') ?? null;
+  const limit = Math.min(Number(c.req.query('limit') ?? 100), 500);
+  return c.json({ errors: await listPlatformErrors(c.env, tenantId, limit) });
+});
 
 // ---------------------------------------------------------------------------
 // Public
