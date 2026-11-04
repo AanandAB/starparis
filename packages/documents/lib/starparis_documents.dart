@@ -15,3 +15,4 @@ export 'src/invoice.dart' show buildInvoicePdf, InvoiceDocument;
 export 'src/job_ticket.dart' show buildJobTicketPdf;
 export 'src/models.dart';
 export 'src/quote.dart' show buildQuotePdf;
+export 'src/statement.dart' show buildStatementPdf;

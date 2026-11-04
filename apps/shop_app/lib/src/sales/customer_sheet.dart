@@ -1,9 +1,15 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:starparis_design/starparis_design.dart';
+import 'package:starparis_documents/starparis_documents.dart';
 import 'package:starparis_domain/starparis_domain.dart';
 import 'package:starparis_sync/starparis_sync.dart';
 
+import '../app_config.dart';
 import '../providers.dart';
 import '../sales/whatsapp.dart';
 
@@ -131,6 +137,34 @@ class _CustomerSheet extends ConsumerWidget {
                           },
                           icon: const Icon(Icons.chat_outlined, size: 18),
                           label: const Text('WhatsApp'),
+                        ),
+                        const SizedBox(width: StarSpace.md),
+                        OutlinedButton.icon(
+                          onPressed: () async {
+                            // Capture before the await so the snackbar is shown
+                            // through a messenger that is still mounted.
+                            final messenger = ScaffoldMessenger.of(context);
+                            try {
+                              final file = await _writeStatementPdf(
+                                customer,
+                                invoices,
+                              );
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Text('Statement saved: ${file.path}'),
+                                ),
+                              );
+                            } catch (error) {
+                              messenger.showSnackBar(
+                                SnackBar(content: Text('$error')),
+                              );
+                            }
+                          },
+                          icon: const Icon(
+                            Icons.receipt_long_outlined,
+                            size: 18,
+                          ),
+                          label: const Text('Statement PDF'),
                         ),
                       ],
                     ),
@@ -270,4 +304,55 @@ class _InvoiceRow extends StatelessWidget {
       trailing: MoneyText(Fils(invoice.totalFils)),
     );
   }
+}
+
+/// Writes a statement of account for [customer] from [invoices] — the same
+/// rows the sheet already shows, not a fresh fetch — to the shop's documents
+/// folder, and returns the file so the caller can tell the user where it went.
+Future<File> _writeStatementPdf(
+  Customer customer,
+  List<Invoice> invoices,
+) async {
+  final lines = <StatementLine>[];
+  var running = 0;
+  for (final invoice in invoices) {
+    // A voided invoice is not a real charge, so it carries no balance and is
+    // left off the statement; the "owed" figure skips it the same way.
+    if (invoice.voidReason != null) continue;
+    final paid = invoice.paidFils + invoice.creditedFils;
+    running += invoice.totalFils - paid;
+    lines.add(
+      StatementLine(
+        date: invoice.issuedAt,
+        reference: invoice.number,
+        description: 'Invoice',
+        amountFils: invoice.totalFils,
+        paidFils: paid,
+        balanceFils: running,
+      ),
+    );
+  }
+
+  final bytes = await buildStatementPdf(
+    StatementDocument(
+      customerName: customer.name,
+      customerCompany: customer.company,
+      customerTrn: customer.trn,
+      periodLabel: AppConfig.company.branchName ?? '',
+      openingBalanceFils: 0,
+      lines: lines,
+      closingBalanceFils: running,
+      generatedAt: DateTime.now(),
+    ),
+    AppConfig.company,
+  );
+
+  final base = await getApplicationDocumentsDirectory();
+  final directory = Directory(p.join(base.path, 'StarParis'));
+  await directory.create(recursive: true);
+  final file = File(
+    p.join(directory.path, 'StarParis_Statement_${customer.name}.pdf'),
+  );
+  await file.writeAsBytes(bytes, flush: true);
+  return file;
 }

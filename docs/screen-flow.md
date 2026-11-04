@@ -126,7 +126,8 @@ left off" list.
 ### 4.4 Customers — BUILT
 List, search by name/phone, add a customer with two phone numbers (WhatsApp + landline). Opens a
 customer's orders and their balance.
-Missing: full customer sheet (address, TRN, notes, statement of account) — **TO BUILD**.
+The customer sheet shows address, TRN, notes, jobs and the statement of account; a **Statement PDF**
+writes that statement to the shop's documents folder.
 
 ### 4.5 Orders — BUILT
 List of orders with status, total, due date. Actions per order: quote PDF, job ticket PDF, invoice,

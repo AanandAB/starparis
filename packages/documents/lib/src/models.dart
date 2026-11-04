@@ -109,3 +109,60 @@ class JobTicketDocument {
   /// here: the shop can change tracking URLs without reprinting old tickets.
   final String? trackUrl;
 }
+
+/// One row of a customer statement: a charge and the money taken against it.
+class StatementLine {
+  const StatementLine({
+    required this.date,
+    required this.reference,
+    required this.description,
+    required this.amountFils,
+    required this.paidFils,
+    required this.balanceFils,
+  });
+
+  /// When the charge happened (the invoice issue date).
+  final DateTime date;
+
+  /// The invoice number. Printed so the customer can match rows to bills.
+  final String reference;
+
+  final String description;
+
+  /// What the invoice charged, in fils.
+  final int amountFils;
+
+  /// Payments and credits taken against the invoice, in fils.
+  final int paidFils;
+
+  /// The running account balance AFTER this row, in fils.
+  final int balanceFils;
+}
+
+/// A statement of account: what a customer was charged, what they paid, and the
+/// running balance. Built from invoices already on screen — a statement is a
+/// view over existing bills, not new data.
+class StatementDocument {
+  const StatementDocument({
+    required this.customerName,
+    required this.lines,
+    required this.closingBalanceFils,
+    required this.generatedAt,
+    this.customerCompany,
+    this.customerTrn,
+    this.periodLabel = '',
+    this.openingBalanceFils = 0,
+  });
+
+  final String customerName;
+  final String? customerCompany;
+  final String? customerTrn;
+
+  /// Branch and/or period shown under the title, e.g. 'Sharjah - Nov 2026'.
+  final String periodLabel;
+
+  final int openingBalanceFils;
+  final List<StatementLine> lines;
+  final int closingBalanceFils;
+  final DateTime generatedAt;
+}

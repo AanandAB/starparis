@@ -186,4 +186,62 @@ void main() {
       expect(String.fromCharCodes(bytes.sublist(0, 5)), '%PDF-');
     });
   });
+
+  group('statement of account PDF', () {
+    StatementDocument statement() => StatementDocument(
+      customerName: 'Ahmed Traders',
+      customerCompany: 'Ahmed Traders LLC',
+      customerTrn: '100123456700003',
+      periodLabel: 'Sharjah - Nov 2026',
+      openingBalanceFils: 0,
+      generatedAt: DateTime(2026, 11, 4, 12),
+      closingBalanceFils: 20010,
+      lines: <StatementLine>[
+        StatementLine(
+          date: DateTime(2026, 11, 3, 11),
+          reference: 'INV-SHJ1-PC1-00001',
+          description: 'Business cards 500',
+          amountFils: 12810,
+          paidFils: 5000,
+          balanceFils: 7810,
+        ),
+        StatementLine(
+          date: DateTime(2026, 11, 4, 9),
+          reference: 'INV-SHJ1-PC1-00002',
+          description: 'Flyers 1000',
+          amountFils: 12200,
+          paidFils: 0,
+          balanceFils: 20010,
+        ),
+      ],
+    );
+
+    test('carries references, the running balance and the title', () async {
+      // Uncompressed so the assertion can read the drawn text.
+      final bytes = await buildStatementPdf(
+        statement(),
+        _company,
+        compress: false,
+      );
+      final text = String.fromCharCodes(bytes);
+
+      expect(String.fromCharCodes(bytes.sublist(0, 5)), '%PDF-');
+      // package:pdf kerns each word into its own text run, so 'STATEMENT OF
+      // ACCOUNT' is never contiguous in the content stream — assert the words.
+      expect(text.contains('STATEMENT'), isTrue, reason: 'title word');
+      expect(text.contains('ACCOUNT'), isTrue, reason: 'title word');
+      expect(
+        text.contains('INV-SHJ1-PC1-00001'),
+        isTrue,
+        reason: 'first reference',
+      );
+      expect(
+        text.contains('INV-SHJ1-PC1-00002'),
+        isTrue,
+        reason: 'second reference',
+      );
+      expect(text.contains('78.10'), isTrue, reason: 'balance after first line');
+      expect(text.contains('200.10'), isTrue, reason: 'closing balance');
+    });
+  });
 }
