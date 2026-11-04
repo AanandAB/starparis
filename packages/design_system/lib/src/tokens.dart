@@ -27,6 +27,18 @@ abstract final class StarColors {
   static const Color canvasLight = Color(0xFFF7F4EE);
   static const Color canvasDark = Color(0xFF101416);
   static const Color surfaceDark = Color(0xFF1A2023);
+
+  /// The surface ramp, light and dark. A card, a dialog and a sheet must read
+  /// as three distinct depths, not one — this is what gives them figure/ground.
+  static const Color surfaceContainerLight = Color(0xFFEFEAE0);
+  static const Color surfaceContainerHighLight = Color(0xFFE9E3D7);
+  static const Color surfaceContainerDark = Color(0xFF161C1F);
+  static const Color surfaceContainerHighDark = Color(0xFF20282C);
+
+  /// Text on the brand surface, and the ink used for the strongest text.
+  static const Color onPetrol = Color(0xFFF3F7F8);
+  static const Color inkLight = Color(0xFF1B2023);
+  static const Color inkDark = Color(0xFFE7ECEE);
 }
 
 /// An 8-point spacing grid. Named so a reviewer can say "that gap is a
@@ -52,4 +64,17 @@ abstract final class StarRadius {
 abstract final class StarBreakpoints {
   static const double compact = 600;
   static const double medium = 1000;
+}
+
+/// Motion, named so the whole app shares one rhythm instead of scattering
+/// `Duration(milliseconds: …)` everywhere. A counter clerk never waits for
+/// motion; it announces a change and is gone.
+abstract final class StarMotion {
+  static const Duration instant = Duration(milliseconds: 80);
+  static const Duration fast = Duration(milliseconds: 160);
+  static const Duration standard = Duration(milliseconds: 240);
+  static const Duration slow = Duration(milliseconds: 360);
+
+  static const Curve easeOut = Curves.easeOutCubic;
+  static const Curve easeInOut = Curves.easeInOutCubic;
 }
