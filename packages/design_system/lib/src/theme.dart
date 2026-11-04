@@ -85,7 +85,12 @@ abstract final class StarTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: Size(desktop ? 0 : double.infinity, desktop ? 44 : 52),
+          // Minimum width is 0, not infinity. A button inside a Row (a header
+          // action) must size to its label; a full-width button comes from its
+          // parent (a stretch Column or a SizedBox), never from the button
+          // itself. The old `double.infinity` starved the Expanded title next
+          // to it, wrapping the header text one character per line on phones.
+          minimumSize: Size(0, desktop ? 44 : 52),
           padding: const EdgeInsets.symmetric(
             horizontal: StarSpace.lg,
             vertical: StarSpace.md,
@@ -98,7 +103,7 @@ abstract final class StarTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          minimumSize: Size(desktop ? 0 : double.infinity, desktop ? 44 : 52),
+          minimumSize: Size(0, desktop ? 44 : 52),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(StarRadius.field),
           ),
