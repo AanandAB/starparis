@@ -145,6 +145,14 @@ final Provider<bool> canViewAuditProvider = Provider<bool>((ref) {
   return role == 'owner' || role == 'manager' || role == 'accountant';
 });
 
+/// Who runs the quick-sale (POS) counter: the counter role and the owner.
+/// The Worker enforces `order.create` on the push regardless, so this only
+/// decides whether the tab is worth showing.
+final Provider<bool> canUsePosProvider = Provider<bool>((ref) {
+  final role = ref.watch(sessionProvider)?.role;
+  return role == 'counter' || role == 'owner';
+});
+
 /// Which language the interface is drawn in. Null follows the device.
 class LocaleChoice extends Notifier<Locale?> {
   @override

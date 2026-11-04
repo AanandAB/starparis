@@ -226,6 +226,60 @@ class OrderItems extends Table {
   Set<Column<Object>> get primaryKey => <Column<Object>>{id};
 }
 
+/// A walk-in sale rung at the counter: paid now, no quote, no production
+/// pipeline, no invoice. The sale row is the whole record and the payment is on
+/// it. Unlike an order, `customerId` is nullable — a walk-in has none.
+class QuickSales extends Table {
+  TextColumn get id => text()();
+  TextColumn get tenantId => text()();
+  TextColumn get branchId => text().nullable()();
+
+  /// Null while offline and on a temporary `QS-T-0007` display.
+  IntColumn get number => integer().nullable()();
+  TextColumn get numberDisplay => text()();
+  TextColumn get customerId => text().nullable()();
+  TextColumn get customerName => text().nullable()();
+  TextColumn get status => text().withDefault(const Constant('paid'))();
+  TextColumn get paymentMethod => text().withDefault(const Constant('cash'))();
+  IntColumn get subtotalFils => integer().withDefault(const Constant(0))();
+  IntColumn get vatFils => integer().withDefault(const Constant(0))();
+  IntColumn get totalFils => integer().withDefault(const Constant(0))();
+  IntColumn get paidFils => integer().withDefault(const Constant(0))();
+
+  /// Stamped by the server, like a till session.
+  TextColumn get deviceId => text()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  TextColumn get createdBy => text().nullable()();
+  IntColumn get version => integer().withDefault(const Constant(0))();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
+class QuickSaleLines extends Table {
+  TextColumn get id => text()();
+  TextColumn get tenantId => text()();
+  TextColumn get branchId => text().nullable()();
+  TextColumn get quickSaleId => text()();
+  TextColumn get productId => text().nullable()();
+  TextColumn get description => text()();
+  IntColumn get quantity => integer()();
+
+  /// Unit price before VAT; the sale row carries the rolled-up VAT.
+  IntColumn get unitFils => integer()();
+  IntColumn get amountFils => integer()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  TextColumn get createdBy => text().nullable()();
+  IntColumn get version => integer().withDefault(const Constant(0))();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{id};
+}
+
 /// Production stages per workflow key. Reference data from `/v1/catalogue`;
 /// the device needs it offline because tasks are generated on the device.
 class WorkflowStages extends Table {
@@ -637,6 +691,8 @@ class SyncMeta extends Table {
     PriceRules,
     Orders,
     OrderItems,
+    QuickSales,
+    QuickSaleLines,
     OutboxMutations,
     SyncMeta,
   ],
@@ -645,7 +701,7 @@ class LocalDatabase extends _$LocalDatabase {
   LocalDatabase(super.executor);
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -698,6 +754,10 @@ class LocalDatabase extends _$LocalDatabase {
       }
       if (from < 13) {
         await m.createTable(priceBreaks);
+      }
+      if (from < 14) {
+        await m.createTable(quickSales);
+        await m.createTable(quickSaleLines);
       }
       if (from < 11) {
         if (from >= 1) {
@@ -965,6 +1025,10 @@ class LocalDatabase extends _$LocalDatabase {
         await _upsertOrder(data);
       case 'order_items':
         await _upsertOrderItem(data);
+      case 'quick_sales':
+        await _upsertQuickSale(data);
+      case 'quick_sale_lines':
+        await _upsertQuickSaleLine(data);
       case 'tasks':
         await _upsertTask(data);
       case 'proofs':
@@ -1540,6 +1604,57 @@ class LocalDatabase extends _$LocalDatabase {
     );
   }
 
+  Future<void> _upsertQuickSale(Map<String, Object?> data) async {
+    final id = data['id'] as String?;
+    if (id == null) return;
+    await into(quickSales).insertOnConflictUpdate(
+      QuickSalesCompanion(
+        id: Value(id),
+        tenantId: Value(data['tenant_id'] as String? ?? ''),
+        branchId: Value(data['branch_id'] as String?),
+        number: Value((data['number'] as num?)?.toInt()),
+        numberDisplay: Value(data['number_display'] as String? ?? ''),
+        customerId: Value(data['customer_id'] as String?),
+        customerName: Value(data['customer_name'] as String?),
+        status: Value(data['status'] as String? ?? 'paid'),
+        paymentMethod: Value(data['payment_method'] as String? ?? 'cash'),
+        subtotalFils: Value((data['subtotal_fils'] as num?)?.toInt() ?? 0),
+        vatFils: Value((data['vat_fils'] as num?)?.toInt() ?? 0),
+        totalFils: Value((data['total_fils'] as num?)?.toInt() ?? 0),
+        paidFils: Value((data['paid_fils'] as num?)?.toInt() ?? 0),
+        deviceId: Value(data['device_id'] as String? ?? ''),
+        createdAt: Value(_asDate(data['created_at']) ?? DateTime.now().toUtc()),
+        updatedAt: Value(_asDate(data['updated_at']) ?? DateTime.now().toUtc()),
+        createdBy: Value(data['created_by'] as String?),
+        version: Value((data['version'] as num?)?.toInt() ?? 0),
+        deletedAt: Value(_asDate(data['deleted_at'])),
+      ),
+    );
+  }
+
+  Future<void> _upsertQuickSaleLine(Map<String, Object?> data) async {
+    final id = data['id'] as String?;
+    if (id == null) return;
+    await into(quickSaleLines).insertOnConflictUpdate(
+      QuickSaleLinesCompanion(
+        id: Value(id),
+        tenantId: Value(data['tenant_id'] as String? ?? ''),
+        branchId: Value(data['branch_id'] as String?),
+        quickSaleId: Value(data['quick_sale_id'] as String? ?? ''),
+        productId: Value(data['product_id'] as String?),
+        description: Value(data['description'] as String? ?? ''),
+        quantity: Value((data['quantity'] as num?)?.toInt() ?? 0),
+        unitFils: Value((data['unit_fils'] as num?)?.toInt() ?? 0),
+        amountFils: Value((data['amount_fils'] as num?)?.toInt() ?? 0),
+        createdAt: Value(_asDate(data['created_at']) ?? DateTime.now().toUtc()),
+        updatedAt: Value(_asDate(data['updated_at']) ?? DateTime.now().toUtc()),
+        createdBy: Value(data['created_by'] as String?),
+        version: Value((data['version'] as num?)?.toInt() ?? 0),
+        deletedAt: Value(_asDate(data['deleted_at'])),
+      ),
+    );
+  }
+
   Future<void> _enqueue({
     required String entity,
     required String rowId,
@@ -1945,6 +2060,121 @@ class LocalDatabase extends _$LocalDatabase {
     });
 
     return orderId;
+  }
+
+  // -------------------------------------------------------------------------
+  // Quick sales
+  // -------------------------------------------------------------------------
+
+  /// Writes a walk-in sale and its lines, and queues the mutations, in one
+  /// local transaction — a crash cannot leave a sale without its lines, and
+  /// the counter never waits for the network. The number was already issued by
+  /// the caller (the same lease-then-allocate path orders use), so the whole
+  /// sale is one atomic write.
+  Future<String> createQuickSaleLocal({
+    required String tenantId,
+    required String? branchId,
+    required String userId,
+    required int? number,
+    required String numberDisplay,
+    required String? customerId,
+    required String? customerName,
+    required String paymentMethod,
+    required int subtotalFils,
+    required int vatFils,
+    required int totalFils,
+    required int paidFils,
+    required List<QuickSaleLineDraft> lines,
+    String status = 'paid',
+  }) async {
+    if (lines.isEmpty) {
+      throw ArgumentError('A quick sale needs at least one line');
+    }
+
+    final saleId = Uuid7.generate();
+    final now = DateTime.now().toUtc();
+
+    await transaction(() async {
+      await into(quickSales).insert(
+        QuickSalesCompanion.insert(
+          id: saleId,
+          tenantId: tenantId,
+          branchId: Value(branchId),
+          number: Value(number),
+          numberDisplay: numberDisplay,
+          customerId: Value(customerId),
+          customerName: Value(customerName),
+          status: Value(status),
+          paymentMethod: Value(paymentMethod),
+          subtotalFils: Value(subtotalFils),
+          vatFils: Value(vatFils),
+          totalFils: Value(totalFils),
+          paidFils: Value(paidFils),
+          // The server stamps the real device id from the token; the local row
+          // keeps a blank until the pull returns the authoritative copy.
+          deviceId: '',
+          createdAt: now,
+          updatedAt: now,
+          createdBy: Value(userId),
+        ),
+      );
+
+      await _enqueue(
+        entity: 'quick_sales',
+        rowId: saleId,
+        op: 'insert',
+        baseVersion: 0,
+        fields: <String, Object?>{
+          'number': number,
+          'number_display': numberDisplay,
+          'customer_id': customerId,
+          'customer_name': customerName,
+          'status': status,
+          'payment_method': paymentMethod,
+          'subtotal_fils': subtotalFils,
+          'vat_fils': vatFils,
+          'total_fils': totalFils,
+          'paid_fils': paidFils,
+        },
+      );
+
+      for (final line in lines) {
+        final lineId = Uuid7.generate();
+        await into(quickSaleLines).insert(
+          QuickSaleLinesCompanion.insert(
+            id: lineId,
+            tenantId: tenantId,
+            branchId: Value(branchId),
+            quickSaleId: saleId,
+            productId: Value(line.productId),
+            description: line.description,
+            quantity: line.quantity,
+            unitFils: line.unitFils,
+            amountFils: line.amountFils,
+            createdAt: now,
+            updatedAt: now,
+            createdBy: Value(userId),
+          ),
+        );
+
+        await _enqueue(
+          entity: 'quick_sale_lines',
+          rowId: lineId,
+          op: 'insert',
+          baseVersion: 0,
+          fields: <String, Object?>{
+            'quick_sale_id': saleId,
+            'product_id': line.productId,
+            'description': line.description,
+            'quantity': line.quantity,
+            'unit_fils': line.unitFils,
+            'amount_fils': line.amountFils,
+          },
+        );
+      }
+    });
+
+    return saleId;
   }
 
   // -------------------------------------------------------------------------
@@ -3452,6 +3682,25 @@ class OrderLineDraft {
   final int subtotalFils;
   final int vatFils;
   final int totalFils;
+}
+
+/// One line the counter is about to ring up, priced by hand (a quick-service
+/// chip or a typed unit price). There is no frozen breakdown: a walk-in sale
+/// has no price engine behind it, just a unit price and a quantity.
+class QuickSaleLineDraft {
+  const QuickSaleLineDraft({
+    required this.productId,
+    required this.description,
+    required this.quantity,
+    required this.unitFils,
+    required this.amountFils,
+  });
+
+  final String? productId;
+  final String description;
+  final int quantity;
+  final int unitFils;
+  final int amountFils;
 }
 
 /// A stage definition as the app uses it: from the catalogue when it has one,

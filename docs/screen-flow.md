@@ -199,6 +199,13 @@ job they belong to. Everything is answered from the local database, so it works 
 Company profile for documents (name, TRN, address), VAT rate, number series, backup/export.
 The number prefixes (`INV`, `QT`, `JOB`) are saved here and used for every number issued from then on; a document already issued keeps the number it was printed with.
 
+### 4.18 Quick sale (POS) — BUILT
+A walk-in sale at the counter: quick-service chips (Copy, Print, Scan, Laminate, Binding) and typed
+lines, optional customer name, VAT at the shop's rate, cash/card/transfer with cash change, and a
+`QS-…` number. It syncs offline-first like every other entity. Till-session integration is deferred:
+cash from a quick sale is recorded on the sale row but does not yet attach to a till session or open
+the cash drawer.
+
 ---
 
 ## 5. What the requirements asked for, and where it is

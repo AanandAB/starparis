@@ -19,6 +19,7 @@ import 'log_sheet.dart';
 import 'orders_screen.dart';
 import 'price_book_screen.dart';
 import 'production_setup_screen.dart';
+import 'quick_sale_screen.dart';
 import 'reports_screen.dart';
 import 'settings_screen.dart';
 import 'staff_screen.dart';
@@ -50,6 +51,19 @@ class AppShell extends ConsumerStatefulWidget {
 
 class _AppShellState extends ConsumerState<AppShell> {
   void _select(int page) => ref.read(shellTabProvider.notifier).select(page);
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // A counter signs in to sell, not to read the dashboard: land them on the
+      // quick-sale tab. POS is always the first optional page, so its index is
+      // the stable [HomeTabs.pos].
+      if (ref.read(sessionProvider)?.role == 'counter') {
+        ref.read(shellTabProvider.notifier).select(HomeTabs.pos);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -107,6 +121,17 @@ class _AppShellState extends ConsumerState<AppShell> {
     final business = <_Dest>[];
     final optionalPages = <Widget>[];
 
+    if (ref.watch(canUsePosProvider)) {
+      business.add(
+        _Dest(
+          t('nav.quickSale'),
+          Icons.point_of_sale_outlined,
+          Icons.point_of_sale,
+          nextPage++,
+        ),
+      );
+      optionalPages.add(const QuickSaleScreen());
+    }
     if (ref.watch(canEditPricesProvider)) {
       business.add(
         _Dest(

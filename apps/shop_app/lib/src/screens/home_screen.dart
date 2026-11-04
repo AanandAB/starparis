@@ -16,6 +16,11 @@ abstract final class HomeTabs {
   static const int customers = 1;
   static const int orders = 2;
   static const int production = 3;
+
+  /// The quick-sale (POS) tab. It is always the first optional page, so its
+  /// index is stable at 4 for every role that has it — a counter lands here on
+  /// sign-in. Keep it first among the optional destinations in `shell.dart`.
+  static const int pos = 4;
 }
 
 /// Today — the screen the shop opens in the morning.

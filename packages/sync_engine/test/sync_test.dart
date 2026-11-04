@@ -543,6 +543,54 @@ void main() {
     });
   });
 
+  group('quick sales', () {
+    test('writes the sale, its lines and the outbox in one go', () async {
+      final saleId = await db.createQuickSaleLocal(
+        tenantId: 't1',
+        branchId: 'b1',
+        userId: 'u1',
+        number: 1,
+        numberDisplay: 'QS-SHJ1-PC1-00001',
+        customerId: null,
+        customerName: 'Walk-in',
+        paymentMethod: 'cash',
+        subtotalFils: 1000,
+        vatFils: 50,
+        totalFils: 1050,
+        paidFils: 1050,
+        lines: const <QuickSaleLineDraft>[
+          QuickSaleLineDraft(
+            productId: null,
+            description: 'Black & white copies',
+            quantity: 10,
+            unitFils: 100,
+            amountFils: 1000,
+          ),
+        ],
+      );
+
+      final sale = await (db.select(db.quickSales)
+            ..where((t) => t.id.equals(saleId)))
+          .getSingle();
+      expect(sale.numberDisplay, 'QS-SHJ1-PC1-00001');
+      expect(sale.totalFils, 1050);
+      expect(sale.paidFils, 1050);
+
+      final lines = await (db.select(db.quickSaleLines)
+            ..where((t) => t.quickSaleId.equals(saleId)))
+          .get();
+      expect(lines, hasLength(1));
+      expect(lines.single.amountFils, 1000);
+
+      final batch = await db.nextBatch();
+      final entities = batch.map((mutation) => mutation.entity).toList();
+      expect(entities, containsAll(<String>['quick_sales', 'quick_sale_lines']));
+      // The parent travels before its lines, so the server sees the sale exist
+      // before the line that points at it.
+      expect(entities.indexOf('quick_sales'), lessThan(entities.indexOf('quick_sale_lines')));
+    });
+  });
+
   group('quotes', () {
     test(
       'converting a quote copies the frozen lines and marks it converted',

@@ -34,7 +34,13 @@ export interface NumberBlock {
 
 /** The number series a shop issues. The kind is what the code reasons about —
  *  the prefix is only how that kind is spelled today. */
-export type SeriesKind = 'job' | 'quote' | 'invoice' | 'credit_note' | 'delivery';
+export type SeriesKind =
+  | 'job'
+  | 'quote'
+  | 'invoice'
+  | 'credit_note'
+  | 'delivery'
+  | 'quick_sale';
 
 const DEFAULT_PREFIXES: Record<SeriesKind, string> = {
   job: 'JOB',
@@ -42,6 +48,7 @@ const DEFAULT_PREFIXES: Record<SeriesKind, string> = {
   invoice: 'INV',
   credit_note: 'CN',
   delivery: 'DN',
+  quick_sale: 'QS',
 };
 
 /**
@@ -57,6 +64,10 @@ export function prefixesFromSettings(settings: ShopSettings): Record<SeriesKind,
     invoice: settings.numbers.invoice_prefix,
     credit_note: DEFAULT_PREFIXES.credit_note,
     delivery: DEFAULT_PREFIXES.delivery,
+    // Settings has no field for a quick-sale prefix yet, exactly like credit
+    // notes and delivery notes: inventing a value here would let the lease
+    // endpoint print a prefix the owner can neither see nor change.
+    quick_sale: DEFAULT_PREFIXES.quick_sale,
   };
 }
 

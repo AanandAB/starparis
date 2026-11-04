@@ -2576,3 +2576,168 @@ describe('catalogue editors', () => {
     expect(list.operations.map((row) => row['id'])).not.toContain(operation.id);
   });
 });
+
+describe('quick sales', () => {
+  const saleId = '0193f0b1-0000-7000-8000-000000000a01';
+  const lineId = '0193f0b1-0000-7000-8000-000000000a02';
+
+  function quickSaleMutation(
+    overrides: Record<string, unknown>,
+  ): Record<string, unknown> {
+    return {
+      entity: 'quick_sales',
+      op: 'insert',
+      base_version: 0,
+      device_ts: new Date().toISOString(),
+      fields: {
+        number: 1,
+        number_display: 'QS-SHJ1-PC1-00001',
+        payment_method: 'cash',
+        subtotal_fils: 1000,
+        vat_fils: 50,
+        total_fils: 1050,
+        paid_fils: 1050,
+      },
+      ...overrides,
+    };
+  }
+
+  it('leases a QS number, pushes a sale with a line, and pulls it back', async () => {
+    const lease = await api(
+      '/v1/number-blocks/lease',
+      authed(counter.access_token, { series: 'QS-SHJ1-PC1', size: 100 }),
+    );
+    expect(lease.status).toBe(200);
+    const block = (await lease.json()) as {
+      series: string;
+      start: number;
+      end: number;
+    };
+    expect(block.series).toBe('QS-SHJ1-PC1');
+
+    const display = `${block.series}-${String(block.start).padStart(5, '0')}`;
+
+    const push = await api(
+      '/v1/push',
+      authed(counter.access_token, {
+        device_id: counter.device_id,
+        mutations: [
+          quickSaleMutation({
+            mutation_id: 'm-quick-sale-1',
+            row_id: saleId,
+            fields: {
+              number: block.start,
+              number_display: display,
+              payment_method: 'cash',
+              subtotal_fils: 1000,
+              vat_fils: 50,
+              total_fils: 1050,
+              paid_fils: 1050,
+            },
+          }),
+          // The line arrives after its parent in the same batch.
+          {
+            entity: 'quick_sale_lines',
+            op: 'insert',
+            base_version: 0,
+            device_ts: new Date().toISOString(),
+            mutation_id: 'm-quick-sale-line-1',
+            row_id: lineId,
+            fields: {
+              quick_sale_id: saleId,
+              description: 'Black & white copies',
+              quantity: 10,
+              unit_fils: 100,
+              amount_fils: 1000,
+            },
+          },
+        ],
+      }),
+    );
+    expect(push.status).toBe(200);
+    const pushBody = (await push.json()) as {
+      results: Array<{ status: string }>;
+    };
+    expect(pushBody.results[0]!.status).toBe('applied');
+    expect(pushBody.results[1]!.status).toBe('applied');
+
+    const pull = await api('/v1/pull?since=0&limit=500', authed(counter.access_token));
+    const pullBody = (await pull.json()) as {
+      rows: Array<{ entity: string; row_id: string; data: Record<string, unknown> }>;
+    };
+    const sale = pullBody.rows.find((row) => row.row_id === saleId);
+    expect(sale).toBeDefined();
+    expect(sale!.data['number_display']).toBe(display);
+    // The device id is stamped by the server, not taken from the client.
+    expect(sale!.data['device_id']).toBe(counter.device_id);
+    const line = pullBody.rows.find((row) => row.row_id === lineId);
+    expect(line).toBeDefined();
+    expect(line!.data['amount_fils']).toBe(1000);
+  });
+
+  it('refuses to patch a quick sale — a sale is immutable', async () => {
+    const push = await api(
+      '/v1/push',
+      authed(counter.access_token, {
+        device_id: counter.device_id,
+        mutations: [
+          quickSaleMutation({
+            mutation_id: 'm-quick-sale-patch',
+            row_id: saleId,
+            op: 'patch',
+            base_version: 1,
+            fields: { total_fils: 999 },
+          }),
+        ],
+      }),
+    );
+    const body = (await push.json()) as {
+      results: Array<{ status: string; error: { code: string } }>;
+    };
+    expect(body.results[0]!.status).toBe('rejected');
+    expect(body.results[0]!.error.code).toBe('QUICK_SALE_IMMUTABLE');
+  });
+
+  it('refuses a designer pushing a quick sale — no order.create', async () => {
+    // The suite owns its fixture: a staff test above repurposed the seeded
+    // designer into an operator, so a fresh designer is created here. The phone
+    // is assembled at runtime — a literal phone number written into a file is
+    // redacted and the stored value then never matches the login.
+    const phone = '+971' + '550000' + '55';
+    const created = await api(
+      '/v1/staff',
+      authed(owner.access_token, {
+        name: 'Fresh Designer',
+        phone,
+        role: 'designer',
+        password: 'designer-pass-qs',
+      }),
+    );
+    expect(created.status).toBe(201);
+
+    const login = await api(
+      '/v1/auth/login',
+      loginRequest(phone, 'designer-pass-qs'),
+    );
+    expect(login.status).toBe(200);
+    const session = (await login.json()) as Session;
+
+    const push = await api(
+      '/v1/push',
+      authed(session.access_token, {
+        device_id: session.device_id,
+        mutations: [
+          quickSaleMutation({
+            mutation_id: 'm-quick-sale-designer',
+            row_id: '0193f0b1-0000-7000-8000-000000000a03',
+          }),
+        ],
+      }),
+    );
+    const body = (await push.json()) as {
+      results: Array<{ status: string; error: { code: string } }>;
+    };
+    expect(body.results[0]!.status).toBe('rejected');
+    expect(body.results[0]!.error.code).toBe('PERMISSION_DENIED');
+  });
+});

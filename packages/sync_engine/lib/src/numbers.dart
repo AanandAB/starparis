@@ -44,17 +44,19 @@ enum NumberKind {
   quote,
   invoice,
   creditNote,
-  delivery;
+  delivery,
+  quickSale;
 
   /// The key this kind's prefix has in the `numbers` block of `GET /v1/settings`.
-  /// Credit notes and delivery notes have no key yet: Settings cannot show a
-  /// field that does not exist, so their prefixes stay fixed.
+  /// Credit notes, delivery notes and quick sales have no key yet: Settings
+  /// cannot show a field that does not exist, so their prefixes stay fixed.
   String? get settingsKey => switch (this) {
     NumberKind.job => 'order_prefix',
     NumberKind.quote => 'quote_prefix',
     NumberKind.invoice => 'invoice_prefix',
     NumberKind.creditNote => null,
     NumberKind.delivery => null,
+    NumberKind.quickSale => null,
   };
 }
 
@@ -71,6 +73,7 @@ class NumberPrefixes {
     this.invoice = 'INV',
     this.creditNote = 'CN',
     this.delivery = 'DN',
+    this.quickSale = 'QS',
   });
 
   /// Reads the settings payload the app already loads for the settings screen.
@@ -110,6 +113,7 @@ class NumberPrefixes {
   /// here would let the app print a prefix the owner cannot see.
   final String creditNote;
   final String delivery;
+  final String quickSale;
 
   String of(NumberKind kind) => switch (kind) {
     NumberKind.job => job,
@@ -117,6 +121,7 @@ class NumberPrefixes {
     NumberKind.invoice => invoice,
     NumberKind.creditNote => creditNote,
     NumberKind.delivery => delivery,
+    NumberKind.quickSale => quickSale,
   };
 }
 

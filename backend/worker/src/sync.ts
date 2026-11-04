@@ -128,6 +128,63 @@ export const ENTITIES: Record<string, EntityDef> = {
     branchScoped: true,
     softDelete: true,
   },
+  quick_sales: {
+    table: 'quick_sales',
+    columns: new Set([
+      'number',
+      'number_display',
+      'customer_id',
+      'customer_name',
+      'status',
+      'payment_method',
+      'subtotal_fils',
+      'vat_fils',
+      'total_fils',
+      'paid_fils',
+    ]),
+    required: [
+      'number_display',
+      'payment_method',
+      'subtotal_fils',
+      'vat_fils',
+      'total_fils',
+      'paid_fils',
+    ],
+    permission: 'order.create',
+    mergeable: false,
+    branchScoped: true,
+    // A sale, once rung, is not edited — the money is in the drawer and the
+    // customer is gone. Corrections are refunds, which do not exist yet.
+    softDelete: false,
+    mutate: () => ({
+      error: {
+        code: 'QUICK_SALE_IMMUTABLE',
+        message: 'A quick sale is a fact once rung. Record a refund when that exists.',
+      },
+    }),
+  },
+  quick_sale_lines: {
+    table: 'quick_sale_lines',
+    columns: new Set([
+      'quick_sale_id',
+      'product_id',
+      'description',
+      'quantity',
+      'unit_fils',
+      'amount_fils',
+    ]),
+    required: ['quick_sale_id', 'description', 'quantity', 'unit_fils', 'amount_fils'],
+    permission: 'order.create',
+    mergeable: false,
+    branchScoped: true,
+    softDelete: false,
+    mutate: () => ({
+      error: {
+        code: 'QUICK_SALE_LINE_IMMUTABLE',
+        message: 'A quick sale line cannot be edited.',
+      },
+    }),
+  },
   tasks: {
     table: 'tasks',
     columns: new Set([
@@ -544,6 +601,13 @@ async function insertRow(
     fields['opened_at'] = now;
     fields['opened_by'] = ctx.userId;
     fields['status'] = 'open';
+  }
+
+  if (mutation.entity === 'quick_sales') {
+    // Which device rung the sale is a server fact, not something the client
+    // asserts — the same rule as a till session. Cash from a quick sale is
+    // recorded on the sale row but is not yet attached to a till session.
+    fields['device_id'] = ctx.deviceId;
   }
 
   const row: Row = { ...fields };

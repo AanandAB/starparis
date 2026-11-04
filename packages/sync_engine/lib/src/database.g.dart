@@ -20429,6 +20429,1876 @@ class OrderItemsCompanion extends UpdateCompanion<OrderItem> {
   }
 }
 
+class $QuickSalesTable extends QuickSales
+    with TableInfo<$QuickSalesTable, QuickSale> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $QuickSalesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tenantIdMeta = const VerificationMeta(
+    'tenantId',
+  );
+  @override
+  late final GeneratedColumn<String> tenantId = GeneratedColumn<String>(
+    'tenant_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _branchIdMeta = const VerificationMeta(
+    'branchId',
+  );
+  @override
+  late final GeneratedColumn<String> branchId = GeneratedColumn<String>(
+    'branch_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _numberMeta = const VerificationMeta('number');
+  @override
+  late final GeneratedColumn<int> number = GeneratedColumn<int>(
+    'number',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _numberDisplayMeta = const VerificationMeta(
+    'numberDisplay',
+  );
+  @override
+  late final GeneratedColumn<String> numberDisplay = GeneratedColumn<String>(
+    'number_display',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _customerIdMeta = const VerificationMeta(
+    'customerId',
+  );
+  @override
+  late final GeneratedColumn<String> customerId = GeneratedColumn<String>(
+    'customer_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _customerNameMeta = const VerificationMeta(
+    'customerName',
+  );
+  @override
+  late final GeneratedColumn<String> customerName = GeneratedColumn<String>(
+    'customer_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('paid'),
+  );
+  static const VerificationMeta _paymentMethodMeta = const VerificationMeta(
+    'paymentMethod',
+  );
+  @override
+  late final GeneratedColumn<String> paymentMethod = GeneratedColumn<String>(
+    'payment_method',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('cash'),
+  );
+  static const VerificationMeta _subtotalFilsMeta = const VerificationMeta(
+    'subtotalFils',
+  );
+  @override
+  late final GeneratedColumn<int> subtotalFils = GeneratedColumn<int>(
+    'subtotal_fils',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _vatFilsMeta = const VerificationMeta(
+    'vatFils',
+  );
+  @override
+  late final GeneratedColumn<int> vatFils = GeneratedColumn<int>(
+    'vat_fils',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _totalFilsMeta = const VerificationMeta(
+    'totalFils',
+  );
+  @override
+  late final GeneratedColumn<int> totalFils = GeneratedColumn<int>(
+    'total_fils',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _paidFilsMeta = const VerificationMeta(
+    'paidFils',
+  );
+  @override
+  late final GeneratedColumn<int> paidFils = GeneratedColumn<int>(
+    'paid_fils',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
+    'deviceId',
+  );
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+    'device_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdByMeta = const VerificationMeta(
+    'createdBy',
+  );
+  @override
+  late final GeneratedColumn<String> createdBy = GeneratedColumn<String>(
+    'created_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _versionMeta = const VerificationMeta(
+    'version',
+  );
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+    'version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    tenantId,
+    branchId,
+    number,
+    numberDisplay,
+    customerId,
+    customerName,
+    status,
+    paymentMethod,
+    subtotalFils,
+    vatFils,
+    totalFils,
+    paidFils,
+    deviceId,
+    createdAt,
+    updatedAt,
+    createdBy,
+    version,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'quick_sales';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<QuickSale> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('tenant_id')) {
+      context.handle(
+        _tenantIdMeta,
+        tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tenantIdMeta);
+    }
+    if (data.containsKey('branch_id')) {
+      context.handle(
+        _branchIdMeta,
+        branchId.isAcceptableOrUnknown(data['branch_id']!, _branchIdMeta),
+      );
+    }
+    if (data.containsKey('number')) {
+      context.handle(
+        _numberMeta,
+        number.isAcceptableOrUnknown(data['number']!, _numberMeta),
+      );
+    }
+    if (data.containsKey('number_display')) {
+      context.handle(
+        _numberDisplayMeta,
+        numberDisplay.isAcceptableOrUnknown(
+          data['number_display']!,
+          _numberDisplayMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_numberDisplayMeta);
+    }
+    if (data.containsKey('customer_id')) {
+      context.handle(
+        _customerIdMeta,
+        customerId.isAcceptableOrUnknown(data['customer_id']!, _customerIdMeta),
+      );
+    }
+    if (data.containsKey('customer_name')) {
+      context.handle(
+        _customerNameMeta,
+        customerName.isAcceptableOrUnknown(
+          data['customer_name']!,
+          _customerNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('payment_method')) {
+      context.handle(
+        _paymentMethodMeta,
+        paymentMethod.isAcceptableOrUnknown(
+          data['payment_method']!,
+          _paymentMethodMeta,
+        ),
+      );
+    }
+    if (data.containsKey('subtotal_fils')) {
+      context.handle(
+        _subtotalFilsMeta,
+        subtotalFils.isAcceptableOrUnknown(
+          data['subtotal_fils']!,
+          _subtotalFilsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('vat_fils')) {
+      context.handle(
+        _vatFilsMeta,
+        vatFils.isAcceptableOrUnknown(data['vat_fils']!, _vatFilsMeta),
+      );
+    }
+    if (data.containsKey('total_fils')) {
+      context.handle(
+        _totalFilsMeta,
+        totalFils.isAcceptableOrUnknown(data['total_fils']!, _totalFilsMeta),
+      );
+    }
+    if (data.containsKey('paid_fils')) {
+      context.handle(
+        _paidFilsMeta,
+        paidFils.isAcceptableOrUnknown(data['paid_fils']!, _paidFilsMeta),
+      );
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(
+        _deviceIdMeta,
+        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_deviceIdMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('created_by')) {
+      context.handle(
+        _createdByMeta,
+        createdBy.isAcceptableOrUnknown(data['created_by']!, _createdByMeta),
+      );
+    }
+    if (data.containsKey('version')) {
+      context.handle(
+        _versionMeta,
+        version.isAcceptableOrUnknown(data['version']!, _versionMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  QuickSale map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return QuickSale(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      tenantId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tenant_id'],
+      )!,
+      branchId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}branch_id'],
+      ),
+      number: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}number'],
+      ),
+      numberDisplay: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}number_display'],
+      )!,
+      customerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}customer_id'],
+      ),
+      customerName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}customer_name'],
+      ),
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      paymentMethod: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payment_method'],
+      )!,
+      subtotalFils: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}subtotal_fils'],
+      )!,
+      vatFils: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}vat_fils'],
+      )!,
+      totalFils: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total_fils'],
+      )!,
+      paidFils: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}paid_fils'],
+      )!,
+      deviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      createdBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}created_by'],
+      ),
+      version: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}version'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $QuickSalesTable createAlias(String alias) {
+    return $QuickSalesTable(attachedDatabase, alias);
+  }
+}
+
+class QuickSale extends DataClass implements Insertable<QuickSale> {
+  final String id;
+  final String tenantId;
+  final String? branchId;
+
+  /// Null while offline and on a temporary `QS-T-0007` display.
+  final int? number;
+  final String numberDisplay;
+  final String? customerId;
+  final String? customerName;
+  final String status;
+  final String paymentMethod;
+  final int subtotalFils;
+  final int vatFils;
+  final int totalFils;
+  final int paidFils;
+
+  /// Stamped by the server, like a till session.
+  final String deviceId;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String? createdBy;
+  final int version;
+  final DateTime? deletedAt;
+  const QuickSale({
+    required this.id,
+    required this.tenantId,
+    this.branchId,
+    this.number,
+    required this.numberDisplay,
+    this.customerId,
+    this.customerName,
+    required this.status,
+    required this.paymentMethod,
+    required this.subtotalFils,
+    required this.vatFils,
+    required this.totalFils,
+    required this.paidFils,
+    required this.deviceId,
+    required this.createdAt,
+    required this.updatedAt,
+    this.createdBy,
+    required this.version,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['tenant_id'] = Variable<String>(tenantId);
+    if (!nullToAbsent || branchId != null) {
+      map['branch_id'] = Variable<String>(branchId);
+    }
+    if (!nullToAbsent || number != null) {
+      map['number'] = Variable<int>(number);
+    }
+    map['number_display'] = Variable<String>(numberDisplay);
+    if (!nullToAbsent || customerId != null) {
+      map['customer_id'] = Variable<String>(customerId);
+    }
+    if (!nullToAbsent || customerName != null) {
+      map['customer_name'] = Variable<String>(customerName);
+    }
+    map['status'] = Variable<String>(status);
+    map['payment_method'] = Variable<String>(paymentMethod);
+    map['subtotal_fils'] = Variable<int>(subtotalFils);
+    map['vat_fils'] = Variable<int>(vatFils);
+    map['total_fils'] = Variable<int>(totalFils);
+    map['paid_fils'] = Variable<int>(paidFils);
+    map['device_id'] = Variable<String>(deviceId);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || createdBy != null) {
+      map['created_by'] = Variable<String>(createdBy);
+    }
+    map['version'] = Variable<int>(version);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  QuickSalesCompanion toCompanion(bool nullToAbsent) {
+    return QuickSalesCompanion(
+      id: Value(id),
+      tenantId: Value(tenantId),
+      branchId: branchId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(branchId),
+      number: number == null && nullToAbsent
+          ? const Value.absent()
+          : Value(number),
+      numberDisplay: Value(numberDisplay),
+      customerId: customerId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(customerId),
+      customerName: customerName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(customerName),
+      status: Value(status),
+      paymentMethod: Value(paymentMethod),
+      subtotalFils: Value(subtotalFils),
+      vatFils: Value(vatFils),
+      totalFils: Value(totalFils),
+      paidFils: Value(paidFils),
+      deviceId: Value(deviceId),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      createdBy: createdBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdBy),
+      version: Value(version),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory QuickSale.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return QuickSale(
+      id: serializer.fromJson<String>(json['id']),
+      tenantId: serializer.fromJson<String>(json['tenantId']),
+      branchId: serializer.fromJson<String?>(json['branchId']),
+      number: serializer.fromJson<int?>(json['number']),
+      numberDisplay: serializer.fromJson<String>(json['numberDisplay']),
+      customerId: serializer.fromJson<String?>(json['customerId']),
+      customerName: serializer.fromJson<String?>(json['customerName']),
+      status: serializer.fromJson<String>(json['status']),
+      paymentMethod: serializer.fromJson<String>(json['paymentMethod']),
+      subtotalFils: serializer.fromJson<int>(json['subtotalFils']),
+      vatFils: serializer.fromJson<int>(json['vatFils']),
+      totalFils: serializer.fromJson<int>(json['totalFils']),
+      paidFils: serializer.fromJson<int>(json['paidFils']),
+      deviceId: serializer.fromJson<String>(json['deviceId']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      createdBy: serializer.fromJson<String?>(json['createdBy']),
+      version: serializer.fromJson<int>(json['version']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'tenantId': serializer.toJson<String>(tenantId),
+      'branchId': serializer.toJson<String?>(branchId),
+      'number': serializer.toJson<int?>(number),
+      'numberDisplay': serializer.toJson<String>(numberDisplay),
+      'customerId': serializer.toJson<String?>(customerId),
+      'customerName': serializer.toJson<String?>(customerName),
+      'status': serializer.toJson<String>(status),
+      'paymentMethod': serializer.toJson<String>(paymentMethod),
+      'subtotalFils': serializer.toJson<int>(subtotalFils),
+      'vatFils': serializer.toJson<int>(vatFils),
+      'totalFils': serializer.toJson<int>(totalFils),
+      'paidFils': serializer.toJson<int>(paidFils),
+      'deviceId': serializer.toJson<String>(deviceId),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'createdBy': serializer.toJson<String?>(createdBy),
+      'version': serializer.toJson<int>(version),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  QuickSale copyWith({
+    String? id,
+    String? tenantId,
+    Value<String?> branchId = const Value.absent(),
+    Value<int?> number = const Value.absent(),
+    String? numberDisplay,
+    Value<String?> customerId = const Value.absent(),
+    Value<String?> customerName = const Value.absent(),
+    String? status,
+    String? paymentMethod,
+    int? subtotalFils,
+    int? vatFils,
+    int? totalFils,
+    int? paidFils,
+    String? deviceId,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<String?> createdBy = const Value.absent(),
+    int? version,
+    Value<DateTime?> deletedAt = const Value.absent(),
+  }) => QuickSale(
+    id: id ?? this.id,
+    tenantId: tenantId ?? this.tenantId,
+    branchId: branchId.present ? branchId.value : this.branchId,
+    number: number.present ? number.value : this.number,
+    numberDisplay: numberDisplay ?? this.numberDisplay,
+    customerId: customerId.present ? customerId.value : this.customerId,
+    customerName: customerName.present ? customerName.value : this.customerName,
+    status: status ?? this.status,
+    paymentMethod: paymentMethod ?? this.paymentMethod,
+    subtotalFils: subtotalFils ?? this.subtotalFils,
+    vatFils: vatFils ?? this.vatFils,
+    totalFils: totalFils ?? this.totalFils,
+    paidFils: paidFils ?? this.paidFils,
+    deviceId: deviceId ?? this.deviceId,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    createdBy: createdBy.present ? createdBy.value : this.createdBy,
+    version: version ?? this.version,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  QuickSale copyWithCompanion(QuickSalesCompanion data) {
+    return QuickSale(
+      id: data.id.present ? data.id.value : this.id,
+      tenantId: data.tenantId.present ? data.tenantId.value : this.tenantId,
+      branchId: data.branchId.present ? data.branchId.value : this.branchId,
+      number: data.number.present ? data.number.value : this.number,
+      numberDisplay: data.numberDisplay.present
+          ? data.numberDisplay.value
+          : this.numberDisplay,
+      customerId: data.customerId.present
+          ? data.customerId.value
+          : this.customerId,
+      customerName: data.customerName.present
+          ? data.customerName.value
+          : this.customerName,
+      status: data.status.present ? data.status.value : this.status,
+      paymentMethod: data.paymentMethod.present
+          ? data.paymentMethod.value
+          : this.paymentMethod,
+      subtotalFils: data.subtotalFils.present
+          ? data.subtotalFils.value
+          : this.subtotalFils,
+      vatFils: data.vatFils.present ? data.vatFils.value : this.vatFils,
+      totalFils: data.totalFils.present ? data.totalFils.value : this.totalFils,
+      paidFils: data.paidFils.present ? data.paidFils.value : this.paidFils,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      createdBy: data.createdBy.present ? data.createdBy.value : this.createdBy,
+      version: data.version.present ? data.version.value : this.version,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuickSale(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('branchId: $branchId, ')
+          ..write('number: $number, ')
+          ..write('numberDisplay: $numberDisplay, ')
+          ..write('customerId: $customerId, ')
+          ..write('customerName: $customerName, ')
+          ..write('status: $status, ')
+          ..write('paymentMethod: $paymentMethod, ')
+          ..write('subtotalFils: $subtotalFils, ')
+          ..write('vatFils: $vatFils, ')
+          ..write('totalFils: $totalFils, ')
+          ..write('paidFils: $paidFils, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('createdBy: $createdBy, ')
+          ..write('version: $version, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    tenantId,
+    branchId,
+    number,
+    numberDisplay,
+    customerId,
+    customerName,
+    status,
+    paymentMethod,
+    subtotalFils,
+    vatFils,
+    totalFils,
+    paidFils,
+    deviceId,
+    createdAt,
+    updatedAt,
+    createdBy,
+    version,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is QuickSale &&
+          other.id == this.id &&
+          other.tenantId == this.tenantId &&
+          other.branchId == this.branchId &&
+          other.number == this.number &&
+          other.numberDisplay == this.numberDisplay &&
+          other.customerId == this.customerId &&
+          other.customerName == this.customerName &&
+          other.status == this.status &&
+          other.paymentMethod == this.paymentMethod &&
+          other.subtotalFils == this.subtotalFils &&
+          other.vatFils == this.vatFils &&
+          other.totalFils == this.totalFils &&
+          other.paidFils == this.paidFils &&
+          other.deviceId == this.deviceId &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.createdBy == this.createdBy &&
+          other.version == this.version &&
+          other.deletedAt == this.deletedAt);
+}
+
+class QuickSalesCompanion extends UpdateCompanion<QuickSale> {
+  final Value<String> id;
+  final Value<String> tenantId;
+  final Value<String?> branchId;
+  final Value<int?> number;
+  final Value<String> numberDisplay;
+  final Value<String?> customerId;
+  final Value<String?> customerName;
+  final Value<String> status;
+  final Value<String> paymentMethod;
+  final Value<int> subtotalFils;
+  final Value<int> vatFils;
+  final Value<int> totalFils;
+  final Value<int> paidFils;
+  final Value<String> deviceId;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String?> createdBy;
+  final Value<int> version;
+  final Value<DateTime?> deletedAt;
+  final Value<int> rowid;
+  const QuickSalesCompanion({
+    this.id = const Value.absent(),
+    this.tenantId = const Value.absent(),
+    this.branchId = const Value.absent(),
+    this.number = const Value.absent(),
+    this.numberDisplay = const Value.absent(),
+    this.customerId = const Value.absent(),
+    this.customerName = const Value.absent(),
+    this.status = const Value.absent(),
+    this.paymentMethod = const Value.absent(),
+    this.subtotalFils = const Value.absent(),
+    this.vatFils = const Value.absent(),
+    this.totalFils = const Value.absent(),
+    this.paidFils = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.createdBy = const Value.absent(),
+    this.version = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  QuickSalesCompanion.insert({
+    required String id,
+    required String tenantId,
+    this.branchId = const Value.absent(),
+    this.number = const Value.absent(),
+    required String numberDisplay,
+    this.customerId = const Value.absent(),
+    this.customerName = const Value.absent(),
+    this.status = const Value.absent(),
+    this.paymentMethod = const Value.absent(),
+    this.subtotalFils = const Value.absent(),
+    this.vatFils = const Value.absent(),
+    this.totalFils = const Value.absent(),
+    this.paidFils = const Value.absent(),
+    required String deviceId,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.createdBy = const Value.absent(),
+    this.version = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       tenantId = Value(tenantId),
+       numberDisplay = Value(numberDisplay),
+       deviceId = Value(deviceId),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<QuickSale> custom({
+    Expression<String>? id,
+    Expression<String>? tenantId,
+    Expression<String>? branchId,
+    Expression<int>? number,
+    Expression<String>? numberDisplay,
+    Expression<String>? customerId,
+    Expression<String>? customerName,
+    Expression<String>? status,
+    Expression<String>? paymentMethod,
+    Expression<int>? subtotalFils,
+    Expression<int>? vatFils,
+    Expression<int>? totalFils,
+    Expression<int>? paidFils,
+    Expression<String>? deviceId,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? createdBy,
+    Expression<int>? version,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (tenantId != null) 'tenant_id': tenantId,
+      if (branchId != null) 'branch_id': branchId,
+      if (number != null) 'number': number,
+      if (numberDisplay != null) 'number_display': numberDisplay,
+      if (customerId != null) 'customer_id': customerId,
+      if (customerName != null) 'customer_name': customerName,
+      if (status != null) 'status': status,
+      if (paymentMethod != null) 'payment_method': paymentMethod,
+      if (subtotalFils != null) 'subtotal_fils': subtotalFils,
+      if (vatFils != null) 'vat_fils': vatFils,
+      if (totalFils != null) 'total_fils': totalFils,
+      if (paidFils != null) 'paid_fils': paidFils,
+      if (deviceId != null) 'device_id': deviceId,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (createdBy != null) 'created_by': createdBy,
+      if (version != null) 'version': version,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  QuickSalesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? tenantId,
+    Value<String?>? branchId,
+    Value<int?>? number,
+    Value<String>? numberDisplay,
+    Value<String?>? customerId,
+    Value<String?>? customerName,
+    Value<String>? status,
+    Value<String>? paymentMethod,
+    Value<int>? subtotalFils,
+    Value<int>? vatFils,
+    Value<int>? totalFils,
+    Value<int>? paidFils,
+    Value<String>? deviceId,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String?>? createdBy,
+    Value<int>? version,
+    Value<DateTime?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return QuickSalesCompanion(
+      id: id ?? this.id,
+      tenantId: tenantId ?? this.tenantId,
+      branchId: branchId ?? this.branchId,
+      number: number ?? this.number,
+      numberDisplay: numberDisplay ?? this.numberDisplay,
+      customerId: customerId ?? this.customerId,
+      customerName: customerName ?? this.customerName,
+      status: status ?? this.status,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      subtotalFils: subtotalFils ?? this.subtotalFils,
+      vatFils: vatFils ?? this.vatFils,
+      totalFils: totalFils ?? this.totalFils,
+      paidFils: paidFils ?? this.paidFils,
+      deviceId: deviceId ?? this.deviceId,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      createdBy: createdBy ?? this.createdBy,
+      version: version ?? this.version,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (tenantId.present) {
+      map['tenant_id'] = Variable<String>(tenantId.value);
+    }
+    if (branchId.present) {
+      map['branch_id'] = Variable<String>(branchId.value);
+    }
+    if (number.present) {
+      map['number'] = Variable<int>(number.value);
+    }
+    if (numberDisplay.present) {
+      map['number_display'] = Variable<String>(numberDisplay.value);
+    }
+    if (customerId.present) {
+      map['customer_id'] = Variable<String>(customerId.value);
+    }
+    if (customerName.present) {
+      map['customer_name'] = Variable<String>(customerName.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (paymentMethod.present) {
+      map['payment_method'] = Variable<String>(paymentMethod.value);
+    }
+    if (subtotalFils.present) {
+      map['subtotal_fils'] = Variable<int>(subtotalFils.value);
+    }
+    if (vatFils.present) {
+      map['vat_fils'] = Variable<int>(vatFils.value);
+    }
+    if (totalFils.present) {
+      map['total_fils'] = Variable<int>(totalFils.value);
+    }
+    if (paidFils.present) {
+      map['paid_fils'] = Variable<int>(paidFils.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (createdBy.present) {
+      map['created_by'] = Variable<String>(createdBy.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuickSalesCompanion(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('branchId: $branchId, ')
+          ..write('number: $number, ')
+          ..write('numberDisplay: $numberDisplay, ')
+          ..write('customerId: $customerId, ')
+          ..write('customerName: $customerName, ')
+          ..write('status: $status, ')
+          ..write('paymentMethod: $paymentMethod, ')
+          ..write('subtotalFils: $subtotalFils, ')
+          ..write('vatFils: $vatFils, ')
+          ..write('totalFils: $totalFils, ')
+          ..write('paidFils: $paidFils, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('createdBy: $createdBy, ')
+          ..write('version: $version, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $QuickSaleLinesTable extends QuickSaleLines
+    with TableInfo<$QuickSaleLinesTable, QuickSaleLine> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $QuickSaleLinesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tenantIdMeta = const VerificationMeta(
+    'tenantId',
+  );
+  @override
+  late final GeneratedColumn<String> tenantId = GeneratedColumn<String>(
+    'tenant_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _branchIdMeta = const VerificationMeta(
+    'branchId',
+  );
+  @override
+  late final GeneratedColumn<String> branchId = GeneratedColumn<String>(
+    'branch_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _quickSaleIdMeta = const VerificationMeta(
+    'quickSaleId',
+  );
+  @override
+  late final GeneratedColumn<String> quickSaleId = GeneratedColumn<String>(
+    'quick_sale_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _productIdMeta = const VerificationMeta(
+    'productId',
+  );
+  @override
+  late final GeneratedColumn<String> productId = GeneratedColumn<String>(
+    'product_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _quantityMeta = const VerificationMeta(
+    'quantity',
+  );
+  @override
+  late final GeneratedColumn<int> quantity = GeneratedColumn<int>(
+    'quantity',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _unitFilsMeta = const VerificationMeta(
+    'unitFils',
+  );
+  @override
+  late final GeneratedColumn<int> unitFils = GeneratedColumn<int>(
+    'unit_fils',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _amountFilsMeta = const VerificationMeta(
+    'amountFils',
+  );
+  @override
+  late final GeneratedColumn<int> amountFils = GeneratedColumn<int>(
+    'amount_fils',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdByMeta = const VerificationMeta(
+    'createdBy',
+  );
+  @override
+  late final GeneratedColumn<String> createdBy = GeneratedColumn<String>(
+    'created_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _versionMeta = const VerificationMeta(
+    'version',
+  );
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+    'version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    tenantId,
+    branchId,
+    quickSaleId,
+    productId,
+    description,
+    quantity,
+    unitFils,
+    amountFils,
+    createdAt,
+    updatedAt,
+    createdBy,
+    version,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'quick_sale_lines';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<QuickSaleLine> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('tenant_id')) {
+      context.handle(
+        _tenantIdMeta,
+        tenantId.isAcceptableOrUnknown(data['tenant_id']!, _tenantIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tenantIdMeta);
+    }
+    if (data.containsKey('branch_id')) {
+      context.handle(
+        _branchIdMeta,
+        branchId.isAcceptableOrUnknown(data['branch_id']!, _branchIdMeta),
+      );
+    }
+    if (data.containsKey('quick_sale_id')) {
+      context.handle(
+        _quickSaleIdMeta,
+        quickSaleId.isAcceptableOrUnknown(
+          data['quick_sale_id']!,
+          _quickSaleIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_quickSaleIdMeta);
+    }
+    if (data.containsKey('product_id')) {
+      context.handle(
+        _productIdMeta,
+        productId.isAcceptableOrUnknown(data['product_id']!, _productIdMeta),
+      );
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_descriptionMeta);
+    }
+    if (data.containsKey('quantity')) {
+      context.handle(
+        _quantityMeta,
+        quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_quantityMeta);
+    }
+    if (data.containsKey('unit_fils')) {
+      context.handle(
+        _unitFilsMeta,
+        unitFils.isAcceptableOrUnknown(data['unit_fils']!, _unitFilsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_unitFilsMeta);
+    }
+    if (data.containsKey('amount_fils')) {
+      context.handle(
+        _amountFilsMeta,
+        amountFils.isAcceptableOrUnknown(data['amount_fils']!, _amountFilsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_amountFilsMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('created_by')) {
+      context.handle(
+        _createdByMeta,
+        createdBy.isAcceptableOrUnknown(data['created_by']!, _createdByMeta),
+      );
+    }
+    if (data.containsKey('version')) {
+      context.handle(
+        _versionMeta,
+        version.isAcceptableOrUnknown(data['version']!, _versionMeta),
+      );
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  QuickSaleLine map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return QuickSaleLine(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      tenantId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tenant_id'],
+      )!,
+      branchId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}branch_id'],
+      ),
+      quickSaleId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}quick_sale_id'],
+      )!,
+      productId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}product_id'],
+      ),
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      )!,
+      quantity: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}quantity'],
+      )!,
+      unitFils: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}unit_fils'],
+      )!,
+      amountFils: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}amount_fils'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      createdBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}created_by'],
+      ),
+      version: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}version'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $QuickSaleLinesTable createAlias(String alias) {
+    return $QuickSaleLinesTable(attachedDatabase, alias);
+  }
+}
+
+class QuickSaleLine extends DataClass implements Insertable<QuickSaleLine> {
+  final String id;
+  final String tenantId;
+  final String? branchId;
+  final String quickSaleId;
+  final String? productId;
+  final String description;
+  final int quantity;
+
+  /// Unit price before VAT; the sale row carries the rolled-up VAT.
+  final int unitFils;
+  final int amountFils;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String? createdBy;
+  final int version;
+  final DateTime? deletedAt;
+  const QuickSaleLine({
+    required this.id,
+    required this.tenantId,
+    this.branchId,
+    required this.quickSaleId,
+    this.productId,
+    required this.description,
+    required this.quantity,
+    required this.unitFils,
+    required this.amountFils,
+    required this.createdAt,
+    required this.updatedAt,
+    this.createdBy,
+    required this.version,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['tenant_id'] = Variable<String>(tenantId);
+    if (!nullToAbsent || branchId != null) {
+      map['branch_id'] = Variable<String>(branchId);
+    }
+    map['quick_sale_id'] = Variable<String>(quickSaleId);
+    if (!nullToAbsent || productId != null) {
+      map['product_id'] = Variable<String>(productId);
+    }
+    map['description'] = Variable<String>(description);
+    map['quantity'] = Variable<int>(quantity);
+    map['unit_fils'] = Variable<int>(unitFils);
+    map['amount_fils'] = Variable<int>(amountFils);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || createdBy != null) {
+      map['created_by'] = Variable<String>(createdBy);
+    }
+    map['version'] = Variable<int>(version);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  QuickSaleLinesCompanion toCompanion(bool nullToAbsent) {
+    return QuickSaleLinesCompanion(
+      id: Value(id),
+      tenantId: Value(tenantId),
+      branchId: branchId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(branchId),
+      quickSaleId: Value(quickSaleId),
+      productId: productId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(productId),
+      description: Value(description),
+      quantity: Value(quantity),
+      unitFils: Value(unitFils),
+      amountFils: Value(amountFils),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      createdBy: createdBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdBy),
+      version: Value(version),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory QuickSaleLine.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return QuickSaleLine(
+      id: serializer.fromJson<String>(json['id']),
+      tenantId: serializer.fromJson<String>(json['tenantId']),
+      branchId: serializer.fromJson<String?>(json['branchId']),
+      quickSaleId: serializer.fromJson<String>(json['quickSaleId']),
+      productId: serializer.fromJson<String?>(json['productId']),
+      description: serializer.fromJson<String>(json['description']),
+      quantity: serializer.fromJson<int>(json['quantity']),
+      unitFils: serializer.fromJson<int>(json['unitFils']),
+      amountFils: serializer.fromJson<int>(json['amountFils']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      createdBy: serializer.fromJson<String?>(json['createdBy']),
+      version: serializer.fromJson<int>(json['version']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'tenantId': serializer.toJson<String>(tenantId),
+      'branchId': serializer.toJson<String?>(branchId),
+      'quickSaleId': serializer.toJson<String>(quickSaleId),
+      'productId': serializer.toJson<String?>(productId),
+      'description': serializer.toJson<String>(description),
+      'quantity': serializer.toJson<int>(quantity),
+      'unitFils': serializer.toJson<int>(unitFils),
+      'amountFils': serializer.toJson<int>(amountFils),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'createdBy': serializer.toJson<String?>(createdBy),
+      'version': serializer.toJson<int>(version),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  QuickSaleLine copyWith({
+    String? id,
+    String? tenantId,
+    Value<String?> branchId = const Value.absent(),
+    String? quickSaleId,
+    Value<String?> productId = const Value.absent(),
+    String? description,
+    int? quantity,
+    int? unitFils,
+    int? amountFils,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<String?> createdBy = const Value.absent(),
+    int? version,
+    Value<DateTime?> deletedAt = const Value.absent(),
+  }) => QuickSaleLine(
+    id: id ?? this.id,
+    tenantId: tenantId ?? this.tenantId,
+    branchId: branchId.present ? branchId.value : this.branchId,
+    quickSaleId: quickSaleId ?? this.quickSaleId,
+    productId: productId.present ? productId.value : this.productId,
+    description: description ?? this.description,
+    quantity: quantity ?? this.quantity,
+    unitFils: unitFils ?? this.unitFils,
+    amountFils: amountFils ?? this.amountFils,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    createdBy: createdBy.present ? createdBy.value : this.createdBy,
+    version: version ?? this.version,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  QuickSaleLine copyWithCompanion(QuickSaleLinesCompanion data) {
+    return QuickSaleLine(
+      id: data.id.present ? data.id.value : this.id,
+      tenantId: data.tenantId.present ? data.tenantId.value : this.tenantId,
+      branchId: data.branchId.present ? data.branchId.value : this.branchId,
+      quickSaleId: data.quickSaleId.present
+          ? data.quickSaleId.value
+          : this.quickSaleId,
+      productId: data.productId.present ? data.productId.value : this.productId,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      quantity: data.quantity.present ? data.quantity.value : this.quantity,
+      unitFils: data.unitFils.present ? data.unitFils.value : this.unitFils,
+      amountFils: data.amountFils.present
+          ? data.amountFils.value
+          : this.amountFils,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      createdBy: data.createdBy.present ? data.createdBy.value : this.createdBy,
+      version: data.version.present ? data.version.value : this.version,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuickSaleLine(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('branchId: $branchId, ')
+          ..write('quickSaleId: $quickSaleId, ')
+          ..write('productId: $productId, ')
+          ..write('description: $description, ')
+          ..write('quantity: $quantity, ')
+          ..write('unitFils: $unitFils, ')
+          ..write('amountFils: $amountFils, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('createdBy: $createdBy, ')
+          ..write('version: $version, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    tenantId,
+    branchId,
+    quickSaleId,
+    productId,
+    description,
+    quantity,
+    unitFils,
+    amountFils,
+    createdAt,
+    updatedAt,
+    createdBy,
+    version,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is QuickSaleLine &&
+          other.id == this.id &&
+          other.tenantId == this.tenantId &&
+          other.branchId == this.branchId &&
+          other.quickSaleId == this.quickSaleId &&
+          other.productId == this.productId &&
+          other.description == this.description &&
+          other.quantity == this.quantity &&
+          other.unitFils == this.unitFils &&
+          other.amountFils == this.amountFils &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.createdBy == this.createdBy &&
+          other.version == this.version &&
+          other.deletedAt == this.deletedAt);
+}
+
+class QuickSaleLinesCompanion extends UpdateCompanion<QuickSaleLine> {
+  final Value<String> id;
+  final Value<String> tenantId;
+  final Value<String?> branchId;
+  final Value<String> quickSaleId;
+  final Value<String?> productId;
+  final Value<String> description;
+  final Value<int> quantity;
+  final Value<int> unitFils;
+  final Value<int> amountFils;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String?> createdBy;
+  final Value<int> version;
+  final Value<DateTime?> deletedAt;
+  final Value<int> rowid;
+  const QuickSaleLinesCompanion({
+    this.id = const Value.absent(),
+    this.tenantId = const Value.absent(),
+    this.branchId = const Value.absent(),
+    this.quickSaleId = const Value.absent(),
+    this.productId = const Value.absent(),
+    this.description = const Value.absent(),
+    this.quantity = const Value.absent(),
+    this.unitFils = const Value.absent(),
+    this.amountFils = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.createdBy = const Value.absent(),
+    this.version = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  QuickSaleLinesCompanion.insert({
+    required String id,
+    required String tenantId,
+    this.branchId = const Value.absent(),
+    required String quickSaleId,
+    this.productId = const Value.absent(),
+    required String description,
+    required int quantity,
+    required int unitFils,
+    required int amountFils,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.createdBy = const Value.absent(),
+    this.version = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       tenantId = Value(tenantId),
+       quickSaleId = Value(quickSaleId),
+       description = Value(description),
+       quantity = Value(quantity),
+       unitFils = Value(unitFils),
+       amountFils = Value(amountFils),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<QuickSaleLine> custom({
+    Expression<String>? id,
+    Expression<String>? tenantId,
+    Expression<String>? branchId,
+    Expression<String>? quickSaleId,
+    Expression<String>? productId,
+    Expression<String>? description,
+    Expression<int>? quantity,
+    Expression<int>? unitFils,
+    Expression<int>? amountFils,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? createdBy,
+    Expression<int>? version,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (tenantId != null) 'tenant_id': tenantId,
+      if (branchId != null) 'branch_id': branchId,
+      if (quickSaleId != null) 'quick_sale_id': quickSaleId,
+      if (productId != null) 'product_id': productId,
+      if (description != null) 'description': description,
+      if (quantity != null) 'quantity': quantity,
+      if (unitFils != null) 'unit_fils': unitFils,
+      if (amountFils != null) 'amount_fils': amountFils,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (createdBy != null) 'created_by': createdBy,
+      if (version != null) 'version': version,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  QuickSaleLinesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? tenantId,
+    Value<String?>? branchId,
+    Value<String>? quickSaleId,
+    Value<String?>? productId,
+    Value<String>? description,
+    Value<int>? quantity,
+    Value<int>? unitFils,
+    Value<int>? amountFils,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String?>? createdBy,
+    Value<int>? version,
+    Value<DateTime?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return QuickSaleLinesCompanion(
+      id: id ?? this.id,
+      tenantId: tenantId ?? this.tenantId,
+      branchId: branchId ?? this.branchId,
+      quickSaleId: quickSaleId ?? this.quickSaleId,
+      productId: productId ?? this.productId,
+      description: description ?? this.description,
+      quantity: quantity ?? this.quantity,
+      unitFils: unitFils ?? this.unitFils,
+      amountFils: amountFils ?? this.amountFils,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      createdBy: createdBy ?? this.createdBy,
+      version: version ?? this.version,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (tenantId.present) {
+      map['tenant_id'] = Variable<String>(tenantId.value);
+    }
+    if (branchId.present) {
+      map['branch_id'] = Variable<String>(branchId.value);
+    }
+    if (quickSaleId.present) {
+      map['quick_sale_id'] = Variable<String>(quickSaleId.value);
+    }
+    if (productId.present) {
+      map['product_id'] = Variable<String>(productId.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (quantity.present) {
+      map['quantity'] = Variable<int>(quantity.value);
+    }
+    if (unitFils.present) {
+      map['unit_fils'] = Variable<int>(unitFils.value);
+    }
+    if (amountFils.present) {
+      map['amount_fils'] = Variable<int>(amountFils.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (createdBy.present) {
+      map['created_by'] = Variable<String>(createdBy.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuickSaleLinesCompanion(')
+          ..write('id: $id, ')
+          ..write('tenantId: $tenantId, ')
+          ..write('branchId: $branchId, ')
+          ..write('quickSaleId: $quickSaleId, ')
+          ..write('productId: $productId, ')
+          ..write('description: $description, ')
+          ..write('quantity: $quantity, ')
+          ..write('unitFils: $unitFils, ')
+          ..write('amountFils: $amountFils, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('createdBy: $createdBy, ')
+          ..write('version: $version, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $OutboxMutationsTable extends OutboxMutations
     with TableInfo<$OutboxMutationsTable, OutboxMutation> {
   @override
@@ -21278,6 +23148,8 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
   late final $PriceRulesTable priceRules = $PriceRulesTable(this);
   late final $OrdersTable orders = $OrdersTable(this);
   late final $OrderItemsTable orderItems = $OrderItemsTable(this);
+  late final $QuickSalesTable quickSales = $QuickSalesTable(this);
+  late final $QuickSaleLinesTable quickSaleLines = $QuickSaleLinesTable(this);
   late final $OutboxMutationsTable outboxMutations = $OutboxMutationsTable(
     this,
   );
@@ -21310,6 +23182,8 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
     priceRules,
     orders,
     orderItems,
+    quickSales,
+    quickSaleLines,
     outboxMutations,
     syncMeta,
   ];
@@ -30854,6 +32728,878 @@ typedef $$OrderItemsTableProcessedTableManager =
       OrderItem,
       PrefetchHooks Function()
     >;
+typedef $$QuickSalesTableCreateCompanionBuilder = QuickSalesCompanion Function({
+  required String id,
+  required String tenantId,
+  Value<String?> branchId,
+  Value<int?> number,
+  required String numberDisplay,
+  Value<String?> customerId,
+  Value<String?> customerName,
+  Value<String> status,
+  Value<String> paymentMethod,
+  Value<int> subtotalFils,
+  Value<int> vatFils,
+  Value<int> totalFils,
+  Value<int> paidFils,
+  required String deviceId,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  Value<String?> createdBy,
+  Value<int> version,
+  Value<DateTime?> deletedAt,
+  Value<int> rowid,
+});
+typedef $$QuickSalesTableUpdateCompanionBuilder = QuickSalesCompanion Function({
+  Value<String> id,
+  Value<String> tenantId,
+  Value<String?> branchId,
+  Value<int?> number,
+  Value<String> numberDisplay,
+  Value<String?> customerId,
+  Value<String?> customerName,
+  Value<String> status,
+  Value<String> paymentMethod,
+  Value<int> subtotalFils,
+  Value<int> vatFils,
+  Value<int> totalFils,
+  Value<int> paidFils,
+  Value<String> deviceId,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<String?> createdBy,
+  Value<int> version,
+  Value<DateTime?> deletedAt,
+  Value<int> rowid,
+});
+
+class $$QuickSalesTableFilterComposer
+    extends Composer<_$LocalDatabase, $QuickSalesTable> {
+  $$QuickSalesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tenantId => $composableBuilder(
+    column: $table.tenantId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get branchId => $composableBuilder(
+    column: $table.branchId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get number => $composableBuilder(
+    column: $table.number,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get numberDisplay => $composableBuilder(
+    column: $table.numberDisplay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get customerId => $composableBuilder(
+    column: $table.customerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get customerName => $composableBuilder(
+    column: $table.customerName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get paymentMethod => $composableBuilder(
+    column: $table.paymentMethod,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get subtotalFils => $composableBuilder(
+    column: $table.subtotalFils,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get vatFils => $composableBuilder(
+    column: $table.vatFils,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get totalFils => $composableBuilder(
+    column: $table.totalFils,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get paidFils => $composableBuilder(
+    column: $table.paidFils,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get createdBy => $composableBuilder(
+    column: $table.createdBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$QuickSalesTableOrderingComposer
+    extends Composer<_$LocalDatabase, $QuickSalesTable> {
+  $$QuickSalesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tenantId => $composableBuilder(
+    column: $table.tenantId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get branchId => $composableBuilder(
+    column: $table.branchId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get number => $composableBuilder(
+    column: $table.number,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get numberDisplay => $composableBuilder(
+    column: $table.numberDisplay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get customerId => $composableBuilder(
+    column: $table.customerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get customerName => $composableBuilder(
+    column: $table.customerName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get paymentMethod => $composableBuilder(
+    column: $table.paymentMethod,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get subtotalFils => $composableBuilder(
+    column: $table.subtotalFils,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get vatFils => $composableBuilder(
+    column: $table.vatFils,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get totalFils => $composableBuilder(
+    column: $table.totalFils,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get paidFils => $composableBuilder(
+    column: $table.paidFils,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get createdBy => $composableBuilder(
+    column: $table.createdBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$QuickSalesTableAnnotationComposer
+    extends Composer<_$LocalDatabase, $QuickSalesTable> {
+  $$QuickSalesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get tenantId =>
+      $composableBuilder(column: $table.tenantId, builder: (column) => column);
+
+  GeneratedColumn<String> get branchId =>
+      $composableBuilder(column: $table.branchId, builder: (column) => column);
+
+  GeneratedColumn<int> get number =>
+      $composableBuilder(column: $table.number, builder: (column) => column);
+
+  GeneratedColumn<String> get numberDisplay => $composableBuilder(
+    column: $table.numberDisplay,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get customerId => $composableBuilder(
+    column: $table.customerId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get customerName => $composableBuilder(
+    column: $table.customerName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get paymentMethod => $composableBuilder(
+    column: $table.paymentMethod,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get subtotalFils => $composableBuilder(
+    column: $table.subtotalFils,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get vatFils =>
+      $composableBuilder(column: $table.vatFils, builder: (column) => column);
+
+  GeneratedColumn<int> get totalFils =>
+      $composableBuilder(column: $table.totalFils, builder: (column) => column);
+
+  GeneratedColumn<int> get paidFils =>
+      $composableBuilder(column: $table.paidFils, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get createdBy =>
+      $composableBuilder(column: $table.createdBy, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+}
+
+class $$QuickSalesTableTableManager
+    extends
+        RootTableManager<
+          _$LocalDatabase,
+          $QuickSalesTable,
+          QuickSale,
+          $$QuickSalesTableFilterComposer,
+          $$QuickSalesTableOrderingComposer,
+          $$QuickSalesTableAnnotationComposer,
+          $$QuickSalesTableCreateCompanionBuilder,
+          $$QuickSalesTableUpdateCompanionBuilder,
+          (
+            QuickSale,
+            BaseReferences<_$LocalDatabase, $QuickSalesTable, QuickSale>,
+          ),
+          QuickSale,
+          PrefetchHooks Function()
+        > {
+  $$QuickSalesTableTableManager(_$LocalDatabase db, $QuickSalesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$QuickSalesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$QuickSalesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$QuickSalesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> tenantId = const Value.absent(),
+                Value<String?> branchId = const Value.absent(),
+                Value<int?> number = const Value.absent(),
+                Value<String> numberDisplay = const Value.absent(),
+                Value<String?> customerId = const Value.absent(),
+                Value<String?> customerName = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String> paymentMethod = const Value.absent(),
+                Value<int> subtotalFils = const Value.absent(),
+                Value<int> vatFils = const Value.absent(),
+                Value<int> totalFils = const Value.absent(),
+                Value<int> paidFils = const Value.absent(),
+                Value<String> deviceId = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String?> createdBy = const Value.absent(),
+                Value<int> version = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => QuickSalesCompanion(
+                id: id,
+                tenantId: tenantId,
+                branchId: branchId,
+                number: number,
+                numberDisplay: numberDisplay,
+                customerId: customerId,
+                customerName: customerName,
+                status: status,
+                paymentMethod: paymentMethod,
+                subtotalFils: subtotalFils,
+                vatFils: vatFils,
+                totalFils: totalFils,
+                paidFils: paidFils,
+                deviceId: deviceId,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                createdBy: createdBy,
+                version: version,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String tenantId,
+                Value<String?> branchId = const Value.absent(),
+                Value<int?> number = const Value.absent(),
+                required String numberDisplay,
+                Value<String?> customerId = const Value.absent(),
+                Value<String?> customerName = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String> paymentMethod = const Value.absent(),
+                Value<int> subtotalFils = const Value.absent(),
+                Value<int> vatFils = const Value.absent(),
+                Value<int> totalFils = const Value.absent(),
+                Value<int> paidFils = const Value.absent(),
+                required String deviceId,
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<String?> createdBy = const Value.absent(),
+                Value<int> version = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => QuickSalesCompanion.insert(
+                id: id,
+                tenantId: tenantId,
+                branchId: branchId,
+                number: number,
+                numberDisplay: numberDisplay,
+                customerId: customerId,
+                customerName: customerName,
+                status: status,
+                paymentMethod: paymentMethod,
+                subtotalFils: subtotalFils,
+                vatFils: vatFils,
+                totalFils: totalFils,
+                paidFils: paidFils,
+                deviceId: deviceId,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                createdBy: createdBy,
+                version: version,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$QuickSalesTable, QuickSale>(table),
+                  BaseReferences<_$LocalDatabase, $QuickSalesTable, QuickSale>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$QuickSalesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$LocalDatabase,
+      $QuickSalesTable,
+      QuickSale,
+      $$QuickSalesTableFilterComposer,
+      $$QuickSalesTableOrderingComposer,
+      $$QuickSalesTableAnnotationComposer,
+      $$QuickSalesTableCreateCompanionBuilder,
+      $$QuickSalesTableUpdateCompanionBuilder,
+      (QuickSale, BaseReferences<_$LocalDatabase, $QuickSalesTable, QuickSale>),
+      QuickSale,
+      PrefetchHooks Function()
+    >;
+typedef $$QuickSaleLinesTableCreateCompanionBuilder =
+    QuickSaleLinesCompanion Function({
+      required String id,
+      required String tenantId,
+      Value<String?> branchId,
+      required String quickSaleId,
+      Value<String?> productId,
+      required String description,
+      required int quantity,
+      required int unitFils,
+      required int amountFils,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<String?> createdBy,
+      Value<int> version,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+typedef $$QuickSaleLinesTableUpdateCompanionBuilder =
+    QuickSaleLinesCompanion Function({
+      Value<String> id,
+      Value<String> tenantId,
+      Value<String?> branchId,
+      Value<String> quickSaleId,
+      Value<String?> productId,
+      Value<String> description,
+      Value<int> quantity,
+      Value<int> unitFils,
+      Value<int> amountFils,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String?> createdBy,
+      Value<int> version,
+      Value<DateTime?> deletedAt,
+      Value<int> rowid,
+    });
+
+class $$QuickSaleLinesTableFilterComposer
+    extends Composer<_$LocalDatabase, $QuickSaleLinesTable> {
+  $$QuickSaleLinesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tenantId => $composableBuilder(
+    column: $table.tenantId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get branchId => $composableBuilder(
+    column: $table.branchId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get quickSaleId => $composableBuilder(
+    column: $table.quickSaleId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get productId => $composableBuilder(
+    column: $table.productId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get quantity => $composableBuilder(
+    column: $table.quantity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get unitFils => $composableBuilder(
+    column: $table.unitFils,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get amountFils => $composableBuilder(
+    column: $table.amountFils,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get createdBy => $composableBuilder(
+    column: $table.createdBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$QuickSaleLinesTableOrderingComposer
+    extends Composer<_$LocalDatabase, $QuickSaleLinesTable> {
+  $$QuickSaleLinesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tenantId => $composableBuilder(
+    column: $table.tenantId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get branchId => $composableBuilder(
+    column: $table.branchId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get quickSaleId => $composableBuilder(
+    column: $table.quickSaleId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get productId => $composableBuilder(
+    column: $table.productId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get quantity => $composableBuilder(
+    column: $table.quantity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get unitFils => $composableBuilder(
+    column: $table.unitFils,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get amountFils => $composableBuilder(
+    column: $table.amountFils,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get createdBy => $composableBuilder(
+    column: $table.createdBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get version => $composableBuilder(
+    column: $table.version,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$QuickSaleLinesTableAnnotationComposer
+    extends Composer<_$LocalDatabase, $QuickSaleLinesTable> {
+  $$QuickSaleLinesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get tenantId =>
+      $composableBuilder(column: $table.tenantId, builder: (column) => column);
+
+  GeneratedColumn<String> get branchId =>
+      $composableBuilder(column: $table.branchId, builder: (column) => column);
+
+  GeneratedColumn<String> get quickSaleId => $composableBuilder(
+    column: $table.quickSaleId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get productId =>
+      $composableBuilder(column: $table.productId, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get quantity =>
+      $composableBuilder(column: $table.quantity, builder: (column) => column);
+
+  GeneratedColumn<int> get unitFils =>
+      $composableBuilder(column: $table.unitFils, builder: (column) => column);
+
+  GeneratedColumn<int> get amountFils => $composableBuilder(
+    column: $table.amountFils,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get createdBy =>
+      $composableBuilder(column: $table.createdBy, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+}
+
+class $$QuickSaleLinesTableTableManager
+    extends
+        RootTableManager<
+          _$LocalDatabase,
+          $QuickSaleLinesTable,
+          QuickSaleLine,
+          $$QuickSaleLinesTableFilterComposer,
+          $$QuickSaleLinesTableOrderingComposer,
+          $$QuickSaleLinesTableAnnotationComposer,
+          $$QuickSaleLinesTableCreateCompanionBuilder,
+          $$QuickSaleLinesTableUpdateCompanionBuilder,
+          (
+            QuickSaleLine,
+            BaseReferences<
+              _$LocalDatabase,
+              $QuickSaleLinesTable,
+              QuickSaleLine
+            >,
+          ),
+          QuickSaleLine,
+          PrefetchHooks Function()
+        > {
+  $$QuickSaleLinesTableTableManager(
+    _$LocalDatabase db,
+    $QuickSaleLinesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$QuickSaleLinesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$QuickSaleLinesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$QuickSaleLinesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> tenantId = const Value.absent(),
+                Value<String?> branchId = const Value.absent(),
+                Value<String> quickSaleId = const Value.absent(),
+                Value<String?> productId = const Value.absent(),
+                Value<String> description = const Value.absent(),
+                Value<int> quantity = const Value.absent(),
+                Value<int> unitFils = const Value.absent(),
+                Value<int> amountFils = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String?> createdBy = const Value.absent(),
+                Value<int> version = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => QuickSaleLinesCompanion(
+                id: id,
+                tenantId: tenantId,
+                branchId: branchId,
+                quickSaleId: quickSaleId,
+                productId: productId,
+                description: description,
+                quantity: quantity,
+                unitFils: unitFils,
+                amountFils: amountFils,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                createdBy: createdBy,
+                version: version,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String tenantId,
+                Value<String?> branchId = const Value.absent(),
+                required String quickSaleId,
+                Value<String?> productId = const Value.absent(),
+                required String description,
+                required int quantity,
+                required int unitFils,
+                required int amountFils,
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<String?> createdBy = const Value.absent(),
+                Value<int> version = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => QuickSaleLinesCompanion.insert(
+                id: id,
+                tenantId: tenantId,
+                branchId: branchId,
+                quickSaleId: quickSaleId,
+                productId: productId,
+                description: description,
+                quantity: quantity,
+                unitFils: unitFils,
+                amountFils: amountFils,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                createdBy: createdBy,
+                version: version,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$QuickSaleLinesTable, QuickSaleLine>(table),
+                  BaseReferences<
+                    _$LocalDatabase,
+                    $QuickSaleLinesTable,
+                    QuickSaleLine
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$QuickSaleLinesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$LocalDatabase,
+      $QuickSaleLinesTable,
+      QuickSaleLine,
+      $$QuickSaleLinesTableFilterComposer,
+      $$QuickSaleLinesTableOrderingComposer,
+      $$QuickSaleLinesTableAnnotationComposer,
+      $$QuickSaleLinesTableCreateCompanionBuilder,
+      $$QuickSaleLinesTableUpdateCompanionBuilder,
+      (
+        QuickSaleLine,
+        BaseReferences<_$LocalDatabase, $QuickSaleLinesTable, QuickSaleLine>,
+      ),
+      QuickSaleLine,
+      PrefetchHooks Function()
+    >;
 typedef $$OutboxMutationsTableCreateCompanionBuilder =
     OutboxMutationsCompanion Function({
       required String mutationId,
@@ -31360,6 +34106,10 @@ class $LocalDatabaseManager {
       $$OrdersTableTableManager(_db, _db.orders);
   $$OrderItemsTableTableManager get orderItems =>
       $$OrderItemsTableTableManager(_db, _db.orderItems);
+  $$QuickSalesTableTableManager get quickSales =>
+      $$QuickSalesTableTableManager(_db, _db.quickSales);
+  $$QuickSaleLinesTableTableManager get quickSaleLines =>
+      $$QuickSaleLinesTableTableManager(_db, _db.quickSaleLines);
   $$OutboxMutationsTableTableManager get outboxMutations =>
       $$OutboxMutationsTableTableManager(_db, _db.outboxMutations);
   $$SyncMetaTableTableManager get syncMeta =>
