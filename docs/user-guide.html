@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Star Paris — Shop Management · User Guide</title>
+<style>
+  :root {
+    --blue: #164F71; --blue-light: #2A7BB0; --ink: #1B2023;
+    --canvas: #F4F6F8; --card: #ffffff; --line: #D9E2E8; --ember: #C4552D;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: var(--canvas); }
+  header.brand { background: linear-gradient(120deg, var(--blue), #0E3A55); color: #fff; padding: 40px 32px 28px; }
+  header.brand h1 { margin: 0 0 4px; font-size: 28px; letter-spacing: -.5px; }
+  header.brand p { margin: 0; opacity: .85; }
+  main { max-width: 980px; margin: 0 auto; padding: 28px 24px 80px; }
+  nav.toc { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px 22px; margin-bottom: 28px; }
+  nav.toc h2 { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--blue); }
+  nav.toc ol { margin: 0; padding-left: 20px; columns: 2; column-gap: 40px; }
+  nav.toc a { color: var(--blue-light); text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; }
+  h2 { color: var(--blue); font-size: 21px; margin: 40px 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--line); }
+  h3 { font-size: 16px; margin: 22px 0 6px; color: var(--ink); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px 22px; margin: 12px 0; }
+  code, kbd { background: #EEF3F6; border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; font: 13px/1.5 ui-monospace, Consolas, monospace; }
+  kbd { border-bottom-width: 2px; }
+  .note { border-left: 4px solid var(--blue-light); background: #EAF3F9; border-radius: 0 8px 8px 0; padding: 10px 14px; margin: 12px 0; }
+  .warn { border-left: 4px solid var(--ember); background: #FBEEE8; border-radius: 0 8px 8px 0; padding: 10px 14px; margin: 12px 0; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0; background: var(--card); }
+  th, td { text-align: left; padding: 8px 10px; border: 1px solid var(--line); font-size: 14px; vertical-align: top; }
+  th { background: #EAF3F9; color: var(--blue); }
+  ol.steps { padding-left: 22px; } ol.steps li { margin: 5px 0; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 720px) { nav.toc ol { columns: 1; } .two-col { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header class="brand">
+  <h1>Star Paris · Shop Management</h1>
+  <p>How to run the shop — orders, design, printing, money and customers, in one place, offline-safe.</p>
+</header>
+
+<main>
+
+<nav class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#start">First 5 minutes</a></li>
+    <li><a href="#roles">Who sees what (roles)</a></li>
+    <li><a href="#shell">The layout &amp; shortcuts</a></li>
+    <li><a href="#today">Today (home)</a></li>
+    <li><a href="#pos">Quick sale (counter)</a></li>
+    <li><a href="#orders">Orders &amp; quotes</a></li>
+    <li><a href="#customers">Customers</a></li>
+    <li><a href="#production">Production board &amp; tasks</a></li>
+    <li><a href="#proofs">Proofs &amp; customer approval</a></li>
+    <li><a href="#pricing">Prices &amp; catalogue</a></li>
+    <li><a href="#money">Invoices, payments, till, deposits</a></li>
+    <li><a href="#vendors">Vendors (outsourced work)</a></li>
+    <li><a href="#reports">Reports &amp; exports</a></li>
+    <li><a href="#settings">Settings</a></li>
+    <li><a href="#offline">Offline &amp; sync</a></li>
+    <li><a href="#backup">Backups</a></li>
+    <li><a href="#faq">Troubleshooting &amp; FAQ</a></li>
+  </ol>
+</nav>
+
+<h2 id="start">1. First 5 minutes</h2>
+<ol class="steps">
+  <li><strong>Open the app</strong> (Windows: <code>shop_app.exe</code>; Android: the APK). It works with no internet.</li>
+  <li><strong>Sign in</strong> with your phone number and password. After the first sign-in you can set a 4–6 digit <strong>PIN</strong> to unlock faster.</li>
+  <li>You land on the screen for your job — a <strong>counter</strong> opens on Quick Sale, everyone else on <strong>Today</strong>.</li>
+  <li>The pill at the top right shows sync state: <strong>Synced</strong>, <strong>Syncing 3 changes</strong>, or <strong>Offline, 12 waiting</strong>. You can keep working either way.</li>
+  <li>Press <kbd>Ctrl K</kbd> (Windows) to search any job, invoice, phone or customer.</li>
+</ol>
+<div class="note">Everything you type is saved to this device instantly and uploads when the network returns. You do not wait for the internet to do a sale.</div>
+
+<h2 id="roles">2. Who sees what (roles)</h2>
+<table>
+  <tr><th>Role</th><th>Opens to</th><th>Main tabs</th></tr>
+  <tr><td><strong>Owner</strong></td><td>Today</td><td>Today, Orders, Production, Customers, Staff, Prices, Production setup, Vendors, Reports, Settings, Quick sale</td></tr>
+  <tr><td><strong>Manager</strong></td><td>Today</td><td>Board, Orders, Customers, Staff, Reports (their branch)</td></tr>
+  <tr><td><strong>Counter / sales</strong></td><td>Quick sale</td><td>Quick sale, New order, Orders, Customers, Payments</td></tr>
+  <tr><td><strong>Designer</strong></td><td>Today</td><td>Design queue, Proofs, Orders (read)</td></tr>
+  <tr><td><strong>Press / finishing</strong></td><td>Today</td><td>My work, Available, Scan, Alerts</td></tr>
+  <tr><td><strong>Accountant</strong></td><td>Today</td><td>Invoices, Payments, Receivables, Expenses, VAT, Reports</td></tr>
+</table>
+<div class="note">The Worker (server) enforces every permission again, so a tampered app cannot bypass a role. What you don't have permission for is hidden — and blocked — not just greyed out.</div>
+
+<h2 id="shell">3. The layout &amp; shortcuts</h2>
+<p>The left rail (Windows) or bottom bar (phone) is grouped:</p>
+<ul>
+  <li><strong>WORK</strong> — Today, Orders, Production, Quick sale.</li>
+  <li><strong>PEOPLE</strong> — Customers, Staff.</li>
+  <li><strong>BUSINESS</strong> — Prices, Production setup, Vendors, Reports, Settings.</li>
+</ul>
+<table>
+  <tr><th>Shortcut (Windows)</th><th>Action</th></tr>
+  <tr><td><kbd>Ctrl K</kbd></td><td>Search any job, invoice, phone, customer</td></tr>
+  <tr><td><kbd>Ctrl N</kbd></td><td>New order</td></tr>
+  <tr><td><kbd>F5</kbd></td><td>Sync now</td></tr>
+  <tr><td><kbd>Esc</kbd></td><td>Clear / go back</td></tr>
+</table>
+<p>Dark mode and language (English / Arabic layout) are in the avatar menu, top right.</p>
+
+<h2 id="today">4. Today (home)</h2>
+<p>Four numbers that are all <em>doors</em> — tap one to see the list behind it:</p>
+<ul>
+  <li><strong>In production</strong> — jobs currently being made.</li>
+  <li><strong>Overdue</strong> — jobs past their due date.</li>
+  <li><strong>Due today</strong> — jobs promised today.</li>
+  <li><strong>Waiting for you</strong> — tasks in your pool.</li>
+</ul>
+<p>Below them: the <strong>cash drawer</strong> (open it, see cash taken, close it with a count) and your overdue / due-today work. When there is nothing, it says what will appear and when — not "no data".</p>
+
+<h2 id="pos">5. Quick sale (counter)</h2>
+<ol class="steps">
+  <li>Tap a quick-service chip — <strong>Copy, Print, Scan, Laminate, Binding</strong> — or type a description.</li>
+  <li>Set quantity and unit price. Each line's total shows live.</li>
+  <li>Optionally add a customer name (walk-in works without one).</li>
+  <li>Choose payment: <strong>Cash</strong> (enter tendered → change is calculated), <strong>Card</strong>, or <strong>Transfer</strong>.</li>
+  <li><strong>Confirm</strong>. The sale gets a number (<code>QS-SHJ1-PC1-00001</code>) and uploads when online.</li>
+</ol>
+<div class="warn">A quick sale is a fact once rung — it cannot be edited. A correction is a refund (being added). Cash is recorded on the sale but does not yet open the cash drawer automatically.</div>
+
+<h2 id="orders">6. Orders &amp; quotes</h2>
+<ol class="steps">
+  <li><kbd>Ctrl N</kbd> or <strong>New order</strong>. Type the customer's phone — it fills the customer or starts a new one.</li>
+  <li><strong>Add an item</strong>: pick the product, then the options (size, paper, GSM, sides, colour, finishing). The price bar updates live with every tap.</li>
+  <li>Set <strong>quantity</strong>, <strong>artwork</strong> (attach a file or "needs design"), <strong>priority</strong> and <strong>due date</strong>.</li>
+  <li>Either <strong>Save as quote</strong> (valid 7 days) or <strong>Confirm order</strong> (locks the price, prints a job ticket, offers a WhatsApp message).</li>
+</ol>
+<p>An order has <strong>one job number</strong> and one customer, with one or more items. Its status is derived from its items, so the job is <em>Ready</em> only when every item is. Tap any order for its full timeline — who did what, when, notes, proofs and messages sent.</p>
+<div class="note">Prices are never typed by hand — they come from the price book. A discount above your limit needs a manager. Every price change is audited.</div>
+
+<h2 id="customers">7. Customers</h2>
+<ul>
+  <li>Customers are found by <strong>phone number</strong> — partial is fine.</li>
+  <li>Tap a customer for the <strong>statement</strong>: what they owe, every invoice with its balance, the jobs behind them, notes.</li>
+  <li><strong>Credit limit</strong> and <strong>outstanding balance</strong> are shown; over-limit is flagged with a warning icon + "Over limit" (never colour alone).</li>
+  <li><strong>Take deposit</strong> records money paid before an invoice exists.</li>
+  <li><strong>WhatsApp</strong> opens a pre-filled message; <strong>Statement PDF</strong> writes a PDF; <strong>Export</strong> writes the customer list to Excel — all offline.</li>
+</ul>
+
+<h2 id="production">8. Production board &amp; tasks</h2>
+<p>The board has three views: <strong>Board</strong> (all work by stage), <strong>My work</strong> (yours), <strong>Vendors</strong> (outsourced).</p>
+<table>
+  <tr><th>Task state</th><th>Meaning</th><th>Who moves it</th></tr>
+  <tr><td>Waiting</td><td>Blocked by an earlier stage</td><td>—</td></tr>
+  <tr><td>Available</td><td>In the pool</td><td>Anyone with the role can <em>Pick up</em></td></tr>
+  <tr><td>Assigned</td><td>Claimed by a person</td><td>—</td></tr>
+  <tr><td>In progress ↔ Paused</td><td>Working (pause with a reason)</td><td>The assignee</td></tr>
+  <tr><td>Done</td><td>Finished</td><td>The assignee</td></tr>
+  <tr><td>Rework / Cancelled</td><td>Sent back / stopped</td><td>Manager (with a reason)</td></tr>
+</table>
+<p>The server enforces these transitions — an illegal jump is refused and the screen shows the real status. Every change is logged with who, when and how long it took.</p>
+
+<h2 id="proofs">9. Proofs &amp; customer approval</h2>
+<ol class="steps">
+  <li>The designer attaches the proof file and sends it.</li>
+  <li>The app uploads a compressed copy to the shop's own storage and opens WhatsApp with an <strong>approval link</strong>.</li>
+  <li>The customer taps <strong>Approve</strong> or <strong>Request changes</strong> on a simple page (no login — the link is the key).</li>
+  <li>The decision is recorded permanently — who, when, what version, and any change request. This is the shop's evidence in a later dispute.</li>
+</ol>
+<div class="note">Approving a proof unlocks the production tasks. A rejected proof needs a note of what to change. A decided proof cannot be re-decided — send a new version.</div>
+
+<h2 id="pricing">10. Prices &amp; catalogue</h2>
+<ul>
+  <li><strong>Prices</strong> — the price book. Edit product prices, add <strong>quantity breaks</strong> (e.g. 500 cards = AED 122), bulk-adjust ("raise all stickers 8%"). Every edit is audited.</li>
+  <li><strong>Production setup</strong> — the <strong>paper (materials)</strong>, <strong>machines</strong> (click rates) and <strong>finishing operations</strong> the pricing engine uses. Edit them here — no developer needed.</li>
+  <li><strong>Customer tiers</strong> — Trade customers pay less than retail for the same job. Per-tier rates are one map, extended from Settings later.</li>
+</ul>
+<p>Pricing works three ways, all owner-editable: <strong>cost-plus</strong> (material + print + finishing × markup), <strong>price table</strong> (your price list), and <strong>vendor markup</strong> (their cost + your margin). The breakdown on every quote shows the whole sum, line by line.</p>
+
+<h2 id="money">11. Invoices, payments, till, deposits</h2>
+<ul>
+  <li><strong>Invoice</strong> — issued from a confirmed order. A tax invoice is <em>immutable</em>: to fix it, issue a <strong>credit note</strong>, then a <strong>refund</strong>.</li>
+  <li><strong>Payment</strong> — cash, card, bank transfer, cheque. Payments are the source of truth for a customer's balance.</li>
+  <li><strong>Till</strong> — open with a float, close with a counted amount; the expected cash (float + cash in − cash out) and the variance are calculated on the server.</li>
+  <li><strong>Deposit</strong> — money taken before an invoice; shown on the customer's balance and applied to invoices later.</li>
+  <li><strong>Credit limit</strong> — an invoice that would push a customer over their limit is blocked (owner/manager can override).</li>
+  <li><strong>Expense</strong> — petty cash (courier, taxi, materials…), cash comes out of the open drawer.</li>
+</ul>
+
+<h2 id="vendors">12. Vendors (outsourced work)</h2>
+<p>An order item can be <strong>outsourced</strong>: choose a vendor, set their cost, and the customer price is their cost + your markup.</p>
+<table>
+  <tr><th>Status</th><th>Meaning</th></tr>
+  <tr><td>Draft</td><td>Not yet sent</td></tr>
+  <tr><td>Sent</td><td>Briefed to the vendor</td></tr>
+  <tr><td>Back</td><td>Received back from the vendor</td></tr>
+  <tr><td>Closed</td><td>Final — a change after this is a new job</td></tr>
+</table>
+<p>Vendor jobs appear on the <strong>production board → Vendors</strong>, so outsourced work is visible beside in-house work.</p>
+
+<h2 id="reports">13. Reports &amp; exports</h2>
+<ul>
+  <li><strong>VAT report</strong> — sales, output VAT, credited VAT, net due, collected, refunded — with a CSV for the accountant.</li>
+  <li><strong>Receivables ageing</strong> — 0–30 / 31–60 / 60+ days.</li>
+  <li><strong>Till history</strong> — every closed shift with float, expected, counted and variance.</li>
+  <li><strong>Exports</strong> — customers to Excel (offline); quotes, invoices, job tickets (with QR) and statements to PDF.</li>
+</ul>
+<div class="note">Reports read whole-shop figures, so they need the network. Everything else — lists, search, pricing, documents — works offline.</div>
+
+<h2 id="settings">14. Settings (owner)</h2>
+<ul>
+  <li><strong>Company profile</strong> — registered name, TRN, address, phone, email (printed on documents).</li>
+  <li><strong>VAT rate</strong> and <strong>number prefixes</strong> (JOB / INV / QT). Issued invoices keep the rate they were made with.</li>
+  <li><strong>Staff</strong> — add people, set roles, reset passwords and PINs, disable when someone leaves.</li>
+</ul>
+
+<h2 id="offline">15. Offline &amp; sync</h2>
+<ul>
+  <li>The app reads and writes only the local, encrypted database — it never waits on the network.</li>
+  <li>Every action writes the change <em>and</em> an outbox record in one step; when online, changes upload in order and the server re-checks every permission.</li>
+  <li>The sync pill shows where you stand. Tap it for last-sync time and a <strong>Sync now</strong> button.</li>
+  <li>An offline session is valid up to <strong>7 days</strong>. Two counters claiming the same task offline: the first to reach the server wins; the other is told.</li>
+  <li>A change the server cannot merge goes to <strong>Needs attention</strong> (the conflicts inbox), where a manager sees both versions side by side.</li>
+</ul>
+
+<h2 id="backup">16. Backups</h2>
+<p>Run <code>python tools/backup_d1.py</code> from the repo to export every database to <code>backups/</code> with a timestamp. Copy the folder to Google Drive or the shop's backup drive and keep 90 days. D1's Time Travel is a restore window, not a backup — the export is the backup.</p>
+
+<h2 id="faq">17. Troubleshooting &amp; FAQ</h2>
+<div class="card">
+  <h3 style="margin-top:0">The header text is wrapping one letter per line</h3>
+  <p>Fixed in the current build — update the app. (A button was forcing itself full-width and squeezing the title.)</p>
+</div>
+<div class="card">
+  <h3 style="margin-top:0">"Over limit" on a customer</h3>
+  <p>Their outstanding balance is past their credit limit. An invoice that would exceed it is blocked; the owner or a manager can override. Take a deposit or payment to bring them under.</p>
+</div>
+<div class="card">
+  <h3 style="margin-top:0">A sale/order/invoice number has "T-" in front</h3>
+  <p>That device was offline and used a temporary number. It swaps to the real number automatically when it syncs.</p>
+</div>
+<div class="card">
+  <h3 style="margin-top:0">Can't edit an issued invoice</h3>
+  <p>By design. Correct it with a <strong>credit note</strong> then a <strong>refund</strong> — the original never changes, so the audit trail is honest.</p>
+</div>
+<div class="card">
+  <h3 style="margin-top:0">The proof link doesn't open</h3>
+  <p>Proof files are kept for 60 days. Older proofs show the thumbnail and the approval record, but the file is purged to keep the database small. Keep original artwork in the shop's own folder.</p>
+</div>
+<div class="card">
+  <h3 style="margin-top:0">Reports are empty / need internet</h3>
+  <p>Reports aggregate the whole shop, so they read from the server and need a connection. Lists and pricing work offline.</p>
+</div>
+
+<p style="margin-top:36px; color:#667; font-size:13px;">Star Paris Shop Management · user guide · generated from the live codebase, not the design document.</p>
+
+</main>
+</body>
+</html>
