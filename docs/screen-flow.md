@@ -164,6 +164,8 @@ variance; the device only reports the count.
 ### 4.11 Proofs (inside an order) — BUILT
 Versions as links, sent / approved / rejected with a mandatory note, revision numbers that the
 customer sees, and a WhatsApp send that opens with the message written.
+Proof files are now stored in D1 (256 KB chunks) and the customer approves on a no-login page that
+records who decided, when, and the channel; files are kept 60 days (the purge job is documented, not yet built).
 
 ### 4.12 Time — BUILT
 Start/pause on a task; the server owns the clock, so a device with a wrong time cannot bill an hour

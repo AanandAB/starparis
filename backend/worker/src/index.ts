@@ -14,6 +14,14 @@ import { z } from 'zod';
 
 import { error, loadSession, login, loginSchema, refreshSchema, refreshSession, revokeDevice } from './auth';
 import { canReadAudit, listAudit } from './audit';
+import {
+  approveByToken,
+  canUploadProof,
+  ensureApprovalToken,
+  getProofByToken,
+  getProofFile,
+  storeProofFile,
+} from './proofs';
 import { loadCatalogue } from './catalogue';
 import {
   createMachine,
@@ -47,7 +55,7 @@ import {
   updateProduct,
   updateRule,
 } from './price_book';
-import { verifyAccessToken } from './crypto';
+import { verifyAccessToken, fromBase64 } from './crypto';
 import { leaseBlock } from './numbers';
 import { can } from './policy';
 import {
@@ -96,6 +104,81 @@ app.get('/v1/health', (c) =>
     server_time: new Date().toISOString(),
   }),
 );
+
+// --- Customer approval page (no login: the token in the URL is the auth) ----
+// These routes are deliberately outside /v1/auth so the customer never needs an
+// account. The token is unguessable (a UUID) and single-purpose: it can only
+// open one proof and, once that proof is decided, cannot decide it again.
+
+app.get('/approve/:token', async (c) => {
+  const proof = await getProofByToken(c.env, c.req.param('token'));
+  if (!proof) return c.json(error('NOT_FOUND', 'This approval link is not valid.'), 404);
+  return c.html(approvalPage(proof, c.req.param('token')));
+});
+
+app.post('/approve/:token', async (c) => {
+  const token = c.req.param('token');
+  const contentType = c.req.header('content-type') ?? '';
+
+  // The browser form posts urlencoded; API clients and tests post JSON. Both
+  // land on the same decision path, so the record is the same either way.
+  let decision: unknown;
+  let note: unknown;
+  let deciderName: unknown;
+  if (contentType.includes('application/json')) {
+    const body = (await safeJson(c)) as Record<string, unknown> | null;
+    decision = body?.decision;
+    note = body?.note;
+    deciderName = body?.decider_name;
+  } else {
+    const form = await c.req.parseBody();
+    decision = typeof form.decision === 'string' ? form.decision : undefined;
+    note = typeof form.note === 'string' ? form.note : undefined;
+    deciderName = typeof form.decider_name === 'string' ? form.decider_name : undefined;
+  }
+
+  const result = await approveByToken(c.env, token, { decision, note, deciderName });
+  const wantsHtml = !contentType.includes('application/json');
+
+  if (!result.ok) {
+    const status = result.code === 'NOT_FOUND' ? 404 : 400;
+    if (wantsHtml) return c.html(approvalResultPage(result.message, false), status);
+    return c.json(error(result.code, result.message), status);
+  }
+  if (wantsHtml) {
+    const message =
+      result.status === 'approved'
+        ? 'Approved — thank you! Your approval has been recorded.'
+        : 'Thanks — your change request has been recorded. The shop will send a new version.';
+    return c.html(approvalResultPage(message, true));
+  }
+  return c.json({ ok: true, status: result.status, decided_at: result.decidedAt });
+});
+
+app.get('/approve/:token/thumbnail', async (c) => {
+  const proof = await getProofByToken(c.env, c.req.param('token'));
+  if (!proof || proof['thumbnail'] == null) {
+    return c.json(error('NOT_FOUND', 'No preview for this proof.'), 404);
+  }
+  return new Response(toUint8(proof['thumbnail']), {
+    headers: {
+      'content-type': 'image/png',
+      'cache-control': 'public, max-age=86400, immutable',
+    },
+  });
+});
+
+app.get('/approve/:token/file', async (c) => {
+  const file = await getProofFile(c.env, c.req.param('token'));
+  if (!file) return c.json(error('NOT_FOUND', 'No file for this proof.'), 404);
+  return new Response(file.bytes, {
+    headers: {
+      'content-type': file.mimeType,
+      'content-length': String(file.bytes.length),
+      'cache-control': 'private, max-age=86400',
+    },
+  });
+});
 
 app.post('/v1/auth/login', async (c) => {
   const tooLarge = rejectLargeBody(c.req.header('content-length'));
@@ -698,6 +781,65 @@ app.post('/v1/number-blocks/lease', async (c) => {
   return c.json({ series: block.series, start: block.start, end: block.end });
 });
 
+// --- proof file upload ------------------------------------------------------
+// The designer pushes the actual artwork here, chunked and base64-encoded, and
+// gets back the approval link. The caller compresses before upload (the app
+// keeps images at or under 600 KB); the Worker only enforces the hard caps.
+const proofFileSchema = z.object({
+  mime_type: z.string().min(3).max(100),
+  sha256: z.string().regex(/^[0-9a-fA-F]{64}$/, 'sha256 must be 64 hex characters'),
+  chunks: z.array(z.string().min(1)).min(1).max(16),
+  thumbnail: z.string().optional(),
+});
+
+app.post('/v1/proofs/:id/file', async (c) => {
+  const ctx = c.get('auth');
+  const session = await loadSession(c.env, ctx);
+  if (!session.ok) return c.json(error(session.code, session.message), 401);
+
+  const proof = await c.env.DB.prepare(
+    'SELECT * FROM proofs WHERE id = ? AND tenant_id = ? AND deleted_at IS NULL',
+  )
+    .bind(c.req.param('id'), ctx.tenantId)
+    .first<Record<string, unknown>>();
+  if (!proof) return c.json(error('NOT_FOUND', 'No such proof.'), 404);
+
+  if (!canUploadProof(ctx, proof)) {
+    return c.json(error('PERMISSION_DENIED', 'Only a designer or manager uploads a proof file.'), 403);
+  }
+
+  const parsed = proofFileSchema.safeParse(await safeJson(c));
+  if (!parsed.success) {
+    return c.json(
+      error('BAD_REQUEST', parsed.error.issues[0]?.message ?? 'Malformed upload.'),
+      400,
+    );
+  }
+  const { mime_type, sha256, chunks, thumbnail } = parsed.data;
+
+  let decoded: Uint8Array[];
+  let thumbBytes: Uint8Array | null = null;
+  try {
+    decoded = chunks.map((chunk) => fromBase64(chunk));
+    thumbBytes = thumbnail ? fromBase64(thumbnail) : null;
+  } catch {
+    return c.json(error('BAD_REQUEST', 'A chunk was not valid base64.'), 400);
+  }
+
+  const stored = await storeProofFile(c.env, proof, {
+    mimeType: mime_type,
+    sha256,
+    chunks: decoded,
+    thumbnail: thumbBytes,
+  });
+  if (!stored.ok) return c.json(error(stored.code, stored.message), 400);
+
+  // The upload is also the moment the approval link exists: mint the token now
+  // (idempotent with the send path) so the app can open the link immediately.
+  const token = await ensureApprovalToken(c.env, proof);
+  return c.json({ ok: true, approval_token: token, file_size: stored.fileSize });
+});
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -740,6 +882,133 @@ async function requirePriceEdit(
     };
   }
   return { ok: true, ctx };
+}
+
+// --- approval page rendering ------------------------------------------------
+// A small, self-contained page with no build step and no external assets, so it
+// works on any phone browser. It is plain HTML with inline CSS and one native
+// form; there is no JavaScript to break.
+
+/** D1 returns BLOBs as ArrayBuffer, Uint8Array, or a plain array-like object. */
+function toUint8(value: unknown): Uint8Array {
+  if (value instanceof Uint8Array) return value;
+  if (value instanceof ArrayBuffer) return new Uint8Array(value);
+  if (Array.isArray(value)) return Uint8Array.from(value as number[]);
+  if (typeof value === 'object' && value !== null && 'length' in (value as object)) {
+    return Uint8Array.from(value as ArrayLike<number>);
+  }
+  return new Uint8Array(0);
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function approvalPage(proof: Record<string, unknown>, token: string): string {
+  const label = escapeHtml(String(proof['label'] ?? 'Proof'));
+  const revision = Number(proof['revision'] ?? 1);
+  const status = String(proof['status'] ?? 'draft');
+  const hasFile = Number(proof['file_size'] ?? 0) > 0;
+  const url = String(proof['url'] ?? '');
+
+  let body: string;
+  if (status === 'approved' || status === 'rejected') {
+    body = `<p class="note">This proof was already ${escapeHtml(status)}. If anything must change, the shop will send a new version.</p>`;
+  } else if (status === 'superseded') {
+    body = `<p class="note">A newer version of this proof replaced this one.</p>`;
+  } else if (status !== 'sent') {
+    body = `<p class="note">This proof has not been sent yet. Check back once the shop sends it.</p>`;
+  } else {
+    const preview =
+      proof['thumbnail'] != null
+        ? `<div class="preview"><img src="/approve/${encodeURIComponent(token)}/thumbnail" alt="Proof preview"></div>`
+        : `<div class="preview"><div class="placeholder">No preview available</div></div>`;
+    const open =
+      hasFile
+        ? `<p><a class="link" href="/approve/${encodeURIComponent(token)}/file" target="_blank">Open the full proof</a></p>`
+        : url
+          ? `<p><a class="link" href="${escapeHtml(url)}" target="_blank" rel="noopener">Open the proof</a></p>`
+          : '';
+    body = `${preview}${open}
+<form method="post" action="/approve/${encodeURIComponent(token)}">
+  <div class="actions">
+    <button class="btn btn-approve" type="submit" name="decision" value="approved" formnovalidate>Approve</button>
+    <label for="note">What would you like changed? <span class="hint">(only if you request changes)</span></label>
+    <textarea id="note" name="note" rows="3" required placeholder="e.g. Logo too close to the trim"></textarea>
+    <label for="name">Your name <span class="hint">(optional)</span></label>
+    <input id="name" name="decider_name" type="text" autocomplete="name" placeholder="Your name">
+    <button class="btn btn-reject" type="submit" name="decision" value="rejected">Request changes</button>
+  </div>
+</form>`;
+  }
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proof v${revision} — Star Paris Graphic</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: #f4f5f7; color: #1a1d23; line-height: 1.5; }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 24px 16px 48px; }
+  .brand { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: #6b7280; }
+  h1 { font-size: 22px; margin: 8px 0 4px; }
+  .sub { color: #6b7280; margin: 0 0 20px; }
+  .preview { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
+  .preview img { display: block; width: 100%; height: auto; }
+  .placeholder { padding: 56px 16px; text-align: center; color: #9ca3af; font-size: 14px; }
+  .actions { display: flex; flex-direction: column; gap: 12px; }
+  .btn { display: block; width: 100%; padding: 16px; border: 0; border-radius: 12px; font-size: 17px; font-weight: 600; cursor: pointer; }
+  .btn-approve { background: #16a34a; color: #fff; }
+  .btn-reject { background: #fff; color: #b91c1c; border: 1px solid #fca5a5; }
+  label { font-size: 14px; color: #374151; }
+  .hint { color: #9ca3af; font-weight: 400; }
+  textarea, input { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 10px; font: inherit; }
+  .note { background: #fff7ed; border: 1px solid #fdba74; color: #9a3412; border-radius: 10px; padding: 12px 14px; font-size: 14px; }
+  .link { color: #2563eb; word-break: break-all; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">Star Paris Graphic</div>
+  <h1>You have a proof to review</h1>
+  <p class="sub">${label} · v${revision}</p>
+  ${body}
+</div>
+</body>
+</html>`;
+}
+
+/** The confirmation or error shown after a customer submits a decision. */
+function approvalResultPage(message: string, ok: boolean): string {
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Star Paris Graphic</title>
+<style>
+  body { margin: 0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: #f4f5f7; color: #1a1d23; display: grid; place-items: center; min-height: 100vh; }
+  .card { max-width: 420px; margin: 16px; padding: 28px; background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; text-align: center; }
+  .ok { color: #16a34a; font-size: 15px; margin: 0; }
+  .bad { color: #b91c1c; font-size: 15px; margin: 0; }
+  a { color: #2563eb; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <p class="${ok ? 'ok' : 'bad'}">${escapeHtml(message)}</p>
+  ${ok ? '' : '<p><a href="#" onclick="history.back(); return false;">Go back</a></p>'}
+</div>
+</body>
+</html>`;
 }
 
 export default app;

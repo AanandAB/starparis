@@ -21,7 +21,7 @@ import type { AuthContext, Env, Mutation, MutationResult } from './types';
 import { prepareVendorJobPatch } from './vendors';
 import { can, permits, redactCosts, type Permission, type RoleKey } from './policy';
 import { cascadeStage, prepareTaskPatch, taskEventStatement } from './tasks';
-import { prepareProofPatch, recordTimeEntry } from './proofs';
+import { prepareProofPatch, recordTimeEntry, ensureApprovalToken } from './proofs';
 import {
   expectedCash,
   prepareCreditNote,
@@ -813,6 +813,13 @@ async function patchRow(
   }
 
   await env.DB.batch(statements);
+
+  // A proof that just became sent needs its approval token, so the customer's
+  // link exists even when the file upload happened earlier, or the proof is a
+  // link with no file at all. Idempotent: an upload-minted token is reused.
+  if (mutation.entity === 'proofs' && statusChanged && String(working['status']) === 'sent') {
+    await ensureApprovalToken(env, row);
+  }
 
   // Outside the batch on purpose: a failed cascade leaves the next stage
   // waiting, which is visible on the board and safe to repeat — whereas a

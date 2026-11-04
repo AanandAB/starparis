@@ -88,4 +88,13 @@ class WhatsApp {
       shopName,
     ].join('\n');
   }
+
+  /// The approval link for a proof, short and plain: the customer taps it and
+  /// lands on the no-login approval page, which records the decision itself.
+  static String approvalMessage({
+    required int revision,
+    required String link,
+  }) {
+    return 'Your proof v$revision is ready to review: $link';
+  }
 }

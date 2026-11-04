@@ -121,7 +121,8 @@ Future<void> main() async {
     ),
     company,
   );
-  await File('${directory.path}/sample-credit-note.pdf').writeAsBytes(creditBytes);
+  await File('${directory.path}/sample-credit-note.pdf')
+      .writeAsBytes(creditBytes);
 
   stdout.writeln('quote      ${quote.length} bytes');
   stdout.writeln('job ticket ${ticket.length} bytes');

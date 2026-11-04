@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +10,7 @@ import 'package:starparis_sync/starparis_sync.dart';
 import '../app_config.dart';
 import '../auth/session.dart';
 import '../providers.dart';
+import 'proof_service.dart';
 import 'whatsapp.dart';
 
 /// Proof versions for one order: what the customer was shown and what they said.
@@ -27,6 +30,11 @@ class ProofsSection extends ConsumerStatefulWidget {
 class _ProofsSectionState extends ConsumerState<ProofsSection> {
   bool _busy = false;
 
+  /// Files attached to proofs that have not been uploaded yet, keyed by proof
+  /// id. The proof row itself holds only a link/empty url; the bytes wait here
+  /// until the proof is sent, then go up to the server.
+  final Map<String, ({Uint8List bytes, String mimeType})> _files = {};
+
   Session? get _session => ref.read(sessionProvider);
 
   Future<void> _add() async {
@@ -42,7 +50,7 @@ class _ProofsSectionState extends ConsumerState<ProofsSection> {
       final session = _session;
       if (session == null) throw StateError('Session expired');
       final db = ref.read(bootstrapProvider).db;
-      await db.addProofLocal(
+      final id = await db.addProofLocal(
         orderId: widget.order.id,
         tenantId: session.tenantId,
         branchId: session.branchId,
@@ -51,6 +59,9 @@ class _ProofsSectionState extends ConsumerState<ProofsSection> {
         url: result.url,
         note: result.note,
       );
+      if (result.fileBytes != null) {
+        _files[id] = (bytes: result.fileBytes!, mimeType: result.mimeType!);
+      }
       unawaited(ref.read(bootstrapProvider).engine?.syncNow());
       messenger.showSnackBar(
         const SnackBar(
@@ -71,6 +82,29 @@ class _ProofsSectionState extends ConsumerState<ProofsSection> {
     final messenger = ScaffoldMessenger.of(context);
     try {
       final bootstrap = ref.read(bootstrapProvider);
+      final file = _files[proof.id];
+
+      // A file-backed proof is uploaded before it is marked sent: a failed
+      // upload leaves it in draft, not stranded as "sent" with no link shared.
+      var shareUrl = proof.url;
+      if (file != null) {
+        await bootstrap.engine?.syncNow(); // the row must exist server-side first
+        final service = ProofService(
+          baseUrl: AppConfig.apiBaseUrl,
+          tokenProvider: bootstrap.auth.accessToken,
+        );
+        try {
+          shareUrl = await service.uploadProof(
+            proofId: proof.id,
+            bytes: file.bytes,
+            mimeType: file.mimeType,
+          );
+        } finally {
+          service.dispose();
+        }
+        _files.remove(proof.id);
+      }
+
       await bootstrap.db.setProofStatus(
         proof: proof,
         status: 'sent',
@@ -89,15 +123,18 @@ class _ProofsSectionState extends ConsumerState<ProofsSection> {
         );
         return;
       }
+      final message = file != null
+          ? WhatsApp.approvalMessage(revision: proof.revision, link: shareUrl)
+          : WhatsApp.proofMessage(
+              customerName: widget.order.customerName ?? 'there',
+              jobNumber: widget.order.numberDisplay,
+              revision: proof.revision,
+              url: shareUrl,
+              shopName: AppConfig.company.name,
+            );
       final opened = await WhatsApp.open(
         phoneE164: phone,
-        message: WhatsApp.proofMessage(
-          customerName: widget.order.customerName ?? 'there',
-          jobNumber: widget.order.numberDisplay,
-          revision: proof.revision,
-          url: proof.url,
-          shopName: AppConfig.company.name,
-        ),
+        message: message,
       );
       if (!opened && mounted) {
         messenger.showSnackBar(
@@ -285,11 +322,21 @@ class _ProofRow extends StatelessWidget {
 }
 
 class _ProofDraft {
-  const _ProofDraft({required this.label, required this.url, this.note});
+  const _ProofDraft({
+    required this.label,
+    required this.url,
+    this.note,
+    this.fileBytes,
+    this.mimeType,
+  });
 
   final String label;
+  /// The link the proof points at; empty for a file-backed proof (the file is
+  /// uploaded to D1 and served from the approval page instead).
   final String url;
   final String? note;
+  final Uint8List? fileBytes;
+  final String? mimeType;
 }
 
 class _AddProofDialog extends StatefulWidget {
@@ -302,73 +349,115 @@ class _AddProofDialog extends StatefulWidget {
 class _AddProofDialogState extends State<_AddProofDialog> {
   final TextEditingController _label = TextEditingController(text: 'Proof');
   final TextEditingController _url = TextEditingController();
+  final TextEditingController _filePath = TextEditingController();
   final TextEditingController _note = TextEditingController();
   String? _error;
+  bool _reading = false;
 
   @override
   void dispose() {
     _label.dispose();
     _url.dispose();
+    _filePath.dispose();
     _note.dispose();
     super.dispose();
   }
 
-  void _save() {
+  Future<void> _save() async {
+    if (_reading) return;
+    final label = _label.text.trim().isEmpty ? 'Proof' : _label.text.trim();
+    final note = _note.text.trim().isEmpty ? null : _note.text.trim();
     final url = _url.text.trim();
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      setState(() => _error = 'Paste a link that starts with https://');
+    final filePath = _filePath.text.trim();
+
+    // A local file takes precedence over a link: the file becomes the
+    // authoritative copy the customer approves, served from the approval page.
+    if (filePath.isNotEmpty) {
+      setState(() => _reading = true);
+      try {
+        final bytes = await File(filePath).readAsBytes();
+        final mime = mimeTypeForPath(filePath);
+        if (mime == null) {
+          setState(() => _error = 'Unsupported file type. Use an image or a PDF.');
+          return;
+        }
+        if (!mounted) return;
+        Navigator.of(context).pop(
+          _ProofDraft(
+            label: label,
+            url: '',
+            note: note,
+            fileBytes: bytes,
+            mimeType: mime,
+          ),
+        );
+      } on FileSystemException {
+        setState(() => _error = 'Could not read that file. Check the path.');
+      } finally {
+        if (mounted) setState(() => _reading = false);
+      }
       return;
     }
-    Navigator.of(context).pop(
-      _ProofDraft(
-        label: _label.text.trim().isEmpty ? 'Proof' : _label.text.trim(),
-        url: url,
-        note: _note.text.trim().isEmpty ? null : _note.text.trim(),
-      ),
-    );
+
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      setState(
+        () => _error = 'Paste a link that starts with https://, or attach a file.',
+      );
+      return;
+    }
+    Navigator.of(context).pop(_ProofDraft(label: label, url: url, note: note));
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Add a proof link'),
+      title: const Text('Add a proof'),
       content: SizedBox(
         width: 420,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            TextField(
-              controller: _label,
-              decoration: const InputDecoration(labelText: 'What is it?'),
-            ),
-            const SizedBox(height: StarSpace.sm),
-            TextField(
-              controller: _url,
-              autofocus: true,
-              keyboardType: TextInputType.url,
-              decoration: const InputDecoration(
-                labelText: 'Link to the file',
-                hintText: 'https://drive.google.com/…',
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              TextField(
+                controller: _label,
+                decoration: const InputDecoration(labelText: 'What is it?'),
               ),
-            ),
-            const SizedBox(height: StarSpace.sm),
-            TextField(
-              controller: _note,
-              maxLines: 2,
-              decoration: const InputDecoration(
-                labelText: 'Note (optional)',
-                hintText: 'Front only, back follows',
-              ),
-            ),
-            if (_error != null)
-              Padding(
-                padding: const EdgeInsets.only(top: StarSpace.sm),
-                child: Text(
-                  _error!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+              const SizedBox(height: StarSpace.sm),
+              TextField(
+                controller: _url,
+                keyboardType: TextInputType.url,
+                decoration: const InputDecoration(
+                  labelText: 'Link to the file',
+                  hintText: 'https://drive.google.com/…',
                 ),
               ),
-          ],
+              const SizedBox(height: StarSpace.sm),
+              TextField(
+                controller: _filePath,
+                decoration: const InputDecoration(
+                  labelText: 'Or attach a file (path on this PC)',
+                  hintText: r'C:\designs\business-card-front.png',
+                ),
+              ),
+              const SizedBox(height: StarSpace.sm),
+              TextField(
+                controller: _note,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  labelText: 'Note (optional)',
+                  hintText: 'Front only, back follows',
+                ),
+              ),
+              if (_error != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: StarSpace.sm),
+                  child: Text(
+                    _error!,
+                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
       actions: <Widget>[
@@ -376,7 +465,7 @@ class _AddProofDialogState extends State<_AddProofDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
-        FilledButton(onPressed: _save, child: const Text('Save')),
+        FilledButton(onPressed: _reading ? null : _save, child: const Text('Save')),
       ],
     );
   }

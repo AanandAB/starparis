@@ -9,7 +9,7 @@
 import { SELF, env } from 'cloudflare:test';
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import { hashPassword } from '../src/crypto';
+import { hashPassword, toBase64 } from '../src/crypto';
 
 const TENANT = '0193f0b1-0000-7000-8000-000000000001';
 const BRANCH_SHJ = '0193f0b1-0000-7000-8000-0000000000b1';
@@ -2739,5 +2739,154 @@ describe('quick sales', () => {
     };
     expect(body.results[0]!.status).toBe('rejected');
     expect(body.results[0]!.error.code).toBe('PERMISSION_DENIED');
+  });
+});
+
+describe('proof files and approvals', () => {
+  const proofId = '0193f0b1-0000-7000-8000-0000000000cb';
+  const ORDER = '0193f0b1-0000-7000-8000-0000000000aa';
+  const CHUNK = 256 * 1024;
+
+  // A payload big enough to span two chunks: 300 KB of deterministic bytes, so
+  // reassembly can be checked against the exact original.
+  const payload = new Uint8Array(300 * 1024);
+  for (let i = 0; i < payload.length; i++) payload[i] = i % 251;
+
+  let approvalToken = '';
+
+  async function sha256Of(bytes: Uint8Array): Promise<string> {
+    const digest = await crypto.subtle.digest('SHA-256', bytes);
+    return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  async function pushProof(session: Session, op: 'insert' | 'patch', baseVersion: number) {
+    const response = await api(
+      '/v1/push',
+      authed(session.access_token, {
+        device_id: session.device_id,
+        mutations: [
+          mutation({
+            mutation_id: `m-proof-file-${op}-${Math.random().toString(36).slice(2, 8)}`,
+            entity: 'proofs',
+            op,
+            row_id: proofId,
+            base_version: baseVersion,
+            fields:
+              op === 'insert'
+                ? {
+                    order_id: ORDER,
+                    revision: 1,
+                    kind: 'proof',
+                    label: 'Business cards front',
+                    url: 'https://drive.example/front-v1.png',
+                    note: 'Full bleed',
+                  }
+                : { status: 'sent' },
+          }),
+        ],
+      }),
+    );
+    const body = (await response.json()) as {
+      results: Array<{ status: string; error?: { code: string } }>;
+    };
+    expect(body.results[0]!.status).toBe('applied');
+  }
+
+  it('stores an uploaded proof file in chunks and returns an approval token', async () => {
+    await pushProof(counter, 'insert', 0);
+
+    const sha256 = await sha256Of(payload);
+    const chunks = [toBase64(payload.slice(0, CHUNK)), toBase64(payload.slice(CHUNK))];
+    const uploadBody = {
+      mime_type: 'image/png',
+      sha256,
+      chunks,
+      thumbnail: toBase64(new Uint8Array([1, 2, 3, 4])),
+    };
+
+    // The upload gate: a counter (who creates proofs) may not push the file —
+    // that is the designer's/manager's job.
+    const blocked = await api(`/v1/proofs/${proofId}/file`, authed(counter.access_token, uploadBody));
+    expect(blocked.status).toBe(403);
+
+    // The owner uploads here (an earlier staff test rotated the designer's
+    // session, so its token is stale by the time this suite runs).
+    const upload = await api(`/v1/proofs/${proofId}/file`, authed(owner.access_token, uploadBody));
+    const body = (await upload.json()) as {
+      ok: boolean;
+      approval_token?: string;
+      error?: { code: string };
+    };
+    expect(upload.status).toBe(200);
+    expect(body.approval_token).toBeTruthy();
+    approvalToken = body.approval_token!;
+  });
+
+  it('reassembles the stored file byte-for-byte', async () => {
+    expect(approvalToken).toBeTruthy();
+    const response = await api(`/approve/${approvalToken}/file`);
+    expect(response.status).toBe(200);
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    expect(bytes.length).toBe(payload.length);
+    expect(await sha256Of(bytes)).toBe(await sha256Of(payload));
+  });
+
+  it('serves the approval page as HTML', async () => {
+    await pushProof(counter, 'patch', 1);
+    const response = await api(`/approve/${approvalToken}`);
+    expect(response.status).toBe(200);
+    const html = await response.text();
+    expect(html).toContain('Star Paris Graphic');
+    expect(html).toContain('You have a proof to review');
+  });
+
+  it('records the approval and moves the proof to approved', async () => {
+    const response = await api(`/approve/${approvalToken}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ decision: 'approved', note: 'Looks good', decider_name: 'Ahmed' }),
+    });
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { ok: boolean; status: string };
+    expect(body.status).toBe('approved');
+
+    const proof = (await env.DB.prepare('SELECT * FROM proofs WHERE id = ?').bind(proofId).first()) as Record<
+      string,
+      unknown
+    >;
+    expect(proof['status']).toBe('approved');
+    expect(proof['decided_at']).toBeTruthy();
+
+    const approvals = await env.DB.prepare(
+      'SELECT * FROM proof_approvals WHERE proof_id = ?',
+    ).bind(proofId).all<Record<string, unknown>>();
+    expect(approvals.results.length).toBe(1);
+    expect(approvals.results[0]!['decision']).toBe('approved');
+    expect(approvals.results[0]!['channel']).toBe('web');
+    expect(approvals.results[0]!['decider_name']).toBe('Ahmed');
+  });
+
+  it('refuses a second decision on the same proof', async () => {
+    const response = await api(`/approve/${approvalToken}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ decision: 'rejected', note: 'Change the trim', decider_name: 'Ahmed' }),
+    });
+    expect(response.status).toBe(400);
+    const body = (await response.json()) as { error: { code: string } };
+    expect(body.error.code).toBe('ALREADY_DECIDED');
+  });
+
+  it('returns 404 for an unknown approval token', async () => {
+    const missing = '0193f0b1-0000-7000-8000-0000000000ff';
+    const page = await api(`/approve/${missing}`);
+    expect(page.status).toBe(404);
+
+    const decide = await api(`/approve/${missing}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ decision: 'approved' }),
+    });
+    expect(decide.status).toBe(404);
   });
 });
