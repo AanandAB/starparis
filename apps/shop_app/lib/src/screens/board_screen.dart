@@ -153,6 +153,12 @@ class _Board extends StatelessWidget {
   }
 }
 
+/// A column with more open tasks than this is a bottleneck, not a queue. There
+/// is no per-stage WIP limit in the schema yet (adding one is a backend
+/// change), so the board owns a single threshold; the day the limit becomes a
+/// stage field, this constant moves there.
+const int _stageCapacity = 6;
+
 class _StageColumn extends StatelessWidget {
   const _StageColumn({
     required this.title,
@@ -168,6 +174,7 @@ class _StageColumn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final overCapacity = tasks.length > _stageCapacity;
 
     return Container(
       width: 296,
@@ -181,7 +188,17 @@ class _StageColumn extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Padding(
+          Container(
+            decoration: BoxDecoration(
+              // Over capacity, the header carries a subtle ember wash AND the
+              // count in words ("12 waiting") — colour never stands alone.
+              color: overCapacity
+                  ? StarColors.ember.withValues(alpha: 0.10)
+                  : Colors.transparent,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(StarRadius.card),
+              ),
+            ),
             padding: const EdgeInsets.fromLTRB(
               StarSpace.md,
               StarSpace.md,
@@ -198,7 +215,27 @@ class _StageColumn extends StatelessWidget {
                     ),
                   ),
                 ),
-                StatusChip(label: '${tasks.length}'),
+                if (overCapacity)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      const Icon(
+                        Icons.warning_amber_rounded,
+                        size: 14,
+                        color: StarColors.ember,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${tasks.length} waiting',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: StarColors.ember,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  StatusChip(label: '${tasks.length}'),
               ],
             ),
           ),
@@ -238,10 +275,9 @@ class _MyWorkList extends StatelessWidget {
         final task = tasks[index];
         return ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 720),
-          child: Card(
-            margin: EdgeInsets.zero,
-            child: _TaskCard(task: task, session: session, flat: true),
-          ),
+          // PressableCard is the surface now — no Card wrapper, so the row
+          // lifts on hover and settles on press like every other door.
+          child: _TaskCard(task: task, session: session, flat: true),
         );
       },
     );
@@ -265,89 +301,90 @@ class _TaskCard extends StatelessWidget {
     final overdue = task.dueAt != null && task.dueAt!.isBefore(DateTime.now());
     final status = TaskStatus.fromWire(task.status);
 
-    final card = InkWell(
+    final card = PressableCard(
       onTap: () => showTaskSheet(context, task, session),
-      borderRadius: BorderRadius.circular(StarRadius.field),
-      child: Padding(
-        padding: const EdgeInsets.all(StarSpace.sm),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    task.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+      padding: const EdgeInsets.all(StarSpace.sm),
+      borderRadius: StarRadius.field,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  task.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
-                ),
-                const SizedBox(width: StarSpace.xs),
-                _statusChip(status),
-              ],
-            ),
-            const SizedBox(height: StarSpace.xs),
-            Row(
-              children: <Widget>[
-                if (task.qty > 0) ...<Widget>[
-                  Text('${task.qty} pcs', style: theme.textTheme.bodySmall),
-                  const SizedBox(width: StarSpace.sm),
-                ],
-                if (task.dueAt != null)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Icon(
-                        overdue ? Icons.warning_amber_rounded : Icons.schedule,
-                        size: 13,
-                        color: overdue
-                            ? theme.colorScheme.error
-                            : theme.colorScheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 3),
-                      Text(
-                        _dueLabel(task.dueAt!),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: overdue ? theme.colorScheme.error : null,
-                        ),
-                      ),
-                    ],
-                  ),
-              ],
-            ),
-            if (task.reason != null && task.reason!.isNotEmpty) ...<Widget>[
-              const SizedBox(height: StarSpace.xs),
-              Text(
-                task.reason!,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontStyle: FontStyle.italic,
-                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
+              const SizedBox(width: StarSpace.xs),
+              _statusChip(status),
             ],
+          ),
+          const SizedBox(height: StarSpace.xs),
+          Row(
+            children: <Widget>[
+              if (task.qty > 0) ...<Widget>[
+                Text('${task.qty} pcs', style: theme.textTheme.bodySmall),
+                const SizedBox(width: StarSpace.sm),
+              ],
+              if (task.dueAt != null)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Icon(
+                      overdue ? Icons.warning_amber_rounded : Icons.schedule,
+                      size: 13,
+                      color: overdue
+                          ? theme.colorScheme.error
+                          : theme.colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 3),
+                    Text(
+                      _dueLabel(task.dueAt!),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: overdue ? theme.colorScheme.error : null,
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+          if (task.reason != null && task.reason!.isNotEmpty) ...<Widget>[
+            const SizedBox(height: StarSpace.xs),
+            Text(
+              task.reason!,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontStyle: FontStyle.italic,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ],
-        ),
+        ],
       ),
     );
 
     if (flat) return card;
 
+    // A card someone is working on right now carries an ember ring; the word
+    // "Working" is on the status chip, so colour is never the only signal.
+    final inProgress = status == TaskStatus.inProgress;
     return Container(
       margin: const EdgeInsets.only(bottom: StarSpace.sm),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(StarRadius.field),
-        border: Border.all(
-          color: status == TaskStatus.inProgress
-              ? StarColors.ember.withValues(alpha: 0.5)
-              : theme.colorScheme.outlineVariant,
-        ),
+        border: inProgress
+            ? Border.all(
+                color: StarColors.ember.withValues(alpha: 0.5),
+                width: 1.5,
+              )
+            : null,
       ),
       child: card,
     );

@@ -89,38 +89,44 @@ class CustomersScreen extends ConsumerWidget {
               }
               return ListView.separated(
                 itemCount: customers.length,
-                separatorBuilder: (_, index) => const Divider(height: 1),
+                separatorBuilder: (_, index) =>
+                    const SizedBox(height: StarSpace.sm),
                 itemBuilder: (context, index) {
                   final customer = customers[index];
-                  return ListTile(
+                  // PressableCard makes the whole row lift on hover and ripple
+                  // on tap, so a row reads as a door, not a line of text.
+                  return PressableCard(
                     onTap: () => showCustomerSheet(context, customer),
-                    leading: CircleAvatar(
-                      backgroundColor: theme.colorScheme.primary.withValues(
-                        alpha: 0.10,
+                    padding: EdgeInsets.zero,
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: theme.colorScheme.primary.withValues(
+                          alpha: 0.10,
+                        ),
+                        child: Text(
+                          customer.name.characters.first.toUpperCase(),
+                          style: TextStyle(color: theme.colorScheme.primary),
+                        ),
                       ),
-                      child: Text(
-                        customer.name.characters.first.toUpperCase(),
-                        style: TextStyle(color: theme.colorScheme.primary),
+                      title: Text(customer.name),
+                      subtitle: Text(
+                        <String>[
+                          if (customer.company != null &&
+                              customer.company!.isNotEmpty)
+                            customer.company!,
+                          customer.tier,
+                        ].join(' · '),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
+                      trailing: customer.version == 0
+                          ? const StatusChip(
+                              label: 'Pending upload',
+                              tone: StatusTone.paused,
+                              icon: Icons.cloud_upload_outlined,
+                            )
+                          : const Icon(Icons.chevron_right),
                     ),
-                    title: Text(customer.name),
-                    subtitle: Text(
-                      <String>[
-                        if (customer.company != null &&
-                            customer.company!.isNotEmpty)
-                          customer.company!,
-                        customer.tier,
-                      ].join(' · '),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: customer.version == 0
-                        ? const StatusChip(
-                            label: 'Pending upload',
-                            tone: StatusTone.paused,
-                            icon: Icons.cloud_upload_outlined,
-                          )
-                        : const Icon(Icons.chevron_right),
                   );
                 },
               );

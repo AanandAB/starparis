@@ -118,9 +118,10 @@ class HomeScreen extends ConsumerWidget {
                 else
                   _StatGrid(
                     stats: <Widget>[
-                      StarStat(
+                      _AnimatedStat(
                         label: t('today.inProduction'),
-                        value: '${inProgress.length}',
+                        value: inProgress.length,
+                        format: _count,
                         hint: inProgress.isEmpty
                             ? t('today.nothingOnMachine')
                             : t('today.onMachine'),
@@ -129,9 +130,10 @@ class HomeScreen extends ConsumerWidget {
                             .read(shellTabProvider.notifier)
                             .select(HomeTabs.production),
                       ),
-                      StarStat(
+                      _AnimatedStat(
                         label: t('today.overdue'),
-                        value: '${overdue.length}',
+                        value: overdue.length,
+                        format: _count,
                         hint: overdue.isEmpty
                             ? t('today.nothingLate')
                             : t('today.overdueHint'),
@@ -143,9 +145,10 @@ class HomeScreen extends ConsumerWidget {
                             .read(shellTabProvider.notifier)
                             .select(HomeTabs.production),
                       ),
-                      StarStat(
+                      _AnimatedStat(
                         label: t('today.dueToday'),
-                        value: '${ordersDueToday.length}',
+                        value: ordersDueToday.length,
+                        format: _count,
                         hint: ordersDueToday.isEmpty
                             ? t('today.noPromiseToday')
                             : t('today.promisedToday'),
@@ -157,9 +160,10 @@ class HomeScreen extends ConsumerWidget {
                             .read(shellTabProvider.notifier)
                             .select(HomeTabs.orders),
                       ),
-                      StarStat(
+                      _AnimatedStat(
                         label: t('today.waitingForYou'),
-                        value: '${unclaimed.length}',
+                        value: unclaimed.length,
+                        format: _count,
                         hint: unclaimed.isEmpty
                             ? t('today.queueClear')
                             : t('today.unclaimed'),
@@ -289,10 +293,7 @@ class _Greeting extends StatelessWidget {
             children: <Widget>[
               Text(
                 '$greeting, ${name.split(' ').first}',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.6,
-                ),
+                style: theme.textTheme.displaySmall,
               ),
               const SizedBox(height: 2),
               Text(
@@ -357,6 +358,106 @@ class _StatGrid extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+/// A count is a plain integer; money (the cash figure) supplies its own fils
+/// formatter through [AnimatedCount.format] instead.
+String _count(int value) => '$value';
+
+/// A door with a live number: the value counts from its old self to the new one
+/// ([AnimatedCount]) and the tile lifts on hover ([PressableCard]) so a clerk
+/// sees it is a door before clicking. Same anatomy as the design system's
+/// StarStat, but the value is animated and set in the display scale, so it
+/// cannot reuse StarStat directly.
+class _AnimatedStat extends StatelessWidget {
+  const _AnimatedStat({
+    required this.label,
+    required this.value,
+    required this.format,
+    this.hint,
+    this.icon,
+    this.tone = StarStatTone.neutral,
+    this.onTap,
+  });
+
+  final String label;
+  final int value;
+  final String Function(int value) format;
+  final String? hint;
+  final IconData? icon;
+  final StarStatTone tone;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accent = switch (tone) {
+      StarStatTone.neutral => theme.colorScheme.primary,
+      StarStatTone.positive => StarColors.statusDone,
+      StarStatTone.warning => StarColors.statusPaused,
+      StarStatTone.danger => StarColors.statusProblem,
+    };
+
+    return PressableCard(
+      onTap: onTap,
+      enabled: onTap != null,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              if (icon != null)
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(StarRadius.field),
+                  ),
+                  child: Icon(icon, size: 16, color: accent),
+                ),
+              if (icon != null) const SizedBox(width: StarSpace.sm),
+              Expanded(
+                child: Text(
+                  label.toUpperCase(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    letterSpacing: 0.8,
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: StarSpace.sm),
+          AnimatedCount(
+            value: value,
+            format: format,
+            style: theme.textTheme.displayMedium?.copyWith(
+              color: tone == StarStatTone.neutral
+                  ? theme.colorScheme.onSurface
+                  : accent,
+            ),
+          ),
+          if (hint != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                hint!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -553,9 +654,12 @@ class _CashToday extends ConsumerWidget {
             future: db.cashTakenSince(till.openedAt),
             builder: (context, cashSnapshot) {
               final cash = cashSnapshot.data ?? 0;
-              return StarStat(
+              return _AnimatedStat(
                 label: t('today.cashToday'),
-                value: Fils(cash).aedLabel,
+                value: cash,
+                // Money formats through the fils formatter so the animated
+                // count shows the same AED label the rest of the app uses.
+                format: (value) => Fils(value).aedLabel,
                 hint:
                     'in the drawer since the shift opened · should be '
                     '${Fils(till.openingFloatFils + cash).aedLabel} with the float',

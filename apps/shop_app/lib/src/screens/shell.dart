@@ -238,176 +238,194 @@ class _AppShellState extends ConsumerState<AppShell> {
       child: Focus(
         autofocus: true,
         child: Scaffold(
-          appBar: AppBar(
-            titleSpacing: StarSpace.md,
-            toolbarHeight: 64,
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Text(
-                  'STAR PARIS',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    letterSpacing: 1.6,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Text(
-                  current.label,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.2,
-                  ),
-                ),
-              ],
-            ),
-            actions: <Widget>[
-              if (useRail)
-                SizedBox(
-                  width: 340,
-                  child: InkWell(
-                    onTap: () => showTrackSheet(context),
-                    borderRadius: BorderRadius.circular(StarRadius.field),
-                    child: Container(
-                      height: 40,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: StarSpace.md,
+          // Scaffold's appBar slot wants a PreferredSizeWidget, which
+          // GlassPanel is not — so the panel is wrapped in a fixed-height slot
+          // that matches the AppBar's own toolbar below.
+          appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(64),
+            child: GlassPanel(
+              // The top bar runs edge to edge, so it keeps square corners: a
+              // rounded radius would let the canvas show through at the window
+              // corner. GlassPanel supplies the translucent fill and hairline;
+              // the AppBar below stays transparent (see the app bar theme).
+              borderRadius: BorderRadius.zero,
+              child: AppBar(
+                titleSpacing: StarSpace.md,
+                toolbarHeight: 64,
+                title: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Text(
+                      'STAR PARIS',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        letterSpacing: 1.6,
+                        fontWeight: FontWeight.w700,
                       ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest
-                            .withValues(alpha: 0.5),
+                    ),
+                    Text(
+                      current.label,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                  ],
+                ),
+                actions: <Widget>[
+                  if (useRail)
+                    SizedBox(
+                      width: 340,
+                      child: InkWell(
+                        onTap: () => showTrackSheet(context),
                         borderRadius: BorderRadius.circular(StarRadius.field),
-                        border: Border.all(
-                          color: theme.colorScheme.outlineVariant,
-                        ),
-                      ),
-                      child: Row(
-                        children: <Widget>[
-                          Icon(
-                            Icons.search,
-                            size: 18,
-                            color: theme.colorScheme.onSurfaceVariant,
+                        child: Container(
+                          height: 40,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: StarSpace.md,
                           ),
-                          const SizedBox(width: StarSpace.sm),
-                          Expanded(
-                            child: Text(
-                              'Job, invoice, phone or customer',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.bodySmall?.copyWith(
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceContainerHighest
+                                .withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(
+                              StarRadius.field,
+                            ),
+                            border: Border.all(
+                              color: theme.colorScheme.outlineVariant,
+                            ),
+                          ),
+                          child: Row(
+                            children: <Widget>[
+                              Icon(
+                                Icons.search,
+                                size: 18,
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),
-                            ),
+                              const SizedBox(width: StarSpace.sm),
+                              Expanded(
+                                child: Text(
+                                  'Job, invoice, phone or customer',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                              // A key-cap, not a label: the shortcut should read as
+                              // a keyboard command, not a feature name.
+                              const ShortcutChip(label: 'Ctrl K'),
+                            ],
                           ),
-                          Text(
-                            'Ctrl K',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ),
-              const SizedBox(width: StarSpace.md),
-              const SyncStatusChip(),
-              const SizedBox(width: StarSpace.sm),
-              PopupMenuButton<String>(
-                tooltip: session.name,
-                icon: CircleAvatar(
-                  radius: 15,
-                  backgroundColor: StarColors.petrol,
-                  child: Text(
-                    session.name.characters.first.toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
+                  const SizedBox(width: StarSpace.md),
+                  const SyncStatusChip(),
+                  if (useRail) ...<Widget>[
+                    // F5 is a keyboard shortcut, so its key-cap is a desktop
+                    // affordance — like the Ctrl K hint, it stays off the phone bar.
+                    const SizedBox(width: StarSpace.xs),
+                    const ShortcutChip(label: 'F5'),
+                  ],
+                  const SizedBox(width: StarSpace.sm),
+                  PopupMenuButton<String>(
+                    tooltip: session.name,
+                    icon: CircleAvatar(
+                      radius: 15,
+                      backgroundColor: StarColors.petrol,
+                      child: Text(
+                        session.name.characters.first.toUpperCase(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
+                    onSelected: (value) async {
+                      if (value == 'till') {
+                        await showTillSheet(context);
+                        return;
+                      }
+                      if (value == 'theme') {
+                        ref.read(themeModeProvider.notifier).toggle();
+                        return;
+                      }
+                      if (value == 'log') {
+                        await showLogSheet(context);
+                        return;
+                      }
+                      if (value == 'audit') {
+                        await openAuditLog(context);
+                        return;
+                      }
+                      if (value == 'diagnostics') {
+                        await showDiagnosticsSheet(context);
+                        return;
+                      }
+                      if (value == 'signout') {
+                        await ref.read(sessionProvider.notifier).signOut();
+                      }
+                      if (value == 'lang') {
+                        ref.read(localeProvider.notifier).toggle();
+                      }
+                    },
+                    itemBuilder: (context) => <PopupMenuEntry<String>>[
+                      PopupMenuItem<String>(
+                        enabled: false,
+                        child: Text('${session.name} · ${session.role}'),
+                      ),
+                      const PopupMenuDivider(),
+                      PopupMenuItem<String>(
+                        value: 'till',
+                        child: Text(t('menu.till')),
+                      ),
+                      PopupMenuItem<String>(
+                        value: 'theme',
+                        child: Text(
+                          ref.watch(themeModeProvider) == ThemeMode.dark
+                              ? t('menu.themeLight')
+                              : t('menu.themeDark'),
+                        ),
+                      ),
+                      PopupMenuItem<String>(
+                        value: 'log',
+                        child: Text(t('menu.log')),
+                      ),
+                      // The strings table is shared and this change does not own
+                      // it, so the label stays a literal until `menu.audit` exists
+                      // there; an untranslated key would render as the key itself.
+                      if (ref.watch(canViewAuditProvider))
+                        const PopupMenuItem<String>(
+                          value: 'audit',
+                          child: Text('Audit log'),
+                        ),
+                      PopupMenuItem<String>(
+                        value: 'diagnostics',
+                        child: Text(t('menu.diagnostics')),
+                      ),
+                      const PopupMenuDivider(),
+                      PopupMenuItem<String>(
+                        value: 'lang',
+                        child: Text(
+                          ref.watch(localeProvider)?.languageCode == 'ar'
+                              ? 'English interface'
+                              : 'عربي — Arabic layout',
+                        ),
+                      ),
+                      const PopupMenuDivider(),
+                      PopupMenuItem<String>(
+                        value: 'signout',
+                        child: Text(t('menu.signout')),
+                      ),
+                    ],
                   ),
-                ),
-                onSelected: (value) async {
-                  if (value == 'till') {
-                    await showTillSheet(context);
-                    return;
-                  }
-                  if (value == 'theme') {
-                    ref.read(themeModeProvider.notifier).toggle();
-                    return;
-                  }
-                  if (value == 'log') {
-                    await showLogSheet(context);
-                    return;
-                  }
-                  if (value == 'audit') {
-                    await openAuditLog(context);
-                    return;
-                  }
-                  if (value == 'diagnostics') {
-                    await showDiagnosticsSheet(context);
-                    return;
-                  }
-                  if (value == 'signout') {
-                    await ref.read(sessionProvider.notifier).signOut();
-                  }
-                  if (value == 'lang') {
-                    ref.read(localeProvider.notifier).toggle();
-                  }
-                },
-                itemBuilder: (context) => <PopupMenuEntry<String>>[
-                  PopupMenuItem<String>(
-                    enabled: false,
-                    child: Text('${session.name} · ${session.role}'),
-                  ),
-                  const PopupMenuDivider(),
-                  PopupMenuItem<String>(
-                    value: 'till',
-                    child: Text(t('menu.till')),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'theme',
-                    child: Text(
-                      ref.watch(themeModeProvider) == ThemeMode.dark
-                          ? t('menu.themeLight')
-                          : t('menu.themeDark'),
-                    ),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'log',
-                    child: Text(t('menu.log')),
-                  ),
-                  // The strings table is shared and this change does not own
-                  // it, so the label stays a literal until `menu.audit` exists
-                  // there; an untranslated key would render as the key itself.
-                  if (ref.watch(canViewAuditProvider))
-                    const PopupMenuItem<String>(
-                      value: 'audit',
-                      child: Text('Audit log'),
-                    ),
-                  PopupMenuItem<String>(
-                    value: 'diagnostics',
-                    child: Text(t('menu.diagnostics')),
-                  ),
-                  const PopupMenuDivider(),
-                  PopupMenuItem<String>(
-                    value: 'lang',
-                    child: Text(
-                      ref.watch(localeProvider)?.languageCode == 'ar'
-                          ? 'English interface'
-                          : 'عربي — Arabic layout',
-                    ),
-                  ),
-                  const PopupMenuDivider(),
-                  PopupMenuItem<String>(
-                    value: 'signout',
-                    child: Text(t('menu.signout')),
-                  ),
+                  const SizedBox(width: StarSpace.sm),
                 ],
               ),
-              const SizedBox(width: StarSpace.sm),
-            ],
+            ),
           ),
           body: useRail
               ? Row(
@@ -537,62 +555,61 @@ class _Rail extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Container(
-      width: extended ? 224 : 84,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        border: Border(
-          right: BorderSide(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
-          ),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          const SizedBox(height: StarSpace.md),
-          if (extended)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                StarSpace.lg,
-                StarSpace.sm,
-                StarSpace.lg,
-                StarSpace.lg,
-              ),
-              child: Row(
-                children: <Widget>[
-                  const Icon(
-                    Icons.local_print_shop_outlined,
-                    color: StarColors.petrol,
-                  ),
-                  const SizedBox(width: StarSpace.sm),
-                  Expanded(
-                    child: Text(
-                      'Star Paris',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
+    return GlassPanel(
+      // The rail is a full-height strip flush against the window edge, so it
+      // keeps square corners. The translucent fill, blur and separating
+      // hairline all come from GlassPanel now; the old hand-drawn surface and
+      // right border are gone, not re-added on top.
+      borderRadius: BorderRadius.zero,
+      child: SizedBox(
+        width: extended ? 224 : 84,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            const SizedBox(height: StarSpace.md),
+            if (extended)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  StarSpace.lg,
+                  StarSpace.sm,
+                  StarSpace.lg,
+                  StarSpace.lg,
+                ),
+                child: Row(
+                  children: <Widget>[
+                    const Icon(
+                      Icons.local_print_shop_outlined,
+                      color: StarColors.petrol,
+                    ),
+                    const SizedBox(width: StarSpace.sm),
+                    Expanded(
+                      child: Text(
+                        'Star Paris',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-          _group(context, 'WORK', work),
-          _group(context, 'PEOPLE', people),
-          if (business.isNotEmpty) _group(context, 'BUSINESS', business),
-          const Spacer(),
-          if (extended)
-            Padding(
-              padding: const EdgeInsets.all(StarSpace.md),
-              child: Text(
-                'Ctrl K search · Ctrl N new order · F5 sync',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  height: 1.5,
+                  ],
                 ),
               ),
-            ),
-        ],
+            _group(context, 'WORK', work),
+            _group(context, 'PEOPLE', people),
+            if (business.isNotEmpty) _group(context, 'BUSINESS', business),
+            const Spacer(),
+            if (extended)
+              Padding(
+                padding: const EdgeInsets.all(StarSpace.md),
+                child: Text(
+                  'Ctrl K search · Ctrl N new order · F5 sync',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    height: 1.5,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -634,7 +651,7 @@ class _Rail extends StatelessWidget {
   }
 }
 
-class _RailItem extends StatelessWidget {
+class _RailItem extends StatefulWidget {
   const _RailItem({
     required this.destination,
     required this.selected,
@@ -648,55 +665,109 @@ class _RailItem extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  State<_RailItem> createState() => _RailItemState();
+}
+
+class _RailItemState extends State<_RailItem> {
+  bool _hovered = false;
+  bool _pressed = false;
+
+  void _setHover(bool value) {
+    if (_hovered != value) setState(() => _hovered = value);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final destination = widget.destination;
+    final selected = widget.selected;
+    final extended = widget.extended;
     final foreground = selected
         ? theme.colorScheme.primary
         : theme.colorScheme.onSurfaceVariant;
+
+    // The same pointer rhythm as PressableCard — hover tints and lifts, press
+    // settles — but hand-rolled here: a rail item has its own selected fill
+    // and grouped layout, so the shared card widget cannot wrap it without
+    // taking over the selection styling.
+    final baseColor = selected
+        ? theme.colorScheme.primary.withValues(alpha: 0.10)
+        : Colors.transparent;
+    final color = _hovered
+        ? Color.alphaBlend(
+            theme.colorScheme.primary.withValues(alpha: 0.04),
+            baseColor,
+          )
+        : baseColor;
+    final boxShadow = _hovered
+        ? <BoxShadow>[
+            BoxShadow(
+              color: theme.colorScheme.shadow.withValues(alpha: 0.14),
+              blurRadius: 12,
+              offset: const Offset(0, 3),
+            ),
+          ]
+        : const <BoxShadow>[];
 
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: StarSpace.sm,
         vertical: 2,
       ),
-      child: Material(
-        color: selected
-            ? theme.colorScheme.primary.withValues(alpha: 0.10)
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(StarRadius.field),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(StarRadius.field),
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: extended ? StarSpace.md : 0,
-              vertical: 10,
-            ),
-            child: Row(
-              mainAxisAlignment: extended
-                  ? MainAxisAlignment.start
-                  : MainAxisAlignment.center,
-              children: <Widget>[
-                Icon(
-                  selected ? destination.selectedIcon : destination.icon,
-                  size: 20,
-                  color: foreground,
+      child: MouseRegion(
+        onEnter: (_) => _setHover(true),
+        onExit: (_) => _setHover(false),
+        child: AnimatedContainer(
+          duration: StarMotion.fast,
+          curve: StarMotion.easeOut,
+          transform: _pressed
+              ? (Matrix4.identity()..scaleByDouble(0.985, 0.985, 0.985, 1.0))
+              : Matrix4.identity(),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(StarRadius.field),
+            boxShadow: boxShadow,
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: widget.onTap,
+              onHighlightChanged: (value) {
+                if (_pressed != value) setState(() => _pressed = value);
+              },
+              borderRadius: BorderRadius.circular(StarRadius.field),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: extended ? StarSpace.md : 0,
+                  vertical: 10,
                 ),
-                if (extended) ...<Widget>[
-                  const SizedBox(width: StarSpace.md),
-                  Expanded(
-                    child: Text(
-                      destination.label,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: foreground,
-                        fontWeight: selected
-                            ? FontWeight.w700
-                            : FontWeight.w500,
-                      ),
+                child: Row(
+                  mainAxisAlignment: extended
+                      ? MainAxisAlignment.start
+                      : MainAxisAlignment.center,
+                  children: <Widget>[
+                    Icon(
+                      selected ? destination.selectedIcon : destination.icon,
+                      size: 20,
+                      color: foreground,
                     ),
-                  ),
-                ],
-              ],
+                    if (extended) ...<Widget>[
+                      const SizedBox(width: StarSpace.md),
+                      Expanded(
+                        child: Text(
+                          destination.label,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: foreground,
+                            fontWeight: selected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
           ),
         ),

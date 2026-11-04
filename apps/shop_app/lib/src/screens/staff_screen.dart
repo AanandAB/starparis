@@ -147,18 +147,18 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
                 ),
               )
             else
-              Card(
-                child: Column(
-                  children: <Widget>[
-                    for (var i = 0; i < snapshot.data!.length; i++) ...<Widget>[
-                      if (i > 0) const Divider(height: 1),
-                      _StaffRow(
-                        member: snapshot.data![i],
-                        onTap: () => _edit(snapshot.data![i]),
-                      ),
-                    ],
+              // Each row is its own PressableCard — hover lift plus ripple on
+              // the tap that opens the edit dialog — so the list reads as doors.
+              Column(
+                children: <Widget>[
+                  for (var i = 0; i < snapshot.data!.length; i++) ...<Widget>[
+                    if (i > 0) const SizedBox(height: StarSpace.sm),
+                    _StaffRow(
+                      member: snapshot.data![i],
+                      onTap: () => _edit(snapshot.data![i]),
+                    ),
                   ],
-                ),
+                ],
               ),
             const SizedBox(height: StarSpace.xl),
             Text(
@@ -192,54 +192,57 @@ class _StaffRow extends StatelessWidget {
         .map((part) => part[0].toUpperCase())
         .join();
 
-    return ListTile(
+    return PressableCard(
       onTap: onTap,
-      leading: CircleAvatar(
-        backgroundColor: member.active
-            ? StarColors.petrol
-            : theme.colorScheme.surfaceContainerHighest,
-        child: Text(
-          initials,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: member.active
-                ? Colors.white
-                : theme.colorScheme.onSurfaceVariant,
+      padding: EdgeInsets.zero,
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: member.active
+              ? StarColors.petrol
+              : theme.colorScheme.surfaceContainerHighest,
+          child: Text(
+            initials,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: member.active
+                  ? Colors.white
+                  : theme.colorScheme.onSurfaceVariant,
+            ),
           ),
         ),
-      ),
-      title: Text(member.name, style: theme.textTheme.bodyMedium),
-      subtitle: Text(
-        <String>[
-          member.roleLabel,
-          member.phone,
-          if (member.branchName != null) member.branchName!,
-        ].join(' · '),
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
+        title: Text(member.name, style: theme.textTheme.bodyMedium),
+        subtitle: Text(
+          <String>[
+            member.roleLabel,
+            member.phone,
+            if (member.branchName != null) member.branchName!,
+          ].join(' · '),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          if (member.hasPin)
-            Padding(
-              padding: const EdgeInsets.only(right: StarSpace.sm),
-              child: Tooltip(
-                message: 'Can unlock with a PIN',
-                child: Icon(
-                  Icons.pin_outlined,
-                  size: 16,
-                  color: theme.colorScheme.onSurfaceVariant,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            if (member.hasPin)
+              Padding(
+                padding: const EdgeInsets.only(right: StarSpace.sm),
+                child: Tooltip(
+                  message: 'Can unlock with a PIN',
+                  child: Icon(
+                    Icons.pin_outlined,
+                    size: 16,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
+            StatusChip(
+              label: member.active ? 'Active' : 'Off',
+              tone: member.active ? StatusTone.done : StatusTone.neutral,
             ),
-          StatusChip(
-            label: member.active ? 'Active' : 'Off',
-            tone: member.active ? StatusTone.done : StatusTone.neutral,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

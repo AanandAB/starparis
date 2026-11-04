@@ -543,10 +543,20 @@ class _OrderBuilderScreenState extends ConsumerState<OrderBuilderScreen> {
                             'Total incl. VAT',
                             style: theme.textTheme.labelSmall,
                           ),
-                          MoneyText(
-                            price.grandTotal,
-                            emphasise: true,
-                            style: theme.textTheme.headlineSmall,
+                          // The running total counts up when a size, finish or
+                          // quantity changes, so a repricing is felt, not read.
+                          AnimatedCount(
+                            value: price.grandTotal.raw,
+                            format: (fils) => Fils(fils).aedLabel,
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              fontFeatures: const <FontFeature>[
+                                FontFeature.tabularFigures(),
+                              ],
+                              color: price.grandTotal.isNegative
+                                  ? theme.colorScheme.error
+                                  : null,
+                            ),
                           ),
                         ],
                       ),
@@ -677,6 +687,23 @@ class _TotalRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    // The emphatic row is the order total: it counts up like the live price
+    // bar and uses the display scale, so the number the customer pays is the
+    // biggest thing on the summary.
+    final Widget value;
+    if (emphatic) {
+      value = AnimatedCount(
+        value: amount.raw,
+        format: (fils) => Fils(fils).aedLabel,
+        style: theme.textTheme.displaySmall?.copyWith(
+          color: amount.isNegative ? theme.colorScheme.error : null,
+        ),
+      );
+    } else {
+      value = MoneyText(amount);
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
@@ -689,11 +716,7 @@ class _TotalRow extends StatelessWidget {
                   : theme.textTheme.bodyMedium,
             ),
           ),
-          MoneyText(
-            amount,
-            emphasise: emphatic,
-            style: emphatic ? theme.textTheme.titleMedium : null,
-          ),
+          value,
         ],
       ),
     );

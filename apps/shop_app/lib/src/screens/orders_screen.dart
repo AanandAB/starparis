@@ -69,7 +69,8 @@ class OrdersScreen extends ConsumerWidget {
               }
               return ListView.separated(
                 itemCount: rows.length,
-                separatorBuilder: (_, index) => const Divider(height: 1),
+                separatorBuilder: (_, index) =>
+                    const SizedBox(height: StarSpace.sm),
                 itemBuilder: (context, index) => _OrderRow(order: rows[index]),
               );
             },
@@ -97,60 +98,65 @@ class _OrderRow extends StatelessWidget {
     final pendingNumber = order.numberDisplay.startsWith('T-');
     final pendingUpload = order.version == 0;
 
-    return ListTile(
-      leading: SizedBox(
-        width: 76,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              order.numberDisplay,
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
-              ),
-            ),
-            if (pendingNumber)
+    return PressableCard(
+      onTap: () => showOrderSheet(context, order),
+      padding: EdgeInsets.zero,
+      child: ListTile(
+        leading: SizedBox(
+          width: 76,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
               Text(
-                'pending',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: StarColors.statusPaused,
+                order.numberDisplay,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontFeatures: const <FontFeature>[
+                    FontFeature.tabularFigures(),
+                  ],
                 ),
+              ),
+              if (pendingNumber)
+                Text(
+                  'pending',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: StarColors.statusPaused,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        title: Text(order.customerName ?? 'Customer'),
+        subtitle: Text(
+          <String>[
+            '${order.itemCount} item${order.itemCount == 1 ? '' : 's'}',
+            order.priority == 'normal' ? 'standard' : order.priority,
+            if (order.dueAt != null)
+              'due ${order.dueAt!.day}/${order.dueAt!.month}',
+          ].join(' · '),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: <Widget>[
+            MoneyText(Fils(order.totalFils), emphasise: true),
+            const SizedBox(height: 4),
+            if (pendingUpload)
+              const StatusChip(
+                label: 'Waiting to upload',
+                tone: StatusTone.paused,
+                icon: Icons.cloud_upload_outlined,
+              )
+            else
+              StatusChip(
+                label: _statusLabel(order.status),
+                tone: _statusTone(order.status),
               ),
           ],
         ),
       ),
-      title: Text(order.customerName ?? 'Customer'),
-      subtitle: Text(
-        <String>[
-          '${order.itemCount} item${order.itemCount == 1 ? '' : 's'}',
-          order.priority == 'normal' ? 'standard' : order.priority,
-          if (order.dueAt != null)
-            'due ${order.dueAt!.day}/${order.dueAt!.month}',
-        ].join(' · '),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      trailing: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: <Widget>[
-          MoneyText(Fils(order.totalFils), emphasise: true),
-          const SizedBox(height: 4),
-          if (pendingUpload)
-            const StatusChip(
-              label: 'Waiting to upload',
-              tone: StatusTone.paused,
-              icon: Icons.cloud_upload_outlined,
-            )
-          else
-            StatusChip(
-              label: _statusLabel(order.status),
-              tone: _statusTone(order.status),
-            ),
-        ],
-      ),
-      onTap: () => showOrderSheet(context, order),
     );
   }
 
