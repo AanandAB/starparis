@@ -35,6 +35,21 @@ class StarParisApp extends ConsumerWidget {
       theme: StarTheme.light(desktop: desktop),
       darkTheme: StarTheme.dark(desktop: desktop),
       themeMode: ref.watch(themeModeProvider),
+      // The shop's dense screens — screen headers, the board, price grids — break
+      // under a very large device font scale: a header button grows until it
+      // starves the title beside it, which then wraps one character per line.
+      // Cap the scale so the layout stays usable while still honouring a
+      // moderate accessibility bump (the design document asks for scalable text,
+      // so we never fully disable scaling — only its catastrophic tail).
+      builder: (context, child) {
+        const double maxScale = 1.3;
+        final media = MediaQuery.of(context);
+        if (media.textScaler.scale(1.0) <= maxScale) return child!;
+        return MediaQuery(
+          data: media.copyWith(textScaler: TextScaler.linear(maxScale)),
+          child: child!,
+        );
+      },
       locale: locale,
       supportedLocales: const <Locale>[Locale('en'), Locale('ar', 'AE')],
       localizationsDelegates: const <LocalizationsDelegate<Object>>[
