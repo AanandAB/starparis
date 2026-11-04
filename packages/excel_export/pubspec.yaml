@@ -1,0 +1,19 @@
+name: starparis_excel_export
+description: Excel (.xlsx) export — customer lists and other tabular reports. Pure Dart, no Flutter.
+publish_to: none
+version: 0.1.0
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  # The zip container for the .xlsx parts. Already a transitive dependency of
+  # package:pdf (via image 4.12.0, which pins archive to ^4.5.0), so matching
+  # that range resolves cleanly — unlike `excel`, whose xml range is disjoint
+  # from pdf's and which offers no freeze pane or auto-filter anyway.
+  archive: ^4.6.0
+
+dev_dependencies:
+  lints: ^6.1.0
+  test: ^1.25.0

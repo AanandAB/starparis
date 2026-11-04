@@ -12,6 +12,7 @@ workspace:
   - packages/sync_engine
   - packages/design_system
   - packages/documents
+  - packages/excel_export
   - apps/shop_app
 
 # Bundle SQLite3MultipleCiphers instead of plain SQLite, so the local database

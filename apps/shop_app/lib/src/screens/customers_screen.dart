@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:starparis_design/starparis_design.dart';
+import 'package:starparis_sync/starparis_sync.dart';
 
 import '../providers.dart';
 import '../sales/customer_sheet.dart';
+import '../sales/excel_export_service.dart';
 import 'new_customer_sheet.dart';
 
 /// The directory the counter actually uses: search by phone number first,
@@ -56,6 +58,12 @@ class CustomersScreen extends ConsumerWidget {
                 onPressed: () => showNewCustomerSheet(context),
                 icon: const Icon(Icons.person_add_alt_1_outlined, size: 18),
                 label: const Text('New customer'),
+              ),
+              const SizedBox(width: StarSpace.md),
+              OutlinedButton.icon(
+                onPressed: () => _exportCustomers(context, ref),
+                icon: const Icon(Icons.file_download_outlined, size: 18),
+                label: const Text('Export'),
               ),
             ],
           ),
@@ -121,5 +129,25 @@ class CustomersScreen extends ConsumerWidget {
         ),
       ],
     );
+  }
+}
+
+/// Writes the customers currently on screen to an .xlsx in the shop's
+/// documents folder and tells the counter where it went. Offline only: the
+/// rows come from the local database and nothing is fetched.
+Future<void> _exportCustomers(BuildContext context, WidgetRef ref) async {
+  // Capture the messenger before the first await so the snackbar is shown
+  // through a messenger that is still mounted.
+  final messenger = ScaffoldMessenger.of(context);
+  try {
+    final db = ref.read(bootstrapProvider).db;
+    final customers =
+        ref.read(customerResultsProvider).value ?? const <Customer>[];
+    final file = await exportCustomersToXlsx(db, customers);
+    messenger.showSnackBar(
+      SnackBar(content: Text('Customers saved: ${file.path}')),
+    );
+  } catch (error) {
+    messenger.showSnackBar(SnackBar(content: Text('$error')));
   }
 }
