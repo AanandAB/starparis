@@ -4,6 +4,19 @@ import 'package:starparis_domain/starparis_domain.dart';
 import 'package:starparis_pricing/pricing_engine.dart';
 import 'package:starparis_sync/starparis_sync.dart';
 
+/// Per-tier basis-point adjustments applied to the selling price. Negative is a
+/// discount (-1000 = 10% off), so a trade customer is quoted less than retail
+/// for the identical job. These rates belong in Settings later; the map is
+/// hardcoded for now so the counter keeps working until then.
+const Map<String, int> _tierAdjustmentBps = <String, int>{
+  'retail': 0,
+  'trade': -1000,
+};
+
+/// The basis-point adjustment for a customer tier. Unknown tiers price at
+/// retail, so an uncategorised customer is never silently discounted.
+int tierAdjustmentBpsFor(String tier) => _tierAdjustmentBps[tier] ?? 0;
+
 /// Bridges the local catalogue rows to the pure pricing engine.
 ///
 /// This is the only place that knows both shapes. Keeping the conversion here
@@ -98,6 +111,7 @@ class ProductPricer {
     MachineSpec? machine,
     List<FinishingOperation> operations = const <FinishingOperation>[],
     List<PriceBreak> priceBreaks = const <PriceBreak>[],
+    String customerTier = 'retail',
   }) {
     return PricingContext(
       priceBookVersion: priceBookVersion,
@@ -127,6 +141,7 @@ class ProductPricer {
       minOrderFils: product.minOrderFils,
       roundingStepFils: product.roundingStepFils,
       vatBps: vatBps,
+      tierAdjustmentBps: tierAdjustmentBpsFor(customerTier),
     );
   }
 
@@ -147,6 +162,7 @@ class ProductPricer {
     int sides = 1,
     List<String> finishes = const <String>[],
     Priority priority = Priority.normal,
+    String customerTier = 'retail',
   }) {
     final machine = _machineFor(product, machines);
     final chosenOperations = _operationsFor(product, operations);
@@ -174,6 +190,7 @@ class ProductPricer {
         machine: machine,
         operations: chosenOperations,
         priceBreaks: priceBreaks,
+        customerTier: customerTier,
       ),
     );
   }

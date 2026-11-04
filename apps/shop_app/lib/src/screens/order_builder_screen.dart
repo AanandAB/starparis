@@ -92,6 +92,17 @@ class _OrderBuilderScreenState extends ConsumerState<OrderBuilderScreen> {
         ? null
         : await bootstrap.db.materialByCode(product.materialCode!);
     final vat = await bootstrap.db.vatBps();
+    // A trade customer is quoted less than retail for the identical job. If no
+    // customer is chosen yet — or one with an uncategorised tier — the price
+    // stays at retail, so attaching a retail customer later never moves it.
+    final customers = ref.read(allCustomersProvider).value ?? const <Customer>[];
+    var customerTier = 'retail';
+    for (final customer in customers) {
+      if (customer.id == _customerId) {
+        customerTier = customer.tier;
+        break;
+      }
+    }
 
     try {
       final price = ProductPricer.price(
@@ -110,6 +121,7 @@ class _OrderBuilderScreenState extends ConsumerState<OrderBuilderScreen> {
         sides: _sides,
         finishes: _finishes.toList(),
         priority: _priority,
+        customerTier: customerTier,
       );
       if (!mounted || token != _pricingToken) return;
       setState(() {
@@ -287,6 +299,7 @@ class _OrderBuilderScreenState extends ConsumerState<OrderBuilderScreen> {
                     ],
                     onChanged: (value) {
                       setState(() => _customerId = value);
+                      _recalculate();
                     },
                   ),
           ),
