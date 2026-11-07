@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# One job per concern: a slow Flutter analyze must not block the fast Dart
+# packages, and a broken price formula must not hide a broken Worker test.
+
+jobs:
+  # Pure-Dart packages. design_system is NOT here — it is widget tests built on
+  # flutter_test, so it runs under `flutter test` in its own job below.
+  dart:
+    name: dart test — ${{ matrix.package }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - packages/pricing_engine
+          - packages/documents
+          - packages/domain
+          - packages/sync_engine
+          - packages/excel_export
+    steps:
+      - uses: actions/checkout@v4
+      # The Flutter SDK, not the bare Dart SDK: this is a Dart *workspace*
+      # (resolution: workspace), so `pub get` at the root must also resolve
+      # apps/shop_app and packages/design_system, both of which pull in the
+      # Flutter SDK. Without Flutter on PATH the root resolution fails.
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.3
+          channel: stable
+      - name: Resolve workspace
+        run: flutter pub get
+      - name: Test
+        run: dart test
+        working-directory: ${{ matrix.package }}
+
+  design-system:
+    name: flutter test — packages/design_system
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.3
+          channel: stable
+      - name: Resolve workspace
+        run: flutter pub get
+      - name: Test
+        run: flutter test
+        working-directory: packages/design_system
+
+  backend:
+    name: worker tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.3
+      - name: Install
+        run: bun install --frozen-lockfile
+        working-directory: backend/worker
+      # `bun run test` runs `vitest run` from package.json. The tests execute
+      # inside workerd against an isolated D1 (see vitest.config.ts), so no
+      # Cloudflare credentials are needed in CI.
+      - name: Test
+        run: bun run test
+        working-directory: backend/worker
+
+  flutter:
+    name: shop_app analyze + test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.3
+          channel: stable
+      - name: Resolve workspace
+        run: flutter pub get
+      - name: Analyze
+        run: flutter analyze
+        working-directory: apps/shop_app
+      - name: Test
+        run: flutter test
+        working-directory: apps/shop_app

@@ -19,12 +19,133 @@ import 'order_builder_screen.dart';
 
 /// Today's work, newest first. The job number is the biggest thing on the row
 /// because it is the only thing a customer ever says on the phone.
-class OrdersScreen extends ConsumerWidget {
+class OrdersScreen extends ConsumerStatefulWidget {
   const OrdersScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<OrdersScreen> createState() => _OrdersScreenState();
+}
+
+class _OrdersScreenState extends ConsumerState<OrdersScreen> {
+  bool _selecting = false;
+  final Set<String> _selected = <String>{};
+  bool _busy = false;
+
+  void _toggleSelected(String id) {
+    setState(() {
+      if (!_selected.add(id)) _selected.remove(id);
+    });
+  }
+
+  void _toggleSelectAll(List<Order> rows) {
+    setState(() {
+      if (_selected.length == rows.length) {
+        _selected.clear();
+      } else {
+        _selected
+          ..clear()
+          ..addAll(rows.map((order) => order.id));
+      }
+    });
+  }
+
+  void _exitSelection() {
+    setState(() {
+      _selecting = false;
+      _selected.clear();
+    });
+  }
+
+  Future<void> _bulkStatus(List<Order> rows, String status) async {
+    final ids = rows
+        .where((order) => _selected.contains(order.id))
+        .map((order) => order.id)
+        .toList();
+    if (ids.isEmpty) return;
+    setState(() => _busy = true);
+    final messenger = ScaffoldMessenger.of(context);
+    final label = _orderStatus(status).label;
+    try {
+      final db = ref.read(bootstrapProvider).db;
+      for (final id in ids) {
+        await db.setOrderStatus(id: id, status: status);
+      }
+      unawaited(
+        ref.read(bootstrapProvider).engine?.syncNow() ?? Future<void>.value(),
+      );
+      if (!mounted) return;
+      _exitSelection();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Moved ${ids.length} ${ids.length == 1 ? 'order' : 'orders'} to $label.',
+          ),
+        ),
+      );
+    } catch (error) {
+      messenger.showSnackBar(SnackBar(content: Text('$error')));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _bulkDelete(List<Order> rows) async {
+    final ids = rows
+        .where((order) => _selected.contains(order.id))
+        .map((order) => order.id)
+        .toList();
+    if (ids.isEmpty) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete these orders?'),
+        content: Text(
+          '${ids.length} ${ids.length == 1 ? 'order' : 'orders'} will be removed from '
+          'this device and the server. A mistake is not recoverable from the counter.',
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _busy = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(bootstrapProvider).db.deleteOrders(ids: ids);
+      unawaited(
+        ref.read(bootstrapProvider).engine?.syncNow() ?? Future<void>.value(),
+      );
+      if (!mounted) return;
+      _exitSelection();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Deleted ${ids.length} ${ids.length == 1 ? 'order' : 'orders'}.',
+          ),
+        ),
+      );
+    } catch (error) {
+      messenger.showSnackBar(SnackBar(content: Text('$error')));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final orders = ref.watch(ordersProvider);
+    final rows = orders.value ?? const <Order>[];
+    final allSelected = rows.isNotEmpty && _selected.length == rows.length;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -38,17 +159,43 @@ class OrdersScreen extends ConsumerWidget {
           ),
           child: ScreenHeader(
             title: 'Orders',
-            subtitle: 'Everything saved on this device, including work still waiting to upload.',
-            actions: <Widget>[
-              FilledButton.icon(
-                onPressed: () => openOrderBuilder(context),
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('New order'),
-              ),
-            ],
+            subtitle: _selecting
+                ? '${_selected.length} of ${rows.length} selected'
+                : 'Everything saved on this device, including work still waiting to upload.',
+            actions: _selecting
+                ? <Widget>[
+                    OutlinedButton.icon(
+                      onPressed: _busy ? null : _exitSelection,
+                      icon: const Icon(Icons.close, size: 18),
+                      label: const Text('Cancel'),
+                    ),
+                  ]
+                : <Widget>[
+                    OutlinedButton.icon(
+                      onPressed: () => setState(() => _selecting = true),
+                      icon: const Icon(Icons.checklist, size: 18),
+                      label: const Text('Select'),
+                    ),
+                    FilledButton.icon(
+                      onPressed: () => openOrderBuilder(context),
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('New order'),
+                    ),
+                  ],
           ),
         ),
-        const Divider(height: 1),
+        if (_selecting) ...<Widget>[
+          _SelectionBar(
+            selectedCount: _selected.length,
+            totalCount: rows.length,
+            allSelected: allSelected,
+            busy: _busy,
+            onToggleSelectAll: () => _toggleSelectAll(rows),
+            onStatus: (status) => _bulkStatus(rows, status),
+            onDelete: () => _bulkDelete(rows),
+          ),
+          const Divider(height: 1),
+        ],
         Expanded(
           child: orders.when(
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -71,7 +218,15 @@ class OrdersScreen extends ConsumerWidget {
                 itemCount: rows.length,
                 separatorBuilder: (_, index) =>
                     const SizedBox(height: StarSpace.sm),
-                itemBuilder: (context, index) => _OrderRow(order: rows[index]),
+                itemBuilder: (context, index) {
+                  final order = rows[index];
+                  return _OrderRow(
+                    order: order,
+                    selecting: _selecting,
+                    selected: _selected.contains(order.id),
+                    onToggle: () => _toggleSelected(order.id),
+                  );
+                },
               );
             },
           ),
@@ -88,43 +243,65 @@ Future<void> openOrderBuilder(BuildContext context) {
 }
 
 class _OrderRow extends StatelessWidget {
-  const _OrderRow({required this.order});
+  const _OrderRow({
+    required this.order,
+    this.selecting = false,
+    this.selected = false,
+    this.onToggle,
+  });
 
   final Order order;
+  final bool selecting;
+  final bool selected;
+  final VoidCallback? onToggle;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final pendingNumber = order.numberDisplay.startsWith('T-');
     final pendingUpload = order.version == 0;
+    final status = _orderStatus(order.status);
 
     return PressableCard(
-      onTap: () => showOrderSheet(context, order),
+      onTap: selecting ? onToggle : () => showOrderSheet(context, order),
       padding: EdgeInsets.zero,
       child: ListTile(
-        leading: SizedBox(
-          width: 76,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                order.numberDisplay,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontFeatures: const <FontFeature>[
-                    FontFeature.tabularFigures(),
-                  ],
+        leading: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            if (selecting)
+              Padding(
+                padding: const EdgeInsets.only(right: StarSpace.xs),
+                child: Checkbox(
+                  value: selected,
+                  onChanged: (_) => onToggle?.call(),
                 ),
               ),
-              if (pendingNumber)
-                Text(
-                  'pending',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: StarColors.statusPaused,
+            SizedBox(
+              width: 76,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    order.numberDisplay,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontFeatures: const <FontFeature>[
+                        FontFeature.tabularFigures(),
+                      ],
+                    ),
                   ),
-                ),
-            ],
-          ),
+                  if (pendingNumber)
+                    Text(
+                      'pending',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: StarColors.statusPaused,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
         ),
         title: Text(order.customerName ?? 'Customer'),
         subtitle: Text(
@@ -151,30 +328,190 @@ class _OrderRow extends StatelessWidget {
               )
             else
               StatusChip(
-                label: _statusLabel(order.status),
-                tone: _statusTone(order.status),
+                label: status.label,
+                tone: status.tone,
+                icon: status.icon,
               ),
           ],
         ),
       ),
     );
   }
+}
 
-  static String _statusLabel(String status) => switch (status) {
-    'draft' => 'Draft',
-    'confirmed' => 'Confirmed',
-    'in_production' => 'In production',
-    'ready' => 'Ready',
-    'delivered' => 'Delivered',
-    _ => status,
-  };
+/// How an order status is shown: a word, a tone and an icon. Colour is never
+/// the only signal, so the chip carries all three.
+typedef _OrderStatus = ({String label, StatusTone tone, IconData icon});
 
-  static StatusTone _statusTone(String status) => switch (status) {
-    'ready' => StatusTone.done,
-    'in_production' => StatusTone.active,
-    'delivered' => StatusTone.done,
-    _ => StatusTone.neutral,
-  };
+_OrderStatus _orderStatus(String status) => switch (status) {
+  'draft' => (label: 'Draft', tone: StatusTone.neutral, icon: Icons.edit_note),
+  'confirmed' => (
+    label: 'Confirmed',
+    tone: StatusTone.active,
+    icon: Icons.check_circle_outline,
+  ),
+  'in_production' => (
+    label: 'In production',
+    tone: StatusTone.active,
+    icon: Icons.play_circle_outline,
+  ),
+  'ready' => (
+    label: 'Ready',
+    tone: StatusTone.done,
+    icon: Icons.inventory_2_outlined,
+  ),
+  'delivered' => (
+    label: 'Delivered',
+    tone: StatusTone.done,
+    icon: Icons.local_shipping_outlined,
+  ),
+  'converted' => (
+    label: 'Converted',
+    tone: StatusTone.paused,
+    icon: Icons.swap_horiz,
+  ),
+  _ => (label: status, tone: StatusTone.neutral, icon: Icons.circle_outlined),
+};
+
+/// The statuses the bulk menu offers, in the order the shop moves through them.
+const List<String> _bulkStatuses = <String>[
+  'draft',
+  'confirmed',
+  'in_production',
+  'ready',
+  'delivered',
+];
+
+/// The bar shown while orders are selected: select-all, a status menu and
+/// delete. The destructive actions stay disabled until something is selected,
+/// so a tap can never act on an empty set.
+class _SelectionBar extends StatelessWidget {
+  const _SelectionBar({
+    required this.selectedCount,
+    required this.totalCount,
+    required this.allSelected,
+    required this.busy,
+    required this.onToggleSelectAll,
+    required this.onStatus,
+    required this.onDelete,
+  });
+
+  final int selectedCount;
+  final int totalCount;
+  final bool allSelected;
+  final bool busy;
+  final VoidCallback onToggleSelectAll;
+  final ValueChanged<String> onStatus;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final enabled = selectedCount > 0 && !busy;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        StarSpace.lg,
+        StarSpace.xs,
+        StarSpace.lg,
+        StarSpace.xs,
+      ),
+      child: Row(
+        children: <Widget>[
+          TextButton.icon(
+            onPressed: busy ? null : onToggleSelectAll,
+            icon: Icon(
+              allSelected ? Icons.check_box : Icons.check_box_outline_blank,
+              size: 18,
+            ),
+            label: Text(allSelected ? 'Clear' : 'Select all'),
+          ),
+          const SizedBox(width: StarSpace.sm),
+          Text(
+            '$selectedCount of $totalCount selected',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const Spacer(),
+          _StatusMenu(enabled: enabled, onStatus: onStatus),
+          const SizedBox(width: StarSpace.sm),
+          OutlinedButton.icon(
+            onPressed: enabled ? onDelete : null,
+            icon: const Icon(Icons.delete_outline, size: 18),
+            label: const Text('Delete'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: theme.colorScheme.error,
+              side: enabled
+                  ? BorderSide(
+                      color: theme.colorScheme.error.withValues(alpha: 0.6),
+                    )
+                  : null,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The "Set status" popup. Its trigger is a hand-rolled pill rather than a
+/// button because a button inside [PopupMenuButton.child] swallows the tap and
+/// the menu never opens.
+class _StatusMenu extends StatelessWidget {
+  const _StatusMenu({required this.enabled, required this.onStatus});
+
+  final bool enabled;
+  final ValueChanged<String> onStatus;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final foreground = enabled
+        ? theme.colorScheme.onSurface
+        : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6);
+
+    return PopupMenuButton<String>(
+      enabled: enabled,
+      tooltip: 'Set status',
+      onSelected: onStatus,
+      itemBuilder: (context) => <PopupMenuEntry<String>>[
+        for (final status in _bulkStatuses)
+          PopupMenuItem<String>(
+            value: status,
+            child: StatusChip(
+              label: _orderStatus(status).label,
+              tone: _orderStatus(status).tone,
+              icon: _orderStatus(status).icon,
+            ),
+          ),
+      ],
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: StarSpace.md,
+          vertical: 10,
+        ),
+        decoration: BoxDecoration(
+          border: Border.all(color: theme.colorScheme.outlineVariant),
+          borderRadius: BorderRadius.circular(StarRadius.field),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(Icons.swap_horiz, size: 18, color: foreground),
+            const SizedBox(width: StarSpace.sm),
+            Text(
+              'Set status',
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: foreground,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 Future<void> showOrderSheet(BuildContext context, Order order) {
@@ -393,10 +730,7 @@ class _OrderSheetState extends ConsumerState<_OrderSheet> {
           ),
           const SizedBox(height: StarSpace.md),
           _SummaryRow(label: 'Customer', value: order.customerName ?? '-'),
-          _SummaryRow(
-            label: 'Status',
-            value: _OrderRow._statusLabel(order.status),
-          ),
+          _SummaryRow(label: 'Status', value: _orderStatus(order.status).label),
           _SummaryRow(label: 'Priority', value: order.priority),
           if (order.dueAt != null)
             _SummaryRow(

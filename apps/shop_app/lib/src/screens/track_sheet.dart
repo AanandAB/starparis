@@ -75,32 +75,38 @@ class _TrackDialogState extends ConsumerState<_TrackDialog> {
               padding: const EdgeInsets.fromLTRB(
                 StarSpace.md,
                 StarSpace.md,
-                StarSpace.sm,
+                StarSpace.md,
                 0,
               ),
-              child: Row(
-                children: <Widget>[
-                  Expanded(
-                    child: TextField(
-                      controller: _query,
-                      focusNode: _focus,
-                      onChanged: _changed,
-                      textInputAction: TextInputAction.search,
-                      style: theme.textTheme.titleMedium,
-                      decoration: const InputDecoration(
-                        hintText: 'Job number, invoice, phone or customer',
-                        prefixIcon: Icon(Icons.search),
-                        border: InputBorder.none,
-                        filled: false,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: 'Close',
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
+              child: ScreenHeader(
+                title: 'Track',
+                subtitle: 'A job number, invoice or phone — answered from this device.',
+                trailing: IconButton(
+                  tooltip: 'Close',
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                StarSpace.md,
+                0,
+                StarSpace.md,
+                StarSpace.sm,
+              ),
+              child: TextField(
+                controller: _query,
+                focusNode: _focus,
+                onChanged: _changed,
+                textInputAction: TextInputAction.search,
+                style: theme.textTheme.titleMedium,
+                decoration: const InputDecoration(
+                  hintText: 'Job number, invoice, phone or customer',
+                  prefixIcon: Icon(Icons.search),
+                  border: InputBorder.none,
+                  filled: false,
+                ),
               ),
             ),
             const Divider(height: 1),

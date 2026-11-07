@@ -74,6 +74,12 @@ class _ProductionScreenState extends ConsumerState<ProductionScreen> {
     );
     final vendorJobs = ref.watch(vendorJobsProvider);
 
+    // One "N open" figure beside the mode switch, whatever the lens: the eye
+    // sees "Board — 14 open" in one place.
+    final openCount = mode == _BoardMode.vendors
+        ? vendorJobs.value?.length
+        : tasks.value?.length;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -84,51 +90,45 @@ class _ProductionScreenState extends ConsumerState<ProductionScreen> {
             StarSpace.lg,
             StarSpace.sm,
           ),
-          child: Row(
-            children: <Widget>[
-              Text(
-                'Production',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(width: StarSpace.md),
-              SegmentedButton<_BoardMode>(
-                segments: const <ButtonSegment<_BoardMode>>[
-                  ButtonSegment<_BoardMode>(
-                    value: _BoardMode.board,
-                    label: Text('Board'),
+          child: ScreenHeader(
+            title: 'Production',
+            subtitle: 'Everything still in the shop, by stage — or out with a vendor.',
+            actions: <Widget>[
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  SegmentedButton<_BoardMode>(
+                    segments: const <ButtonSegment<_BoardMode>>[
+                      ButtonSegment<_BoardMode>(
+                        value: _BoardMode.board,
+                        label: Text('Board'),
+                      ),
+                      ButtonSegment<_BoardMode>(
+                        value: _BoardMode.mine,
+                        label: Text('My work'),
+                      ),
+                      ButtonSegment<_BoardMode>(
+                        value: _BoardMode.vendors,
+                        label: Text('Vendors'),
+                      ),
+                    ],
+                    selected: <_BoardMode>{mode},
+                    onSelectionChanged: (selection) =>
+                        setState(() => _mode = selection.first),
+                    showSelectedIcon: false,
+                    style: const ButtonStyle(
+                      visualDensity: VisualDensity.compact,
+                    ),
                   ),
-                  ButtonSegment<_BoardMode>(
-                    value: _BoardMode.mine,
-                    label: Text('My work'),
-                  ),
-                  ButtonSegment<_BoardMode>(
-                    value: _BoardMode.vendors,
-                    label: Text('Vendors'),
-                  ),
+                  if (openCount != null) ...<Widget>[
+                    const SizedBox(width: StarSpace.md),
+                    Text(
+                      '$openCount open',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
                 ],
-                selected: <_BoardMode>{mode},
-                onSelectionChanged: (selection) =>
-                    setState(() => _mode = selection.first),
-                showSelectedIcon: false,
-                style: const ButtonStyle(visualDensity: VisualDensity.compact),
               ),
-              const Spacer(),
-              if (mode == _BoardMode.vendors)
-                vendorJobs.maybeWhen(
-                  data: (rows) => Text(
-                    '${rows.length} open',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  orElse: () => const SizedBox.shrink(),
-                )
-              else
-                tasks.maybeWhen(
-                  data: (rows) => Text(
-                    '${rows.length} open',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  orElse: () => const SizedBox.shrink(),
-                ),
             ],
           ),
         ),
@@ -141,7 +141,8 @@ class _ProductionScreenState extends ConsumerState<ProductionScreen> {
                   orders: ref.watch(ordersProvider),
                 )
               : tasks.when(
-                  loading: () => const Center(child: CircularProgressIndicator()),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
                   error: (error, _) =>
                       Center(child: Text('Could not read tasks: $error')),
                   data: (rows) {
@@ -178,17 +179,17 @@ const List<String> _vendorStatusOrder = <String>['sent', 'received', 'draft'];
 typedef _VendorStatus = ({String label, StatusTone tone, IconData icon});
 
 _VendorStatus _vendorStatus(String status) => switch (status) {
-  'draft' => (
-    label: 'Draft',
-    tone: StatusTone.neutral,
-    icon: Icons.edit_note,
-  ),
+  'draft' => (label: 'Draft', tone: StatusTone.neutral, icon: Icons.edit_note),
   'sent' => (
     label: 'With vendor',
     tone: StatusTone.active,
     icon: Icons.outbox_outlined,
   ),
-  'received' => (label: 'Back', tone: StatusTone.paused, icon: Icons.inbox_outlined),
+  'received' => (
+    label: 'Back',
+    tone: StatusTone.paused,
+    icon: Icons.inbox_outlined,
+  ),
   'closed' => (
     label: 'Closed',
     tone: StatusTone.done,
@@ -227,8 +228,7 @@ class _VendorsView extends StatelessWidget {
           return const EmptyState(
             icon: Icons.inventory_2_outlined,
             title: 'Nothing out with vendors',
-            message:
-                'Out-sourced jobs appear here once an item is sent to a vendor.',
+            message: 'Out-sourced jobs appear here once an item is sent to a vendor.',
           );
         }
 
@@ -239,8 +239,7 @@ class _VendorsView extends StatelessWidget {
             vendor.id: vendor,
         };
         final orderById = <String, Order>{
-          for (final order in orders.value ?? const <Order>[])
-            order.id: order,
+          for (final order in orders.value ?? const <Order>[]) order.id: order,
         };
 
         // Fixed order first, then any status the query returns that we did not

@@ -18,7 +18,6 @@ class PriceBookScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final rules = ref.watch(allRulesProvider);
     final products = ref.watch(productsProvider).value ?? const <Product>[];
     final version = ref.watch(priceBookVersionProvider).value ?? 0;
@@ -33,22 +32,10 @@ class PriceBookScreen extends ConsumerWidget {
             StarSpace.lg,
             StarSpace.md,
           ),
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text('Price book', style: theme.textTheme.titleLarge),
-                    Text(
-                      'Version $version · changes apply to new orders only',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+          child: ScreenHeader(
+            title: 'Price book',
+            subtitle: 'Version $version · changes apply to new orders only',
+            actions: <Widget>[
               OutlinedButton.icon(
                 onPressed: () => _showBulkAdjust(context, ref, products),
                 icon: const Icon(Icons.percent, size: 18),

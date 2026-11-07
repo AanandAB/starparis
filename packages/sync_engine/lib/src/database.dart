@@ -1490,7 +1490,6 @@ class LocalDatabase extends _$LocalDatabase {
 
   // --- catalogue rows ------------------------------------------------------
 
-
   /// Machines and operations arrive with the catalogue and are replaced whole,
   /// like prices: a machine the server stopped sending must stop being priced.
   MachinesCompanion _machineFromServer(Map<String, Object?> row) =>
@@ -3490,7 +3489,10 @@ class LocalDatabase extends _$LocalDatabase {
 
   /// Moves a vendor job along. The same transitions the server enforces are
   /// offered here, so the button a user can press never gets refused.
-  Future<void> transitionVendorJob({required VendorJob job, required String to}) async {
+  Future<void> transitionVendorJob({
+    required VendorJob job,
+    required String to,
+  }) async {
     const allowed = <String, List<String>>{
       'draft': <String>['sent', 'cancelled'],
       'sent': <String>['received', 'cancelled'],
@@ -3527,9 +3529,7 @@ class LocalDatabase extends _$LocalDatabase {
   /// built from these two lists plus what each invoice still owes.
   Stream<List<Invoice>> watchInvoicesForCustomer(String customerId) {
     return (select(invoices)
-          ..where(
-            (t) => t.customerId.equals(customerId) & t.deletedAt.isNull(),
-          )
+          ..where((t) => t.customerId.equals(customerId) & t.deletedAt.isNull())
           ..orderBy(<OrderClauseGenerator<$InvoicesTable>>[
             (t) => OrderingTerm.desc(t.issuedAt),
           ]))
@@ -3540,9 +3540,7 @@ class LocalDatabase extends _$LocalDatabase {
   /// balance (`amount_fils - allocated_fils`) alongside what is owed.
   Stream<List<CustomerDeposit>> watchDepositsForCustomer(String customerId) {
     return (select(customerDeposits)
-          ..where(
-            (t) => t.customerId.equals(customerId) & t.deletedAt.isNull(),
-          )
+          ..where((t) => t.customerId.equals(customerId) & t.deletedAt.isNull())
           ..orderBy(<OrderClauseGenerator<$CustomerDepositsTable>>[
             (t) => OrderingTerm.desc(t.createdAt),
           ]))
@@ -3551,9 +3549,7 @@ class LocalDatabase extends _$LocalDatabase {
 
   Stream<List<Order>> watchOrdersForCustomer(String customerId) {
     return (select(orders)
-          ..where(
-            (t) => t.customerId.equals(customerId) & t.deletedAt.isNull(),
-          )
+          ..where((t) => t.customerId.equals(customerId) & t.deletedAt.isNull())
           ..orderBy(<OrderClauseGenerator<$OrdersTable>>[
             (t) => OrderingTerm.desc(t.createdAt),
           ]))
@@ -3743,6 +3739,70 @@ class LocalDatabase extends _$LocalDatabase {
     });
 
     return orderId;
+  }
+
+  /// Moves an order to a new status locally and queues the patch.
+  ///
+  /// The order lifecycle (draft → confirmed → in_production → ready →
+  /// delivered) has no state machine the way tasks do, so any of those statuses
+  /// is a legal write; the Worker accepts the field as-is. The local row is
+  /// updated immediately so the list never shows a stale status while the patch
+  /// waits for a connection.
+  Future<void> setOrderStatus({
+    required String id,
+    required String status,
+  }) async {
+    final order = await orderById(id);
+    if (order == null) {
+      throw StateError('Order $id not found');
+    }
+    final now = DateTime.now().toUtc();
+    await transaction(() async {
+      await (update(orders)..where((t) => t.id.equals(id))).write(
+        OrdersCompanion(
+          status: Value(status),
+          updatedAt: Value(now),
+          version: Value(order.version + 1),
+        ),
+      );
+      await _enqueue(
+        entity: 'orders',
+        rowId: id,
+        op: 'patch',
+        baseVersion: order.version,
+        fields: <String, Object?>{'status': status},
+      );
+    });
+  }
+
+  /// Soft-deletes orders locally and queues a delete for each.
+  ///
+  /// A mistake is a void, not a hard row removal, matching the soft-delete rule
+  /// everywhere else: the row is hidden on this device and the server sets
+  /// `deleted_at` on the next push, so the record is never destroyed.
+  Future<void> deleteOrders({required List<String> ids}) async {
+    if (ids.isEmpty) return;
+    final now = DateTime.now().toUtc();
+    await transaction(() async {
+      for (final id in ids) {
+        final order = await orderById(id);
+        if (order == null || order.deletedAt != null) continue;
+        await (update(orders)..where((t) => t.id.equals(id))).write(
+          OrdersCompanion(
+            deletedAt: Value(now),
+            updatedAt: Value(now),
+            version: Value(order.version + 1),
+          ),
+        );
+        await _enqueue(
+          entity: 'orders',
+          rowId: id,
+          op: 'delete',
+          baseVersion: order.version,
+          fields: const <String, Object?>{},
+        );
+      }
+    });
   }
 
   // -------------------------------------------------------------------------

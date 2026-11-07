@@ -1,0 +1,73 @@
+name: Daily D1 backup
+
+# Exports the remote D1 databases to a workflow artifact once a day.
+#
+# Why scheduled rather than manual: a restore window is not a backup — the value
+# is in the export existing before it is needed, on a clock nobody must remember
+# to wind (docs/backup.md).
+#
+# Required repository secrets — set once, from a machine with `gh` logged in
+# against this repo. The values are the ones in .env.local (git-ignored, never
+# committed). Give the job a token scoped to D1 read/export only.
+#   gh secret set CF_ACCOUNT_ID --body "YOUR_CLOUDFLARE_ACCOUNT_ID"
+#   gh secret set CF_API_TOKEN  --body "YOUR_CLOUDFLARE_API_TOKEN"
+#
+# Retention tradeoff: the export lands as a GitHub Actions artifact and is
+# deleted after `retention-days` below. An artifact is NOT durable off-platform
+# storage, so this is a short-term safety net for a failed restore — not the
+# 90-day off-platform copy docs/backup.md describes. For anything that must
+# survive an account lockout, download the artifact and copy it to the shop's
+# Drive.
+
+on:
+  schedule:
+    # 02:15 UTC daily — off the shop's working hours (UTC+4). GitHub may delay
+    # scheduled runs under load; that is acceptable for a daily export.
+    - cron: '15 2 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # tools/backup_d1.py invokes `bunx wrangler` from backend/worker, so the
+      # pinned wrangler dependency must be installed before the export runs.
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.3
+
+      - name: Install wrangler
+        run: bun install --frozen-lockfile
+        working-directory: backend/worker
+
+      # backup_d1.py reads CF_ACCOUNT_ID / CF_API_TOKEN from .env.local, which
+      # does not exist in CI. Recreate it from secrets via the environment so
+      # the values never appear in the shell command line or the logs.
+      - name: Provide Cloudflare credentials
+        run: |
+          printf 'CF_ACCOUNT_ID=%s\nCF_API_TOKEN=%s\n' \
+            "$CF_ACCOUNT_ID" "$CF_API_TOKEN" > .env.local
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+
+      - name: Export D1 databases
+        run: python tools/backup_d1.py
+
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: d1-backup
+          path: backups/
+          retention-days: 14
+          if-no-files-found: error

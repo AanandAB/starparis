@@ -79,22 +79,29 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         return ListView(
           padding: const EdgeInsets.all(StarSpace.lg),
           children: <Widget>[
-            Row(
-              children: <Widget>[
-                Text('Reports', style: theme.textTheme.headlineSmall),
-                const SizedBox(width: StarSpace.lg),
-                IconButton(
-                  tooltip: 'Previous month',
-                  onPressed: () => _move(-1),
-                  icon: const Icon(Icons.chevron_left),
+            ScreenHeader(
+              title: 'Reports',
+              subtitle: 'Read from the server — these figures cover every branch and need a connection.',
+              actions: <Widget>[
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    IconButton(
+                      tooltip: 'Previous month',
+                      onPressed: () => _move(-1),
+                      icon: const Icon(Icons.chevron_left),
+                    ),
+                    Text(
+                      _monthLabel(_month),
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    IconButton(
+                      tooltip: 'Next month',
+                      onPressed: () => _move(1),
+                      icon: const Icon(Icons.chevron_right),
+                    ),
+                  ],
                 ),
-                Text(_monthLabel(_month), style: theme.textTheme.titleMedium),
-                IconButton(
-                  tooltip: 'Next month',
-                  onPressed: () => _move(1),
-                  icon: const Icon(Icons.chevron_right),
-                ),
-                const Spacer(),
                 TextButton.icon(
                   onPressed: () => setState(() {
                     _report = _load();
@@ -105,14 +112,6 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: StarSpace.xs),
-            Text(
-              'Read from the server — these figures cover every branch and need a connection.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: StarSpace.lg),
             if (snapshot.connectionState == ConnectionState.waiting)
               const Padding(
                 padding: EdgeInsets.all(StarSpace.xl),

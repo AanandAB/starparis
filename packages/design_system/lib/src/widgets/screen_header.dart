@@ -15,6 +15,7 @@ class ScreenHeader extends StatelessWidget {
     this.subtitle,
     this.actions = const <Widget>[],
     this.trailing,
+    this.onBack,
   });
 
   final String title;
@@ -23,6 +24,11 @@ class ScreenHeader extends StatelessWidget {
 
   /// Sits on the opposite edge from the title, for a search field or a count.
   final Widget? trailing;
+
+  /// When set, a back button is drawn before the title — the pushed screens
+  /// (the order builder) need one, the tab screens do not, and both must keep
+  /// the same title weight and padding.
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +39,15 @@ class ScreenHeader extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          if (onBack != null)
+            Padding(
+              padding: const EdgeInsets.only(right: StarSpace.xs, top: 2),
+              child: IconButton(
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                onPressed: onBack,
+                icon: const Icon(Icons.arrow_back),
+              ),
+            ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

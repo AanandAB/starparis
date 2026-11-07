@@ -95,7 +95,8 @@ class _OrderBuilderScreenState extends ConsumerState<OrderBuilderScreen> {
     // A trade customer is quoted less than retail for the identical job. If no
     // customer is chosen yet — or one with an uncategorised tier — the price
     // stays at retail, so attaching a retail customer later never moves it.
-    final customers = ref.read(allCustomersProvider).value ?? const <Customer>[];
+    final customers =
+        ref.read(allCustomersProvider).value ?? const <Customer>[];
     var customerTier = 'retail';
     for (final customer in customers) {
       if (customer.id == _customerId) {
@@ -267,262 +268,273 @@ class _OrderBuilderScreenState extends ConsumerState<OrderBuilderScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('New order')),
-      body: ListView(
-        padding: const EdgeInsets.all(StarSpace.lg),
-        children: <Widget>[
-          _Section(
-            title: 'Customer',
-            child: customers.isEmpty
-                ? Text(
-                    'Add a customer first — the counter finds them by phone number next time.',
-                    style: theme.textTheme.bodySmall,
-                  )
-                : DropdownButtonFormField<String>(
-                    initialValue: _customerId,
-                    isExpanded: true,
-                    decoration: const InputDecoration(
-                      prefixIcon: Icon(Icons.person_outline),
-                    ),
-                    items: <DropdownMenuItem<String>>[
-                      for (final customer in customers)
-                        DropdownMenuItem<String>(
-                          value: customer.id,
-                          child: Text(
-                            customer.company == null ||
-                                    customer.company!.isEmpty
-                                ? customer.name
-                                : '${customer.name} · ${customer.company}',
-                            overflow: TextOverflow.ellipsis,
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(StarSpace.lg),
+          children: <Widget>[
+            ScreenHeader(
+              title: 'New order',
+              subtitle:
+                  'Priced on this device — a repeat order in under a minute.',
+              onBack: () => Navigator.of(context).maybePop(),
+            ),
+            _Section(
+              title: 'Customer',
+              child: customers.isEmpty
+                  ? Text(
+                      'Add a customer first — the counter finds them by phone number next time.',
+                      style: theme.textTheme.bodySmall,
+                    )
+                  : DropdownButtonFormField<String>(
+                      initialValue: _customerId,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.person_outline),
+                      ),
+                      items: <DropdownMenuItem<String>>[
+                        for (final customer in customers)
+                          DropdownMenuItem<String>(
+                            value: customer.id,
+                            child: Text(
+                              customer.company == null ||
+                                      customer.company!.isEmpty
+                                  ? customer.name
+                                  : '${customer.name} · ${customer.company}',
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                        ),
-                    ],
-                    onChanged: (value) {
-                      setState(() => _customerId = value);
-                      _recalculate();
-                    },
-                  ),
-          ),
-          _Section(
-            title: 'Product',
-            child: products.isEmpty
-                ? Text(
-                    'No price book on this device yet. Connect once and it downloads automatically.',
-                    style: theme.textTheme.bodySmall,
-                  )
-                : Wrap(
+                      ],
+                      onChanged: (value) {
+                        setState(() => _customerId = value);
+                        _recalculate();
+                      },
+                    ),
+            ),
+            _Section(
+              title: 'Product',
+              child: products.isEmpty
+                  ? Text(
+                      'No price book on this device yet. Connect once and it downloads automatically.',
+                      style: theme.textTheme.bodySmall,
+                    )
+                  : Wrap(
+                      spacing: StarSpace.sm,
+                      runSpacing: StarSpace.sm,
+                      children: <Widget>[
+                        for (final product in products)
+                          ChoiceChip(
+                            label: Text(product.nameEn),
+                            selected: _product?.id == product.id,
+                            onSelected: (_) => _selectProduct(product),
+                          ),
+                      ],
+                    ),
+            ),
+            if (_product != null) ...<Widget>[
+              if (ProductPricer.sizes(_product!).isNotEmpty)
+                _Section(
+                  title: 'Finished size',
+                  child: Wrap(
                     spacing: StarSpace.sm,
                     runSpacing: StarSpace.sm,
                     children: <Widget>[
-                      for (final product in products)
+                      for (final size in ProductPricer.sizes(_product!))
                         ChoiceChip(
-                          label: Text(product.nameEn),
-                          selected: _product?.id == product.id,
-                          onSelected: (_) => _selectProduct(product),
-                        ),
-                    ],
-                  ),
-          ),
-          if (_product != null) ...<Widget>[
-            if (ProductPricer.sizes(_product!).isNotEmpty)
-              _Section(
-                title: 'Finished size',
-                child: Wrap(
-                  spacing: StarSpace.sm,
-                  runSpacing: StarSpace.sm,
-                  children: <Widget>[
-                    for (final size in ProductPricer.sizes(_product!))
-                      ChoiceChip(
-                        label: Text(size.label),
-                        selected: _size?.code == size.code,
-                        onSelected: (_) {
-                          setState(() => _size = size);
-                          _recalculate();
-                        },
-                      ),
-                  ],
-                ),
-              ),
-            if (_product!.kind == 'sheet')
-              _Section(
-                title: 'Sides',
-                child: SegmentedButton<int>(
-                  segments: const <ButtonSegment<int>>[
-                    ButtonSegment<int>(value: 1, label: Text('Single')),
-                    ButtonSegment<int>(value: 2, label: Text('Double')),
-                  ],
-                  selected: <int>{_sides},
-                  onSelectionChanged: (selection) {
-                    setState(() => _sides = selection.first);
-                    _recalculate();
-                  },
-                ),
-              ),
-            if (ProductPricer.finishes(_product!).isNotEmpty)
-              _Section(
-                title: 'Finishing',
-                child: Wrap(
-                  spacing: StarSpace.sm,
-                  runSpacing: StarSpace.sm,
-                  children: <Widget>[
-                    for (final finish in ProductPricer.finishes(_product!))
-                      FilterChip(
-                        label: Text(finish.label),
-                        selected: _finishes.contains(finish.code),
-                        onSelected: (selected) {
-                          setState(() {
-                            if (selected) {
-                              _finishes.add(finish.code);
-                            } else {
-                              _finishes.remove(finish.code);
-                            }
-                          });
-                          _recalculate();
-                        },
-                      ),
-                  ],
-                ),
-              ),
-            _Section(
-              title: 'Quantity',
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Wrap(
-                    spacing: StarSpace.sm,
-                    children: <Widget>[
-                      for (final preset in ProductPricer.quantityPresets(
-                        _product!,
-                      ))
-                        ChoiceChip(
-                          label: Text('$preset'),
-                          selected: _quantity == preset,
+                          label: Text(size.label),
+                          selected: _size?.code == size.code,
                           onSelected: (_) {
-                            setState(() => _quantity = preset);
+                            setState(() => _size = size);
                             _recalculate();
                           },
                         ),
                     ],
                   ),
-                  const SizedBox(height: StarSpace.md),
-                  Row(
-                    children: <Widget>[
-                      IconButton.outlined(
-                        onPressed: () {
-                          setState(
-                            () =>
-                                _quantity = (_quantity - 50).clamp(1, 1000000),
-                          );
-                          _recalculate();
-                        },
-                        icon: const Icon(Icons.remove),
-                      ),
-                      const SizedBox(width: StarSpace.sm),
-                      SizedBox(
-                        width: 100,
-                        child: TextFormField(
-                          key: ValueKey<int>(_quantity),
-                          initialValue: '$_quantity',
-                          textAlign: TextAlign.center,
-                          keyboardType: TextInputType.number,
-                          onFieldSubmitted: (value) {
-                            final parsed = int.tryParse(value);
-                            if (parsed != null && parsed > 0) {
-                              setState(() => _quantity = parsed);
-                              _recalculate();
-                            }
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: StarSpace.sm),
-                      IconButton.outlined(
-                        onPressed: () {
-                          setState(() => _quantity += 50);
-                          _recalculate();
-                        },
-                        icon: const Icon(Icons.add),
-                      ),
+                ),
+              if (_product!.kind == 'sheet')
+                _Section(
+                  title: 'Sides',
+                  child: SegmentedButton<int>(
+                    segments: const <ButtonSegment<int>>[
+                      ButtonSegment<int>(value: 1, label: Text('Single')),
+                      ButtonSegment<int>(value: 2, label: Text('Double')),
                     ],
-                  ),
-                ],
-              ),
-            ),
-            _Section(
-              title: 'Due and priority',
-              child: Row(
-                children: <Widget>[
-                  OutlinedButton.icon(
-                    onPressed: () async {
-                      final picked = await showDatePicker(
-                        context: context,
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime.now().add(const Duration(days: 120)),
-                        initialDate:
-                            _dueAt ??
-                            DateTime.now().add(const Duration(days: 2)),
-                      );
-                      if (picked != null) setState(() => _dueAt = picked);
-                    },
-                    icon: const Icon(Icons.event_outlined, size: 18),
-                    label: Text(
-                      _dueAt == null
-                          ? 'Set a due date'
-                          : '${_dueAt!.day}/${_dueAt!.month}/${_dueAt!.year}',
-                    ),
-                  ),
-                  const SizedBox(width: StarSpace.md),
-                  SegmentedButton<Priority>(
-                    segments: const <ButtonSegment<Priority>>[
-                      ButtonSegment<Priority>(
-                        value: Priority.normal,
-                        label: Text('Normal'),
-                      ),
-                      ButtonSegment<Priority>(
-                        value: Priority.urgent,
-                        label: Text('Urgent'),
-                      ),
-                      ButtonSegment<Priority>(
-                        value: Priority.rush,
-                        label: Text('Rush'),
-                      ),
-                    ],
-                    selected: <Priority>{_priority},
+                    selected: <int>{_sides},
                     onSelectionChanged: (selection) {
-                      setState(() => _priority = selection.first);
+                      setState(() => _sides = selection.first);
                       _recalculate();
                     },
                   ),
-                ],
-              ),
-            ),
-            _Section(
-              title: 'Notes for the shop',
-              child: TextField(
-                controller: _notes,
-                maxLines: 2,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  hintText: 'Artwork coming by WhatsApp, delivery after 4pm…',
+                ),
+              if (ProductPricer.finishes(_product!).isNotEmpty)
+                _Section(
+                  title: 'Finishing',
+                  child: Wrap(
+                    spacing: StarSpace.sm,
+                    runSpacing: StarSpace.sm,
+                    children: <Widget>[
+                      for (final finish in ProductPricer.finishes(_product!))
+                        FilterChip(
+                          label: Text(finish.label),
+                          selected: _finishes.contains(finish.code),
+                          onSelected: (selected) {
+                            setState(() {
+                              if (selected) {
+                                _finishes.add(finish.code);
+                              } else {
+                                _finishes.remove(finish.code);
+                              }
+                            });
+                            _recalculate();
+                          },
+                        ),
+                    ],
+                  ),
+                ),
+              _Section(
+                title: 'Quantity',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Wrap(
+                      spacing: StarSpace.sm,
+                      children: <Widget>[
+                        for (final preset in ProductPricer.quantityPresets(
+                          _product!,
+                        ))
+                          ChoiceChip(
+                            label: Text('$preset'),
+                            selected: _quantity == preset,
+                            onSelected: (_) {
+                              setState(() => _quantity = preset);
+                              _recalculate();
+                            },
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: StarSpace.md),
+                    Row(
+                      children: <Widget>[
+                        IconButton.outlined(
+                          onPressed: () {
+                            setState(
+                              () => _quantity = (_quantity - 50).clamp(
+                                1,
+                                1000000,
+                              ),
+                            );
+                            _recalculate();
+                          },
+                          icon: const Icon(Icons.remove),
+                        ),
+                        const SizedBox(width: StarSpace.sm),
+                        SizedBox(
+                          width: 100,
+                          child: TextFormField(
+                            key: ValueKey<int>(_quantity),
+                            initialValue: '$_quantity',
+                            textAlign: TextAlign.center,
+                            keyboardType: TextInputType.number,
+                            onFieldSubmitted: (value) {
+                              final parsed = int.tryParse(value);
+                              if (parsed != null && parsed > 0) {
+                                setState(() => _quantity = parsed);
+                                _recalculate();
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: StarSpace.sm),
+                        IconButton.outlined(
+                          onPressed: () {
+                            setState(() => _quantity += 50);
+                            _recalculate();
+                          },
+                          icon: const Icon(Icons.add),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ],
-          if (_error != null)
-            Padding(
-              padding: const EdgeInsets.only(top: StarSpace.md),
-              child: Text(
-                _error!,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: StarColors.statusProblem,
+              _Section(
+                title: 'Due and priority',
+                child: Row(
+                  children: <Widget>[
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime.now().add(
+                            const Duration(days: 120),
+                          ),
+                          initialDate:
+                              _dueAt ??
+                              DateTime.now().add(const Duration(days: 2)),
+                        );
+                        if (picked != null) setState(() => _dueAt = picked);
+                      },
+                      icon: const Icon(Icons.event_outlined, size: 18),
+                      label: Text(
+                        _dueAt == null
+                            ? 'Set a due date'
+                            : '${_dueAt!.day}/${_dueAt!.month}/${_dueAt!.year}',
+                      ),
+                    ),
+                    const SizedBox(width: StarSpace.md),
+                    SegmentedButton<Priority>(
+                      segments: const <ButtonSegment<Priority>>[
+                        ButtonSegment<Priority>(
+                          value: Priority.normal,
+                          label: Text('Normal'),
+                        ),
+                        ButtonSegment<Priority>(
+                          value: Priority.urgent,
+                          label: Text('Urgent'),
+                        ),
+                        ButtonSegment<Priority>(
+                          value: Priority.rush,
+                          label: Text('Rush'),
+                        ),
+                      ],
+                      selected: <Priority>{_priority},
+                      onSelectionChanged: (selection) {
+                        setState(() => _priority = selection.first);
+                        _recalculate();
+                      },
+                    ),
+                  ],
                 ),
               ),
-            ),
-          if (price != null) ...<Widget>[
-            const SizedBox(height: StarSpace.lg),
-            _PricePanel(price: price),
+              _Section(
+                title: 'Notes for the shop',
+                child: TextField(
+                  controller: _notes,
+                  maxLines: 2,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(
+                    hintText: 'Artwork coming by WhatsApp, delivery after 4pm…',
+                  ),
+                ),
+              ),
+            ],
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.only(top: StarSpace.md),
+                child: Text(
+                  _error!,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: StarColors.statusProblem,
+                  ),
+                ),
+              ),
+            if (price != null) ...<Widget>[
+              const SizedBox(height: StarSpace.lg),
+              _PricePanel(price: price),
+            ],
+            const SizedBox(height: StarSpace.xxl),
           ],
-          const SizedBox(height: StarSpace.xxl),
-        ],
+        ),
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(

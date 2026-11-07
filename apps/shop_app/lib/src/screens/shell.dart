@@ -385,9 +385,14 @@ class _AppShellState extends ConsumerState<AppShell> {
                       PopupMenuItem<String>(
                         value: 'theme',
                         child: Text(
-                          ref.watch(themeModeProvider) == ThemeMode.dark
-                              ? t('menu.themeLight')
-                              : t('menu.themeDark'),
+                          // The label names the mode one click away, matching
+                          // the old light/dark toggle's convention of showing
+                          // the target rather than the current state.
+                          switch (ref.watch(themeModeProvider)) {
+                            ThemeMode.dark => t('menu.themeSystem'),
+                            ThemeMode.light => t('menu.themeDark'),
+                            ThemeMode.system => t('menu.themeLight'),
+                          },
                         ),
                       ),
                       PopupMenuItem<String>(
