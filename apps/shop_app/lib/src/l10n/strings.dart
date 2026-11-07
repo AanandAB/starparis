@@ -27,6 +27,7 @@ const Map<String, String> _en = <String, String>{
 
   'menu.till': 'Cash drawer',
   'menu.log': 'Activity log',
+  'menu.tour': 'Replay the tour',
   'menu.themeDark': 'Dark interface',
   'menu.themeLight': 'Light interface',
   'menu.themeSystem': 'System theme',
@@ -84,6 +85,7 @@ const Map<String, String> _ar = <String, String>{
 
   'menu.till': 'درج النقد',
   'menu.log': 'سجل النشاط',
+  'menu.tour': 'إعادة عرض الجولة',
   'menu.themeDark': 'الواجهة الداكنة',
   'menu.themeLight': 'الواجهة الفاتحة',
   'menu.themeSystem': 'ثيم النظام',

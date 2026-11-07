@@ -8,6 +8,7 @@ import 'package:starparis_sync/starparis_sync.dart';
 
 import '../providers.dart';
 import '../theme_provider.dart';
+import '../tour/app_tour.dart';
 import '../sales/till_sheet.dart';
 import 'audit_screen.dart';
 import 'board_screen.dart';
@@ -224,264 +225,282 @@ class _AppShellState extends ConsumerState<AppShell> {
 
     // Global keys: a counter works at speed, and three of the most common
     // actions should not need the mouse.
-    return CallbackShortcuts(
-      bindings: <ShortcutActivator, VoidCallback>{
-        const SingleActivator(LogicalKeyboardKey.keyK, control: true): () =>
-            showTrackSheet(context),
-        const SingleActivator(LogicalKeyboardKey.keyN, control: true): () =>
-            openOrderBuilder(context),
-        const SingleActivator(LogicalKeyboardKey.f5): () =>
-            ref.read(bootstrapProvider).engine?.syncNow(),
-        const SingleActivator(LogicalKeyboardKey.escape): () =>
-            Navigator.of(context).maybePop(),
-      },
-      child: Focus(
-        autofocus: true,
-        child: Scaffold(
-          // Scaffold's appBar slot wants a PreferredSizeWidget, which
-          // GlassPanel is not — so the panel is wrapped in a fixed-height slot
-          // that matches the AppBar's own toolbar below.
-          appBar: PreferredSize(
-            preferredSize: const Size.fromHeight(64),
-            child: GlassPanel(
-              // The top bar runs edge to edge, so it keeps square corners: a
-              // rounded radius would let the canvas show through at the window
-              // corner. GlassPanel supplies the translucent fill and hairline;
-              // the AppBar below stays transparent (see the app bar theme).
-              borderRadius: BorderRadius.zero,
-              child: AppBar(
-                titleSpacing: StarSpace.md,
-                toolbarHeight: 64,
-                title: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    Text(
-                      'STAR PARIS',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        letterSpacing: 1.6,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    Text(
-                      current.label,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.2,
-                      ),
-                    ),
-                  ],
-                ),
-                actions: <Widget>[
-                  if (useRail)
-                    SizedBox(
-                      width: 340,
-                      child: InkWell(
-                        onTap: () => showTrackSheet(context),
-                        borderRadius: BorderRadius.circular(StarRadius.field),
-                        child: Container(
-                          height: 40,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: StarSpace.md,
+    return Stack(
+      children: <Widget>[
+        CallbackShortcuts(
+          bindings: <ShortcutActivator, VoidCallback>{
+            const SingleActivator(LogicalKeyboardKey.keyK, control: true): () =>
+                showTrackSheet(context),
+            const SingleActivator(LogicalKeyboardKey.keyN, control: true): () =>
+                openOrderBuilder(context),
+            const SingleActivator(LogicalKeyboardKey.f5): () =>
+                ref.read(bootstrapProvider).engine?.syncNow(),
+            const SingleActivator(LogicalKeyboardKey.escape): () =>
+                Navigator.of(context).maybePop(),
+          },
+          child: Focus(
+            autofocus: true,
+            child: Scaffold(
+              // Scaffold's appBar slot wants a PreferredSizeWidget, which
+              // GlassPanel is not — so the panel is wrapped in a fixed-height slot
+              // that matches the AppBar's own toolbar below.
+              appBar: PreferredSize(
+                preferredSize: const Size.fromHeight(64),
+                child: GlassPanel(
+                  // The top bar runs edge to edge, so it keeps square corners: a
+                  // rounded radius would let the canvas show through at the window
+                  // corner. GlassPanel supplies the translucent fill and hairline;
+                  // the AppBar below stays transparent (see the app bar theme).
+                  borderRadius: BorderRadius.zero,
+                  child: AppBar(
+                    titleSpacing: StarSpace.md,
+                    toolbarHeight: 64,
+                    title: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Text(
+                          'STAR PARIS',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            letterSpacing: 1.6,
+                            fontWeight: FontWeight.w700,
                           ),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceContainerHighest
-                                .withValues(alpha: 0.5),
+                        ),
+                        Text(
+                          current.label,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                    actions: <Widget>[
+                      if (useRail)
+                        SizedBox(
+                          width: 340,
+                          child: InkWell(
+                            onTap: () => showTrackSheet(context),
                             borderRadius: BorderRadius.circular(
                               StarRadius.field,
                             ),
-                            border: Border.all(
-                              color: theme.colorScheme.outlineVariant,
-                            ),
-                          ),
-                          child: Row(
-                            children: <Widget>[
-                              Icon(
-                                Icons.search,
-                                size: 18,
-                                color: theme.colorScheme.onSurfaceVariant,
+                            child: Container(
+                              height: 40,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: StarSpace.md,
                               ),
-                              const SizedBox(width: StarSpace.sm),
-                              Expanded(
-                                child: Text(
-                                  'Job, invoice, phone or customer',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.surfaceContainerHighest
+                                    .withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(
+                                  StarRadius.field,
+                                ),
+                                border: Border.all(
+                                  color: theme.colorScheme.outlineVariant,
                                 ),
                               ),
-                              // A key-cap, not a label: the shortcut should read as
-                              // a keyboard command, not a feature name.
-                              const ShortcutChip(label: 'Ctrl K'),
-                            ],
+                              child: Row(
+                                children: <Widget>[
+                                  Icon(
+                                    Icons.search,
+                                    size: 18,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                  const SizedBox(width: StarSpace.sm),
+                                  Expanded(
+                                    child: Text(
+                                      'Job, invoice, phone or customer',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            color: theme
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                          ),
+                                    ),
+                                  ),
+                                  // A key-cap, not a label: the shortcut should read as
+                                  // a keyboard command, not a feature name.
+                                  const ShortcutChip(label: 'Ctrl K'),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                  const SizedBox(width: StarSpace.md),
-                  const SyncStatusChip(),
-                  if (useRail) ...<Widget>[
-                    // F5 is a keyboard shortcut, so its key-cap is a desktop
-                    // affordance — like the Ctrl K hint, it stays off the phone bar.
-                    const SizedBox(width: StarSpace.xs),
-                    const ShortcutChip(label: 'F5'),
-                  ],
-                  const SizedBox(width: StarSpace.sm),
-                  PopupMenuButton<String>(
-                    tooltip: session.name,
-                    icon: CircleAvatar(
-                      radius: 15,
-                      backgroundColor: StarColors.petrol,
-                      child: Text(
-                        session.name.characters.first.toUpperCase(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
+                      const SizedBox(width: StarSpace.md),
+                      const SyncStatusChip(),
+                      if (useRail) ...<Widget>[
+                        // F5 is a keyboard shortcut, so its key-cap is a desktop
+                        // affordance — like the Ctrl K hint, it stays off the phone bar.
+                        const SizedBox(width: StarSpace.xs),
+                        const ShortcutChip(label: 'F5'),
+                      ],
+                      const SizedBox(width: StarSpace.sm),
+                      PopupMenuButton<String>(
+                        tooltip: session.name,
+                        icon: CircleAvatar(
+                          radius: 15,
+                          backgroundColor: StarColors.petrol,
+                          child: Text(
+                            session.name.characters.first.toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
+                        onSelected: (value) async {
+                          if (value == 'till') {
+                            await showTillSheet(context);
+                            return;
+                          }
+                          if (value == 'theme') {
+                            ref.read(themeModeProvider.notifier).toggle();
+                            return;
+                          }
+                          if (value == 'log') {
+                            await showLogSheet(context);
+                            return;
+                          }
+                          if (value == 'audit') {
+                            await openAuditLog(context);
+                            return;
+                          }
+                          if (value == 'diagnostics') {
+                            await showDiagnosticsSheet(context);
+                            return;
+                          }
+                          if (value == 'tour') {
+                            ref.read(appTourProvider.notifier).start();
+                            return;
+                          }
+                          if (value == 'signout') {
+                            await ref.read(sessionProvider.notifier).signOut();
+                          }
+                          if (value == 'lang') {
+                            ref.read(localeProvider.notifier).toggle();
+                          }
+                        },
+                        itemBuilder: (context) => <PopupMenuEntry<String>>[
+                          PopupMenuItem<String>(
+                            enabled: false,
+                            child: Text('${session.name} · ${session.role}'),
+                          ),
+                          const PopupMenuDivider(),
+                          PopupMenuItem<String>(
+                            value: 'till',
+                            child: Text(t('menu.till')),
+                          ),
+                          PopupMenuItem<String>(
+                            value: 'theme',
+                            child: Text(
+                              // The label names the mode one click away, matching
+                              // the old light/dark toggle's convention of showing
+                              // the target rather than the current state.
+                              switch (ref.watch(themeModeProvider)) {
+                                ThemeMode.dark => t('menu.themeSystem'),
+                                ThemeMode.light => t('menu.themeDark'),
+                                ThemeMode.system => t('menu.themeLight'),
+                              },
+                            ),
+                          ),
+                          PopupMenuItem<String>(
+                            value: 'log',
+                            child: Text(t('menu.log')),
+                          ),
+                          // The strings table is shared and this change does not own
+                          // it, so the label stays a literal until `menu.audit` exists
+                          // there; an untranslated key would render as the key itself.
+                          if (ref.watch(canViewAuditProvider))
+                            const PopupMenuItem<String>(
+                              value: 'audit',
+                              child: Text('Audit log'),
+                            ),
+                          PopupMenuItem<String>(
+                            value: 'diagnostics',
+                            child: Text(t('menu.diagnostics')),
+                          ),
+                          PopupMenuItem<String>(
+                            value: 'tour',
+                            child: Text(t('menu.tour')),
+                          ),
+                          const PopupMenuDivider(),
+                          PopupMenuItem<String>(
+                            value: 'lang',
+                            child: Text(
+                              ref.watch(localeProvider)?.languageCode == 'ar'
+                                  ? 'English interface'
+                                  : 'عربي — Arabic layout',
+                            ),
+                          ),
+                          const PopupMenuDivider(),
+                          PopupMenuItem<String>(
+                            value: 'signout',
+                            child: Text(t('menu.signout')),
+                          ),
+                        ],
                       ),
-                    ),
-                    onSelected: (value) async {
-                      if (value == 'till') {
-                        await showTillSheet(context);
-                        return;
-                      }
-                      if (value == 'theme') {
-                        ref.read(themeModeProvider.notifier).toggle();
-                        return;
-                      }
-                      if (value == 'log') {
-                        await showLogSheet(context);
-                        return;
-                      }
-                      if (value == 'audit') {
-                        await openAuditLog(context);
-                        return;
-                      }
-                      if (value == 'diagnostics') {
-                        await showDiagnosticsSheet(context);
-                        return;
-                      }
-                      if (value == 'signout') {
-                        await ref.read(sessionProvider.notifier).signOut();
-                      }
-                      if (value == 'lang') {
-                        ref.read(localeProvider.notifier).toggle();
-                      }
-                    },
-                    itemBuilder: (context) => <PopupMenuEntry<String>>[
-                      PopupMenuItem<String>(
-                        enabled: false,
-                        child: Text('${session.name} · ${session.role}'),
-                      ),
-                      const PopupMenuDivider(),
-                      PopupMenuItem<String>(
-                        value: 'till',
-                        child: Text(t('menu.till')),
-                      ),
-                      PopupMenuItem<String>(
-                        value: 'theme',
-                        child: Text(
-                          // The label names the mode one click away, matching
-                          // the old light/dark toggle's convention of showing
-                          // the target rather than the current state.
-                          switch (ref.watch(themeModeProvider)) {
-                            ThemeMode.dark => t('menu.themeSystem'),
-                            ThemeMode.light => t('menu.themeDark'),
-                            ThemeMode.system => t('menu.themeLight'),
-                          },
-                        ),
-                      ),
-                      PopupMenuItem<String>(
-                        value: 'log',
-                        child: Text(t('menu.log')),
-                      ),
-                      // The strings table is shared and this change does not own
-                      // it, so the label stays a literal until `menu.audit` exists
-                      // there; an untranslated key would render as the key itself.
-                      if (ref.watch(canViewAuditProvider))
-                        const PopupMenuItem<String>(
-                          value: 'audit',
-                          child: Text('Audit log'),
-                        ),
-                      PopupMenuItem<String>(
-                        value: 'diagnostics',
-                        child: Text(t('menu.diagnostics')),
-                      ),
-                      const PopupMenuDivider(),
-                      PopupMenuItem<String>(
-                        value: 'lang',
-                        child: Text(
-                          ref.watch(localeProvider)?.languageCode == 'ar'
-                              ? 'English interface'
-                              : 'عربي — Arabic layout',
-                        ),
-                      ),
-                      const PopupMenuDivider(),
-                      PopupMenuItem<String>(
-                        value: 'signout',
-                        child: Text(t('menu.signout')),
-                      ),
+                      const SizedBox(width: StarSpace.sm),
                     ],
                   ),
-                  const SizedBox(width: StarSpace.sm),
-                ],
+                ),
               ),
+              body: useRail
+                  ? Row(
+                      children: <Widget>[
+                        _Rail(
+                          work: work,
+                          people: people,
+                          business: business,
+                          selected: index,
+                          extended: wide,
+                          onSelect: _select,
+                        ),
+                        const VerticalDivider(width: 1),
+                        Expanded(child: body),
+                      ],
+                    )
+                  : body,
+              bottomNavigationBar: useRail
+                  ? null
+                  : NavigationBar(
+                      selectedIndex: _bottomIndex(index, work, people),
+                      onDestinationSelected: (position) {
+                        if (position < work.length) {
+                          _select(work[position].page);
+                        } else if (position == work.length) {
+                          _select(people.first.page);
+                        } else {
+                          _showMore(context, business);
+                        }
+                      },
+                      destinations: <Widget>[
+                        for (final destination in work)
+                          NavigationDestination(
+                            icon: Icon(destination.icon),
+                            selectedIcon: Icon(destination.selectedIcon),
+                            label: destination.label,
+                          ),
+                        NavigationDestination(
+                          icon: Icon(people.first.icon),
+                          selectedIcon: Icon(people.first.selectedIcon),
+                          label: people.first.label,
+                        ),
+                        const NavigationDestination(
+                          icon: Icon(Icons.more_horiz),
+                          selectedIcon: Icon(Icons.more_horiz),
+                          label: 'More',
+                        ),
+                      ],
+                    ),
             ),
           ),
-          body: useRail
-              ? Row(
-                  children: <Widget>[
-                    _Rail(
-                      work: work,
-                      people: people,
-                      business: business,
-                      selected: index,
-                      extended: wide,
-                      onSelect: _select,
-                    ),
-                    const VerticalDivider(width: 1),
-                    Expanded(child: body),
-                  ],
-                )
-              : body,
-          bottomNavigationBar: useRail
-              ? null
-              : NavigationBar(
-                  selectedIndex: _bottomIndex(index, work, people),
-                  onDestinationSelected: (position) {
-                    if (position < work.length) {
-                      _select(work[position].page);
-                    } else if (position == work.length) {
-                      _select(people.first.page);
-                    } else {
-                      _showMore(context, business);
-                    }
-                  },
-                  destinations: <Widget>[
-                    for (final destination in work)
-                      NavigationDestination(
-                        icon: Icon(destination.icon),
-                        selectedIcon: Icon(destination.selectedIcon),
-                        label: destination.label,
-                      ),
-                    NavigationDestination(
-                      icon: Icon(people.first.icon),
-                      selectedIcon: Icon(people.first.selectedIcon),
-                      label: people.first.label,
-                    ),
-                    const NavigationDestination(
-                      icon: Icon(Icons.more_horiz),
-                      selectedIcon: Icon(Icons.more_horiz),
-                      label: 'More',
-                    ),
-                  ],
-                ),
         ),
-      ),
+        const AppTourOverlay(),
+      ],
     );
   }
 

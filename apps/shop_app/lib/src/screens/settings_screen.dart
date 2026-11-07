@@ -5,6 +5,7 @@ import 'package:starparis_design/starparis_design.dart';
 import '../app_config.dart';
 import '../providers.dart';
 import '../sales/settings_service.dart';
+import '../tour/app_tour.dart';
 
 /// Settings — the values printed on every document, and the rate charged on
 /// every invoice.
@@ -214,6 +215,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     Expanded(child: _field(_quotePrefix, 'Quotes')),
                   ],
                 ),
+              ),
+            ),
+            const SizedBox(height: StarSpace.xl),
+            StarSectionHeader(
+              title: 'Help',
+              subtitle: 'Replay the guided tour that walks new staff through the app.',
+            ),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.help_outline),
+                title: const Text('Replay the guided tour'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => ref.read(appTourProvider.notifier).start(),
               ),
             ),
             const SizedBox(height: StarSpace.xl),
