@@ -1,15 +1,18 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:starparis_design/starparis_design.dart';
+import 'package:starparis_documents/starparis_documents.dart';
 import 'package:starparis_domain/starparis_domain.dart';
 import 'package:starparis_sync/starparis_sync.dart';
 
 import '../app_config.dart';
 import '../providers.dart';
 import '../sales/number_prefixes.dart';
+import '../sales/receipt_transport.dart';
 
 /// One line the counter is ringing up. The unit price starts at a chip's
 /// default and stays editable — a walk-in sale has no price engine, so the
@@ -206,6 +209,10 @@ class _QuickSaleScreenState extends ConsumerState<QuickSaleScreen> {
       // the top bar shows it waiting while offline.
       unawaited(bootstrap.engine?.syncNow());
 
+      // Build the 80 mm slip from what was rung, before the basket clears, so
+      // the printed arithmetic always matches the recorded sale.
+      final receiptBytes = _receiptBytes(issued.display, subtotal, vat, total);
+
       if (!mounted) return;
       setState(() {
         _lines.clear();
@@ -216,10 +223,57 @@ class _QuickSaleScreenState extends ConsumerState<QuickSaleScreen> {
       messenger.showSnackBar(
         SnackBar(content: Text('Sale ${issued.display} recorded.')),
       );
+
+      // Printing must never un-record a sale: a failed print is reported and
+      // the sale stands.
+      unawaited(_printReceipt(receiptBytes, messenger));
     } catch (error) {
       messenger.showSnackBar(SnackBar(content: Text('$error')));
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// The receipt for the sale just rung, as ESC/POS bytes. Built from the same
+  /// values that were saved, so a later price change can never alter a slip.
+  Uint8List _receiptBytes(String number, int subtotal, int vat, int total) {
+    final received = double.tryParse(_cashReceived.text.trim());
+    final tendered = _paymentMethod == 'cash' && received != null
+        ? (received * 100).round()
+        : null;
+    final doc = ReceiptDocument(
+      shopName: AppConfig.company.name,
+      branchName: AppConfig.company.branchName,
+      address: AppConfig.company.address,
+      phone: AppConfig.company.phone,
+      number: number,
+      issuedAt: DateTime.now(),
+      lines: [
+        for (final line in _lines)
+          ReceiptLine(
+            description: line.description,
+            quantity: line.quantity,
+            amountFils: line.amountFils,
+          ),
+      ],
+      subtotalFils: subtotal,
+      vatFils: vat,
+      totalFils: total,
+      paymentMethod: _paymentMethod,
+      tenderedFils: tendered,
+    );
+    return buildReceiptBytes(doc);
+  }
+
+  Future<void> _printReceipt(
+      Uint8List bytes, ScaffoldMessengerState messenger) async {
+    try {
+      await ReceiptPrinter.forPlatform().printBytes(bytes);
+    } on ReceiptPrintException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    } catch (e) {
+      messenger
+          .showSnackBar(SnackBar(content: Text('Receipt failed to print: $e')));
     }
   }
 

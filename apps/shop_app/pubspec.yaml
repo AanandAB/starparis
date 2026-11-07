@@ -61,6 +61,12 @@ dependencies:
   intl: ^0.20.3
   url_launcher: ^6.3.3
 
+  # Windows raw printing (winspool) for the 80 mm receipt. win32 is already a
+  # transitive dependency of the workspace; declaring it here pins it for the
+  # direct FFI use in receipt_transport.dart.
+  win32: ^6.4.0
+  ffi: ^2.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
