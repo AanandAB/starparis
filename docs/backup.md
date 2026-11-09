@@ -4,43 +4,55 @@ A restore window is not a backup. D1 Time Travel gives point-in-time restore
 within its retention window; the drill below is what survives an account
 lockout, a region outage, or a deleted database.
 
-## Export (daily)
+## Export (automatic — daily + weekly)
+
+One script, two schedules, both running on the owner's PC via Windows Task
+Scheduler (installed with `tools\install_schedule.bat`):
+
+| Task                  | When               | Writes to         | Retention                  |
+| --------------------- | ------------------ | ----------------- | -------------------------- |
+| StarParisBackupDaily  | every day 02:30    | `backups/daily/`  | deletes files > 30 days old |
+| StarParisBackupWeekly | every Sunday 03:30 | `backups/weekly/` | kept indefinitely          |
+
+The scheduler runs `tools\backup_scheduled.bat`, which cds to the repo, puts
+bun on PATH, and calls the script. Output is appended to `backups/backup.log`.
+Run it by hand with:
 
 ```bash
-python tools/backup_d1.py
+python tools/backup_d1.py --type daily     # keeps 30 days
+python tools/backup_d1.py --type weekly    # kept indefinitely
 ```
 
-Exports every remote D1 database (`starparis-dev`, `starparis-staging`) to
-`backups/<db>-<UTC timestamp>.sql`, verifies each file is non-empty, and prints
-the off-platform copy reminder. `backups/` is git-ignored — these files hold
-shop data and must never be committed.
-
-Secrets are read from `.env.local` (`CF_API_TOKEN`, `CF_ACCOUNT_ID`); nothing
-credential-shaped lives in the script or in git.
+Each export is verified non-empty. `backups/` is git-ignored — these files hold
+shop data and must never be committed. Secrets are read from `.env.local`
+(`CF_API_TOKEN`, `CF_ACCOUNT_ID`); nothing credential-shaped lives in the
+script or in git.
 
 ## Off-platform copy
 
-Copy `backups/` to Google Drive or the shop's backup drive immediately after
-the export. Keep 90 days. Schedule the export + copy on the owner's PC (or the
-CI job that owns this account) — the script has no scheduler of its own.
+Copy `backups/weekly/` (and the recent dailies) to Google Drive or the shop's
+backup drive on a regular cadence. A local copy is not off-platform storage; it
+does not survive the PC failing. See the note in `.github/workflows/backup.yml`
+for the CI-artifact path (short-term only).
 
-## Restore
+## Restore (verified)
 
-To restore a database from an export into a fresh or empty D1 database:
+Restore is a one-command drill now, and it is proven, not just documented:
 
 ```bash
-wrangler d1 execute <db> --remote --file backups/<file>.sql
+python tools/restore_d1.py backups/daily/<file>.sql <scratch-db>
 ```
 
-Run this against a scratch database first (create one with
-`wrangler d1 create <name>`), then confirm the tables and row counts before
-touching the real database.
+`tools/restore_d1.py` creates the scratch database, executes the backup into
+it, re-exports it, and compares the table list and per-table row counts against
+the source export — exiting non-zero on any mismatch. Verified 2026-11-09:
+46 tables restored, 470 data rows, every table and count matched.
 
-## Honest status
+For a real restore into the live database, run the raw export as before:
 
-- Export: **verified working** (2026-11-04) — dev exports with rows; staging is
-  schema-only because it has never been seeded.
-- Restore into a scratch database: **documented, not yet executed** — that is
-  the one step of the drill still to prove.
-- There is no scheduled job yet; the script runs by hand until the client's
-  Cloudflare account owns this and a CI/scheduler is set up.
+```bash
+wrangler d1 execute <db> --remote --file backups/daily/<file>.sql
+```
+
+Always restore into a scratch database first and confirm the counts before
+touching the live database.

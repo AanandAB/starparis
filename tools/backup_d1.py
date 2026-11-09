@@ -1,27 +1,52 @@
-"""Off-platform D1 backup drill.
+"""Off-platform D1 backup drill with daily/weekly retention.
 
-Exports every remote D1 database to a timestamped .sql file under backups/,
-verifies each export is non-empty, and reminds the operator to copy the file
-off-platform (Google Drive, the shop's backup drive). Run from the repo root:
+Exports every remote D1 database to a timestamped .sql file and verifies each
+export is non-empty. Two schedules share this script:
 
-    python tools/backup_d1.py
+- Daily  (`--type daily`, the default): writes to backups/daily/ and deletes
+  any daily export older than 30 days.
+- Weekly (`--type weekly`): writes to backups/weekly/ and keeps every file, so
+  there is always a long-horizon copy alongside the rolling 30-day dailies.
+
+Run from the repo root:
+
+    python tools/backup_d1.py --type daily
+    python tools/backup_d1.py --type weekly
 
 Why this exists: D1 Time Travel gives point-in-time restore, but a restore
-window is not a backup. A scheduled export copied off-platform is the thing that
-survives an account lockout, a region outage, or a deleted database. Keep 90
-days and copy daily — see docs/backup.md.
+window is not a backup. A scheduled export copied off-platform is the thing
+that survives an account lockout, a region outage, or a deleted database.
 """
 
 from __future__ import annotations
 
+import argparse
 import os
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DATABASES = ("starparis-dev", "starparis-staging")
+DAILY_RETENTION_DAYS = 30
+SECONDS_PER_DAY = 86400
+
+
+def purge_daily(backup_dir: Path) -> int:
+    """Delete daily exports older than the retention window. Returns count."""
+    cutoff = time.time() - DAILY_RETENTION_DAYS * SECONDS_PER_DAY
+    removed = 0
+    for path in backup_dir.glob("*.sql"):
+        try:
+            if path.stat().st_mtime < cutoff:
+                path.unlink()
+                removed += 1
+        except OSError:
+            # A file that cannot be read or deleted must not stop the backup.
+            pass
+    return removed
 
 
 def load_env() -> dict[str, str]:
@@ -40,14 +65,23 @@ def load_env() -> dict[str, str]:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--type",
+        choices=("daily", "weekly"),
+        default="daily",
+        help="daily keeps 30 days; weekly keeps everything (default: daily)",
+    )
+    args = parser.parse_args()
+
     secrets = load_env()
     token = secrets.get("CF_API_TOKEN", "")
     account = secrets.get("CF_ACCOUNT_ID", "")
     if not token or not account:
         raise SystemExit("CF_API_TOKEN or CF_ACCOUNT_ID missing from .env.local")
 
-    backup_dir = ROOT / "backups"
-    backup_dir.mkdir(exist_ok=True)
+    backup_dir = ROOT / "backups" / args.type
+    backup_dir.mkdir(parents=True, exist_ok=True)
 
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%SZ")
     env = os.environ.copy()
@@ -83,9 +117,17 @@ def main() -> int:
         else:
             print(f"WARN    {name} -> {output.name} (schema only, no rows — expected if unused)")
 
+    if args.type == "daily":
+        removed = purge_daily(backup_dir)
+        print(
+            f"Retention: removed {removed} daily export(s) older than "
+            f"{DAILY_RETENTION_DAYS} days."
+        )
+    else:
+        print("Retention: weekly exports are kept indefinitely.")
+
     print()
     print("Next: copy backups/ to Google Drive or the shop backup drive.")
-    print("Retention: 90 days. See docs/backup.md.")
     return 1 if failures else 0
 
 

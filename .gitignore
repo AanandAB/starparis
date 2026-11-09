@@ -8,3 +8,5 @@ build/
 node_modules/
 .wrangler/
 backups/
+__pycache__/
+*.pyc
