@@ -14,6 +14,7 @@ export 'src/widgets/empty_state.dart';
 export 'src/widgets/glass_panel.dart';
 export 'src/widgets/money_text.dart';
 export 'src/widgets/pressable_card.dart';
+export 'src/widgets/responsive_fields.dart';
 export 'src/widgets/screen_header.dart';
 export 'src/widgets/section_header.dart';
 export 'src/widgets/shortcut_chip.dart';

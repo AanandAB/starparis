@@ -737,99 +737,79 @@ class _MaterialDialogState extends State<_MaterialDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Row(
+              ResponsiveFields(
+                weights: const <int>[1, 2],
                 children: <Widget>[
-                  Expanded(
-                    child: TextField(
-                      controller: _code,
-                      autofocus: !_editing,
-                      enabled: !_editing,
-                      decoration: const InputDecoration(
-                        labelText: 'Code',
-                        hintText: 'art_card_350',
-                      ),
+                  TextField(
+                    controller: _code,
+                    autofocus: !_editing,
+                    enabled: !_editing,
+                    decoration: const InputDecoration(
+                      labelText: 'Code',
+                      hintText: 'art_card_350',
                     ),
                   ),
-                  const SizedBox(width: StarSpace.md),
-                  Expanded(
-                    flex: 2,
-                    child: TextField(
-                      controller: _name,
-                      decoration: const InputDecoration(
-                        labelText: 'Name',
-                        hintText: 'Art card 350 gsm',
-                      ),
+                  TextField(
+                    controller: _name,
+                    decoration: const InputDecoration(
+                      labelText: 'Name',
+                      hintText: 'Art card 350 gsm',
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: StarSpace.sm),
-              Row(
+              ResponsiveFields(
                 children: <Widget>[
-                  Expanded(
-                    child: TextField(
-                      controller: _kind,
-                      decoration: const InputDecoration(
-                        labelText: 'Kind',
-                        hintText: 'sheet, roll, card, vinyl',
-                      ),
+                  TextField(
+                    controller: _kind,
+                    decoration: const InputDecoration(
+                      labelText: 'Kind',
+                      hintText: 'sheet, roll, card, vinyl',
                     ),
                   ),
-                  const SizedBox(width: StarSpace.md),
-                  Expanded(
-                    child: TextField(
-                      controller: _gsm,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'GSM'),
+                  TextField(
+                    controller: _gsm,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'GSM'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: StarSpace.sm),
+              ResponsiveFields(
+                children: <Widget>[
+                  TextField(
+                    controller: _width,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Sheet width (mm)',
+                    ),
+                  ),
+                  TextField(
+                    controller: _height,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Sheet height (mm)',
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: StarSpace.sm),
-              Row(
+              ResponsiveFields(
                 children: <Widget>[
-                  Expanded(
-                    child: TextField(
-                      controller: _width,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Sheet width (mm)',
-                      ),
+                  TextField(
+                    controller: _cost,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: 'Cost per sheet',
+                      prefixText: 'AED ',
                     ),
                   ),
-                  const SizedBox(width: StarSpace.md),
-                  Expanded(
-                    child: TextField(
-                      controller: _height,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Sheet height (mm)',
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: StarSpace.sm),
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: TextField(
-                      controller: _cost,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      decoration: const InputDecoration(
-                        labelText: 'Cost per sheet',
-                        prefixText: 'AED ',
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: StarSpace.md),
-                  Expanded(
-                    child: TextField(
-                      controller: _supplier,
-                      decoration: const InputDecoration(labelText: 'Supplier'),
-                    ),
+                  TextField(
+                    controller: _supplier,
+                    decoration: const InputDecoration(labelText: 'Supplier'),
                   ),
                 ],
               ),
@@ -962,111 +942,93 @@ class _MachineDialogState extends State<_MachineDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Row(
+              ResponsiveFields(
+                weights: const <int>[2, 1],
                 children: <Widget>[
-                  Expanded(
-                    flex: 2,
-                    child: TextField(
-                      controller: _name,
-                      autofocus: !_editing,
-                      decoration: const InputDecoration(
-                        labelText: 'Name',
-                        hintText: 'Xerox 3100',
-                      ),
+                  TextField(
+                    controller: _name,
+                    autofocus: !_editing,
+                    decoration: const InputDecoration(
+                      labelText: 'Name',
+                      hintText: 'Xerox 3100',
                     ),
                   ),
-                  const SizedBox(width: StarSpace.md),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _type,
-                      decoration: const InputDecoration(labelText: 'Kind'),
-                      items: const <DropdownMenuItem<String>>[
-                        DropdownMenuItem(
-                          value: 'offset',
-                          child: Text('Offset'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'digital',
-                          child: Text('Digital'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'large_format',
-                          child: Text('Large format'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'finishing',
-                          child: Text('Finishing'),
-                        ),
-                      ],
-                      onChanged: (value) =>
-                          setState(() => _type = value ?? _type),
+                  DropdownButtonFormField<String>(
+                    initialValue: _type,
+                    decoration: const InputDecoration(labelText: 'Kind'),
+                    items: const <DropdownMenuItem<String>>[
+                      DropdownMenuItem(
+                        value: 'offset',
+                        child: Text('Offset'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'digital',
+                        child: Text('Digital'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'large_format',
+                        child: Text('Large format'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'finishing',
+                        child: Text('Finishing'),
+                      ),
+                    ],
+                    onChanged: (value) =>
+                        setState(() => _type = value ?? _type),
+                  ),
+                ],
+              ),
+              const SizedBox(height: StarSpace.sm),
+              ResponsiveFields(
+                children: <Widget>[
+                  TextField(
+                    controller: _hourly,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: 'Hourly rate',
+                      prefixText: 'AED ',
+                    ),
+                  ),
+                  TextField(
+                    controller: _click,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: 'Per click',
+                      prefixText: 'AED ',
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: StarSpace.sm),
-              Row(
+              ResponsiveFields(
                 children: <Widget>[
-                  Expanded(
-                    child: TextField(
-                      controller: _hourly,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      decoration: const InputDecoration(
-                        labelText: 'Hourly rate',
-                        prefixText: 'AED ',
-                      ),
+                  TextField(
+                    controller: _setup,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Setup (min)',
                     ),
                   ),
-                  const SizedBox(width: StarSpace.md),
-                  Expanded(
-                    child: TextField(
-                      controller: _click,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      decoration: const InputDecoration(
-                        labelText: 'Per click',
-                        prefixText: 'AED ',
-                      ),
+                  TextField(
+                    controller: _speed,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Sheets per hour',
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: StarSpace.sm),
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: TextField(
-                      controller: _setup,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Setup (min)',
-                      ),
+                  TextField(
+                    controller: _plate,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
                     ),
-                  ),
-                  const SizedBox(width: StarSpace.md),
-                  Expanded(
-                    child: TextField(
-                      controller: _speed,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Sheets per hour',
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: StarSpace.md),
-                  Expanded(
-                    child: TextField(
-                      controller: _plate,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      decoration: const InputDecoration(
-                        labelText: 'Plate cost',
-                        prefixText: 'AED ',
-                      ),
+                    decoration: const InputDecoration(
+                      labelText: 'Plate cost',
+                      prefixText: 'AED ',
                     ),
                   ),
                 ],
@@ -1208,153 +1170,133 @@ class _OperationDialogState extends State<_OperationDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Row(
+              ResponsiveFields(
+                weights: const <int>[1, 2],
                 children: <Widget>[
-                  Expanded(
-                    child: TextField(
-                      controller: _code,
-                      autofocus: !_editing,
-                      enabled: !_editing,
-                      decoration: const InputDecoration(
-                        labelText: 'Code',
-                        hintText: 'lam_matt',
-                      ),
+                  TextField(
+                    controller: _code,
+                    autofocus: !_editing,
+                    enabled: !_editing,
+                    decoration: const InputDecoration(
+                      labelText: 'Code',
+                      hintText: 'lam_matt',
                     ),
                   ),
-                  const SizedBox(width: StarSpace.md),
-                  Expanded(
-                    flex: 2,
-                    child: TextField(
-                      controller: _name,
-                      decoration: const InputDecoration(
-                        labelText: 'Name',
-                        hintText: 'Matt lamination',
-                      ),
+                  TextField(
+                    controller: _name,
+                    decoration: const InputDecoration(
+                      labelText: 'Name',
+                      hintText: 'Matt lamination',
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: StarSpace.sm),
-              Row(
+              ResponsiveFields(
                 children: <Widget>[
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _phase,
-                      decoration: const InputDecoration(labelText: 'Phase'),
-                      items: const <DropdownMenuItem<String>>[
-                        DropdownMenuItem(
-                          value: 'prepress',
-                          child: Text('Prepress'),
-                        ),
-                        DropdownMenuItem(value: 'print', child: Text('Print')),
-                        DropdownMenuItem(
-                          value: 'finishing',
-                          child: Text('Finishing'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'packing',
-                          child: Text('Packing'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'delivery',
-                          child: Text('Delivery'),
-                        ),
-                      ],
-                      onChanged: (value) =>
-                          setState(() => _phase = value ?? _phase),
+                  DropdownButtonFormField<String>(
+                    initialValue: _phase,
+                    decoration: const InputDecoration(labelText: 'Phase'),
+                    items: const <DropdownMenuItem<String>>[
+                      DropdownMenuItem(
+                        value: 'prepress',
+                        child: Text('Prepress'),
+                      ),
+                      DropdownMenuItem(value: 'print', child: Text('Print')),
+                      DropdownMenuItem(
+                        value: 'finishing',
+                        child: Text('Finishing'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'packing',
+                        child: Text('Packing'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'delivery',
+                        child: Text('Delivery'),
+                      ),
+                    ],
+                    onChanged: (value) =>
+                        setState(() => _phase = value ?? _phase),
+                  ),
+                  DropdownButtonFormField<String>(
+                    initialValue: _basis,
+                    decoration: const InputDecoration(labelText: 'Basis'),
+                    items: const <DropdownMenuItem<String>>[
+                      DropdownMenuItem(
+                        value: 'per_piece',
+                        child: Text('Per piece'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'per_1000',
+                        child: Text('Per 1000'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'per_side',
+                        child: Text('Per side'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'per_sqm',
+                        child: Text('Per m²'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'per_copy',
+                        child: Text('Per copy'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'per_hour',
+                        child: Text('Per hour'),
+                      ),
+                    ],
+                    onChanged: (value) =>
+                        setState(() => _basis = value ?? _basis),
+                  ),
+                ],
+              ),
+              const SizedBox(height: StarSpace.sm),
+              ResponsiveFields(
+                children: <Widget>[
+                  TextField(
+                    controller: _rate,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: 'Rate',
+                      prefixText: 'AED ',
                     ),
                   ),
-                  const SizedBox(width: StarSpace.md),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _basis,
-                      decoration: const InputDecoration(labelText: 'Basis'),
-                      items: const <DropdownMenuItem<String>>[
-                        DropdownMenuItem(
-                          value: 'per_piece',
-                          child: Text('Per piece'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'per_1000',
-                          child: Text('Per 1000'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'per_side',
-                          child: Text('Per side'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'per_sqm',
-                          child: Text('Per m²'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'per_copy',
-                          child: Text('Per copy'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'per_hour',
-                          child: Text('Per hour'),
-                        ),
-                      ],
-                      onChanged: (value) =>
-                          setState(() => _basis = value ?? _basis),
+                  TextField(
+                    controller: _setup,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: 'Setup',
+                      prefixText: 'AED ',
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: StarSpace.sm),
-              Row(
+              ResponsiveFields(
                 children: <Widget>[
-                  Expanded(
-                    child: TextField(
-                      controller: _rate,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      decoration: const InputDecoration(
-                        labelText: 'Rate',
-                        prefixText: 'AED ',
-                      ),
+                  TextField(
+                    controller: _waste,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Waste',
+                      suffixText: 'bps',
                     ),
                   ),
-                  const SizedBox(width: StarSpace.md),
-                  Expanded(
-                    child: TextField(
-                      controller: _setup,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      decoration: const InputDecoration(
-                        labelText: 'Setup',
-                        prefixText: 'AED ',
-                      ),
+                  TextField(
+                    controller: _min,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: StarSpace.sm),
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: TextField(
-                      controller: _waste,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Waste',
-                        suffixText: 'bps',
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: StarSpace.md),
-                  Expanded(
-                    child: TextField(
-                      controller: _min,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      decoration: const InputDecoration(
-                        labelText: 'Minimum charge',
-                        prefixText: 'AED ',
-                      ),
+                    decoration: const InputDecoration(
+                      labelText: 'Minimum charge',
+                      prefixText: 'AED ',
                     ),
                   ),
                 ],

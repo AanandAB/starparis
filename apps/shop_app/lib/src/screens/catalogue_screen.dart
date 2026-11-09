@@ -328,140 +328,120 @@ class _ProductDialogState extends State<_ProductDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Row(
+              ResponsiveFields(
+                weights: const <int>[1, 2],
                 children: <Widget>[
-                  Expanded(
-                    child: TextField(
-                      controller: _code,
-                      autofocus: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Code',
-                        hintText: 'banner_3x1',
-                      ),
+                  TextField(
+                    controller: _code,
+                    autofocus: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Code',
+                      hintText: 'banner_3x1',
                     ),
                   ),
-                  const SizedBox(width: StarSpace.md),
-                  Expanded(
-                    flex: 2,
-                    child: TextField(
-                      controller: _name,
-                      decoration: const InputDecoration(
-                        labelText: 'Name',
-                        hintText: 'Banner 3 × 1 m',
-                      ),
+                  TextField(
+                    controller: _name,
+                    decoration: const InputDecoration(
+                      labelText: 'Name',
+                      hintText: 'Banner 3 × 1 m',
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: StarSpace.sm),
-              Row(
+              ResponsiveFields(
                 children: <Widget>[
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _kind,
-                      decoration: const InputDecoration(labelText: 'Kind'),
-                      items: const <DropdownMenuItem<String>>[
-                        DropdownMenuItem(
-                          value: 'sheet',
-                          child: Text('Sheet (imposed)'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'area',
-                          child: Text('Area (per m²)'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'per_unit',
-                          child: Text('Per unit'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'service',
-                          child: Text('Service'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'outsourced',
-                          child: Text('Outsourced'),
-                        ),
-                      ],
-                      onChanged: (value) =>
-                          setState(() => _kind = value ?? _kind),
-                    ),
+                  DropdownButtonFormField<String>(
+                    initialValue: _kind,
+                    decoration: const InputDecoration(labelText: 'Kind'),
+                    items: const <DropdownMenuItem<String>>[
+                      DropdownMenuItem(
+                        value: 'sheet',
+                        child: Text('Sheet (imposed)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'area',
+                        child: Text('Area (per m²)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'per_unit',
+                        child: Text('Per unit'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'service',
+                        child: Text('Service'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'outsourced',
+                        child: Text('Outsourced'),
+                      ),
+                    ],
+                    onChanged: (value) =>
+                        setState(() => _kind = value ?? _kind),
                   ),
-                  const SizedBox(width: StarSpace.md),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _mode,
-                      decoration: const InputDecoration(labelText: 'Pricing'),
-                      items: const <DropdownMenuItem<String>>[
-                        DropdownMenuItem(
-                          value: 'cost_plus',
-                          child: Text('Cost plus'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'price_table',
-                          child: Text('Fixed price table'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'vendor_markup',
-                          child: Text('Vendor plus margin'),
-                        ),
-                      ],
-                      onChanged: (value) =>
-                          setState(() => _mode = value ?? _mode),
-                    ),
+                  DropdownButtonFormField<String>(
+                    initialValue: _mode,
+                    decoration: const InputDecoration(labelText: 'Pricing'),
+                    items: const <DropdownMenuItem<String>>[
+                      DropdownMenuItem(
+                        value: 'cost_plus',
+                        child: Text('Cost plus'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'price_table',
+                        child: Text('Fixed price table'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'vendor_markup',
+                        child: Text('Vendor plus margin'),
+                      ),
+                    ],
+                    onChanged: (value) =>
+                        setState(() => _mode = value ?? _mode),
                   ),
                 ],
               ),
               const SizedBox(height: StarSpace.sm),
-              Row(
+              ResponsiveFields(
                 children: <Widget>[
-                  Expanded(
-                    child: TextField(
-                      controller: _rate,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      decoration: const InputDecoration(
-                        labelText: 'Print per sheet (AED)',
-                        hintText: '3.00',
-                      ),
+                  TextField(
+                    controller: _rate,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: 'Print per sheet (AED)',
+                      hintText: '3.00',
                     ),
                   ),
-                  const SizedBox(width: StarSpace.md),
-                  Expanded(
-                    child: TextField(
-                      controller: _markup,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      decoration: const InputDecoration(
-                        labelText: 'Markup %',
-                        suffixText: '%',
-                      ),
+                  TextField(
+                    controller: _markup,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: 'Markup %',
+                      suffixText: '%',
                     ),
                   ),
                 ],
               ),
               if (_kind == 'sheet') ...<Widget>[
                 const SizedBox(height: StarSpace.sm),
-                Row(
+                ResponsiveFields(
                   children: <Widget>[
-                    Expanded(
-                      child: TextField(
-                        controller: _width,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Sheet width (mm)',
-                        ),
+                    TextField(
+                      controller: _width,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Sheet width (mm)',
                       ),
                     ),
-                    const SizedBox(width: StarSpace.md),
-                    Expanded(
-                      child: TextField(
-                        controller: _height,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Sheet height (mm)',
-                        ),
+                    TextField(
+                      controller: _height,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Sheet height (mm)',
                       ),
                     ),
                   ],
@@ -763,26 +743,21 @@ class _BreaksDialogState extends ConsumerState<_BreaksDialog> {
               },
             ),
             const Divider(),
-            Row(
+            ResponsiveFields(
               children: <Widget>[
-                Expanded(
-                  child: TextField(
-                    controller: _quantity,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Quantity'),
-                  ),
+                TextField(
+                  controller: _quantity,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Quantity'),
                 ),
-                const SizedBox(width: StarSpace.md),
-                Expanded(
-                  child: TextField(
-                    controller: _amount,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: const InputDecoration(
-                      labelText: 'Price',
-                      prefixText: 'AED ',
-                    ),
+                TextField(
+                  controller: _amount,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: const InputDecoration(
+                    labelText: 'Price',
+                    prefixText: 'AED ',
                   ),
                 ),
               ],
