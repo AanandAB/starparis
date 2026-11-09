@@ -6,12 +6,44 @@ import 'package:starparis_sync/starparis_sync.dart';
 import '../providers.dart';
 import '../sales/customer_sheet.dart';
 import '../sales/excel_export_service.dart';
+import '../tour/section_tour.dart';
 import 'new_customer_sheet.dart';
 
 /// The directory the counter actually uses: search by phone number first,
 /// because that is what the customer gives you.
 class CustomersScreen extends ConsumerWidget {
   const CustomersScreen({super.key});
+
+  /// The first-visit guide for the Customers screen.
+  static const List<TourStep> tourSteps = <TourStep>[
+    TourStep(
+      icon: Icons.people_outline,
+      title: 'Customers',
+      body: 'Find anyone by name or phone, then see their orders, balance '
+          'and statement.',
+    ),
+    TourStep(
+      anchor: 'header',
+      icon: Icons.search,
+      title: 'Search and add',
+      body: 'The search box finds as you type; New customer sits right '
+          'beside it.',
+    ),
+    TourStep(
+      anchor: 'new',
+      icon: Icons.person_add_outlined,
+      title: 'Add a customer',
+      body: 'Tap New customer to save a name and phone — that phone is their '
+          'identity.',
+    ),
+  ];
+
+  /// Resolves an anchor name to the element it spotlights.
+  static GlobalKey? tourAnchorFor(String? name) => switch (name) {
+        'header' => const GlobalObjectKey('customers-header'),
+        'new' => const GlobalObjectKey('customers-new'),
+        _ => null,
+      };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -29,6 +61,7 @@ class CustomersScreen extends ConsumerWidget {
             0,
           ),
           child: const ScreenHeader(
+            key: GlobalObjectKey('customers-header'),
             title: 'Customers',
             subtitle:
                 'Find by phone number: the counter types digits, not names.',
@@ -52,6 +85,7 @@ class CustomersScreen extends ConsumerWidget {
                 ),
               );
               final newButton = FilledButton.icon(
+                key: const GlobalObjectKey('customers-new'),
                 onPressed: () => showNewCustomerSheet(context),
                 icon: const Icon(Icons.person_add_alt_1_outlined, size: 18),
                 label: const Text('New customer'),

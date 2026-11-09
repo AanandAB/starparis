@@ -6,6 +6,7 @@ import 'package:starparis_domain/starparis_domain.dart';
 import '../app_config.dart';
 import '../providers.dart';
 import '../sales/reports_service.dart';
+import '../tour/section_tour.dart';
 
 /// VAT for a month and who owes what.
 ///
@@ -18,6 +19,27 @@ class ReportsScreen extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<ReportsScreen> createState() => _ReportsScreenState();
+
+  /// The first-visit guide for the Reports screen.
+  static const List<TourStep> tourSteps = <TourStep>[
+    TourStep(
+      icon: Icons.insights_outlined,
+      title: 'Reports',
+      body: 'Sales, jobs and payments, over any date range you choose.',
+    ),
+    TourStep(
+      anchor: 'header',
+      icon: Icons.calendar_month_outlined,
+      title: 'Pick and export',
+      body: 'Choose a report and a range, then export it.',
+    ),
+  ];
+
+  /// Resolves an anchor name to the element it spotlights.
+  static GlobalKey? tourAnchorFor(String? name) => switch (name) {
+        'header' => const GlobalObjectKey('reports-header'),
+        _ => null,
+      };
 }
 
 class _ReportsScreenState extends ConsumerState<ReportsScreen> {
@@ -80,6 +102,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           padding: const EdgeInsets.all(StarSpace.lg),
           children: <Widget>[
             ScreenHeader(
+              key: const GlobalObjectKey('reports-header'),
               title: 'Reports',
               subtitle: 'Read from the server — these figures cover every branch and need a connection.',
               actions: <Widget>[

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:starparis_design/starparis_design.dart';
 
 import '../app_config.dart';
+import '../tour/section_tour.dart';
 import '../providers.dart';
 import '../sales/staff_service.dart';
 
@@ -17,6 +18,34 @@ class StaffScreen extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<StaffScreen> createState() => _StaffScreenState();
+
+  /// The first-visit guide for the Staff screen.
+  static const List<TourStep> tourSteps = <TourStep>[
+    TourStep(
+      icon: Icons.badge_outlined,
+      title: 'Staff',
+      body: 'Who can sign in, their roles, and their PINs.',
+    ),
+    TourStep(
+      anchor: 'header',
+      icon: Icons.person_add_outlined,
+      title: 'Add a person',
+      body: 'Give someone a phone (that is their login) and a role.',
+    ),
+    TourStep(
+      anchor: 'new',
+      icon: Icons.add,
+      title: 'Add',
+      body: 'Tap Add to create a login for someone.',
+    ),
+  ];
+
+  /// Resolves an anchor name to the element it spotlights.
+  static GlobalKey? tourAnchorFor(String? name) => switch (name) {
+        'header' => const GlobalObjectKey('staff-header'),
+        'new' => const GlobalObjectKey('staff-new'),
+        _ => null,
+      };
 }
 
 class _StaffScreenState extends ConsumerState<StaffScreen> {
@@ -106,6 +135,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
           padding: const EdgeInsets.all(StarSpace.lg),
           children: <Widget>[
             ScreenHeader(
+              key: const GlobalObjectKey('staff-header'),
               title: 'Staff',
               subtitle: 'Who can sign in, and what each of them may do.',
               actions: <Widget>[
@@ -115,6 +145,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
                   label: const Text('Refresh'),
                 ),
                 FilledButton.icon(
+                  key: const GlobalObjectKey('staff-new'),
                   onPressed: _add,
                   icon: const Icon(Icons.person_add_alt_1, size: 18),
                   label: const Text('Add staff'),

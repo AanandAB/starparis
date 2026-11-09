@@ -5,6 +5,7 @@ import 'package:starparis_domain/starparis_domain.dart';
 import 'package:starparis_sync/starparis_sync.dart';
 
 import '../app_config.dart';
+import '../tour/section_tour.dart';
 import '../providers.dart';
 import '../sales/catalogue_admin_service.dart';
 
@@ -23,6 +24,34 @@ class ProductionSetupScreen extends ConsumerStatefulWidget {
   @override
   ConsumerState<ProductionSetupScreen> createState() =>
       _ProductionSetupScreenState();
+
+  /// The first-visit guide for the Production setup screen.
+  static const List<TourStep> tourSteps = <TourStep>[
+    TourStep(
+      icon: Icons.tune_outlined,
+      title: 'Production setup',
+      body: 'Papers, presses and finishing steps that the pricing engine uses.',
+    ),
+    TourStep(
+      anchor: 'header',
+      icon: Icons.add_box_outlined,
+      title: 'Add your shop',
+      body: 'Add a paper, a press, or a finishing step here.',
+    ),
+    TourStep(
+      anchor: 'new',
+      icon: Icons.add,
+      title: 'Add',
+      body: 'Tap Add to create a paper, press or finishing step.',
+    ),
+  ];
+
+  /// Resolves an anchor name to the element it spotlights.
+  static GlobalKey? tourAnchorFor(String? name) => switch (name) {
+        'header' => const GlobalObjectKey('production_setup-header'),
+        'new' => const GlobalObjectKey('production_setup-new'),
+        _ => null,
+      };
 }
 
 class _ProductionSetupScreenState extends ConsumerState<ProductionSetupScreen> {
@@ -305,12 +334,14 @@ class _ProductionSetupScreenState extends ConsumerState<ProductionSetupScreen> {
         Padding(
           padding: const EdgeInsets.all(StarSpace.lg),
           child: ScreenHeader(
+            key: const GlobalObjectKey('production_setup-header'),
             title: 'Production setup',
             subtitle:
                 'The paper, presses and finishing steps the price engine reads. '
                 'A change here reaches every counter on its next sync.',
             actions: <Widget>[
               FilledButton.icon(
+                key: const GlobalObjectKey('production_setup-new'),
                 onPressed: _add,
                 icon: const Icon(Icons.add, size: 18),
                 label: Text(_addLabel),

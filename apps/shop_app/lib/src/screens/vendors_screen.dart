@@ -5,6 +5,7 @@ import 'package:starparis_domain/starparis_domain.dart';
 import 'package:starparis_sync/starparis_sync.dart';
 
 import '../providers.dart';
+import '../tour/section_tour.dart';
 
 /// Vendors — the work the shop does not do itself.
 ///
@@ -12,6 +13,34 @@ import '../providers.dart';
 /// somebody else right now* (and when was it promised back), and *who do we use*.
 class VendorsScreen extends ConsumerWidget {
   const VendorsScreen({super.key});
+
+  /// The first-visit guide for the Vendors screen.
+  static const List<TourStep> tourSteps = <TourStep>[
+    TourStep(
+      icon: Icons.storefront_outlined,
+      title: 'Vendors',
+      body: 'Outside shops you hand work to, and what they charge.',
+    ),
+    TourStep(
+      anchor: 'header',
+      icon: Icons.handshake_outlined,
+      title: 'Hand work out',
+      body: 'Add a vendor, then hand a job to them.',
+    ),
+    TourStep(
+      anchor: 'new',
+      icon: Icons.add,
+      title: 'Add vendor',
+      body: 'Tap Add to save a vendor.',
+    ),
+  ];
+
+  /// Resolves an anchor name to the element it spotlights.
+  static GlobalKey? tourAnchorFor(String? name) => switch (name) {
+        'header' => const GlobalObjectKey('vendors-header'),
+        'new' => const GlobalObjectKey('vendors-new'),
+        _ => null,
+      };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -35,6 +64,7 @@ class VendorsScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(StarSpace.lg),
               children: <Widget>[
                 ScreenHeader(
+                  key: const GlobalObjectKey('vendors-header'),
                   title: 'Vendors',
                   subtitle: 'Work handed to other shops, what it costs, and when it is due back.',
                   actions: <Widget>[
@@ -44,6 +74,7 @@ class VendorsScreen extends ConsumerWidget {
                       label: const Text('Add vendor'),
                     ),
                     FilledButton.icon(
+                      key: const GlobalObjectKey('vendors-new'),
                       onPressed: vendors.isEmpty
                           ? null
                           : () => _handOutWork(context, ref, vendors),

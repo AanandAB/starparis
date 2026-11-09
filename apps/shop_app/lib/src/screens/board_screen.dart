@@ -8,6 +8,7 @@ import 'package:starparis_sync/starparis_sync.dart';
 
 import '../auth/session.dart';
 import '../providers.dart';
+import '../tour/section_tour.dart';
 
 /// Everything still in the shop, by stage.
 ///
@@ -57,6 +58,27 @@ class ProductionScreen extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<ProductionScreen> createState() => _ProductionScreenState();
+
+  /// The first-visit guide for the Production screen.
+  static const List<TourStep> tourSteps = <TourStep>[
+    TourStep(
+      icon: Icons.view_kanban_outlined,
+      title: 'Production board',
+      body: 'Every job is a card. Its column is where it is right now.',
+    ),
+    TourStep(
+      anchor: 'header',
+      icon: Icons.filter_list_outlined,
+      title: 'Board tools',
+      body: 'Filters and the stage view live up here.',
+    ),
+  ];
+
+  /// Resolves an anchor name to the element it spotlights.
+  static GlobalKey? tourAnchorFor(String? name) => switch (name) {
+        'header' => const GlobalObjectKey('production-header'),
+        _ => null,
+      };
 }
 
 class _ProductionScreenState extends ConsumerState<ProductionScreen> {
@@ -91,6 +113,7 @@ class _ProductionScreenState extends ConsumerState<ProductionScreen> {
             StarSpace.sm,
           ),
           child: ScreenHeader(
+            key: const GlobalObjectKey('production-header'),
             title: 'Production',
             subtitle: 'Everything still in the shop, by stage — or out with a vendor.',
             actions: <Widget>[

@@ -9,6 +9,7 @@ import 'package:starparis_sync/starparis_sync.dart';
 import '../providers.dart';
 import '../theme_provider.dart';
 import '../tour/app_tour.dart';
+import '../tour/section_tour.dart';
 import '../sales/till_sheet.dart';
 import 'audit_screen.dart';
 import 'board_screen.dart';
@@ -29,12 +30,15 @@ import 'vendors_screen.dart';
 
 /// One place to go, and which page it shows.
 class _Dest {
-  const _Dest(this.label, this.icon, this.selectedIcon, this.page);
+  const _Dest(this.label, this.icon, this.selectedIcon, this.page, this.id);
 
   final String label;
   final IconData icon;
   final IconData selectedIcon;
   final int page;
+
+  /// Stable section id for the screen at [page] ('orders', 'customers', …).
+  final String id;
 }
 
 /// The frame every screen lives in: navigation, search, sync state, user menu.
@@ -93,18 +97,21 @@ class _AppShellState extends ConsumerState<AppShell> {
         Icons.dashboard_outlined,
         Icons.dashboard,
         HomeTabs.home,
+        'today',
       ),
       _Dest(
         t('nav.orders'),
         Icons.receipt_long_outlined,
         Icons.receipt_long,
         HomeTabs.orders,
+        'orders',
       ),
       _Dest(
         t('nav.production'),
         Icons.view_kanban_outlined,
         Icons.view_kanban,
         HomeTabs.production,
+        'production',
       ),
     ];
     final people = <_Dest>[
@@ -113,6 +120,7 @@ class _AppShellState extends ConsumerState<AppShell> {
         Icons.people_outline,
         Icons.people,
         HomeTabs.customers,
+        'customers',
       ),
     ];
 
@@ -130,9 +138,15 @@ class _AppShellState extends ConsumerState<AppShell> {
           Icons.point_of_sale_outlined,
           Icons.point_of_sale,
           nextPage++,
+          'pos',
         ),
       );
-      optionalPages.add(const QuickSaleScreen());
+      optionalPages.add(SectionTourHost(
+        id: 'pos',
+        steps: QuickSaleScreen.tourSteps,
+        anchorFor: QuickSaleScreen.tourAnchorFor,
+        child: const QuickSaleScreen(),
+      ));
     }
     if (ref.watch(canEditPricesProvider)) {
       business.add(
@@ -141,9 +155,15 @@ class _AppShellState extends ConsumerState<AppShell> {
           Icons.inventory_2_outlined,
           Icons.inventory_2,
           nextPage++,
+          'catalogue',
         ),
       );
-      optionalPages.add(const CatalogueScreen());
+      optionalPages.add(SectionTourHost(
+        id: 'catalogue',
+        steps: CatalogueScreen.tourSteps,
+        anchorFor: CatalogueScreen.tourAnchorFor,
+        child: const CatalogueScreen(),
+      ));
     }
     if (ref.watch(canEditPricesProvider)) {
       business.add(
@@ -152,9 +172,15 @@ class _AppShellState extends ConsumerState<AppShell> {
           Icons.tune_outlined,
           Icons.tune,
           nextPage++,
+          'production_setup',
         ),
       );
-      optionalPages.add(const ProductionSetupScreen());
+      optionalPages.add(SectionTourHost(
+        id: 'production_setup',
+        steps: ProductionSetupScreen.tourSteps,
+        anchorFor: ProductionSetupScreen.tourAnchorFor,
+        child: const ProductionSetupScreen(),
+      ));
     }
     if (ref.watch(canEditPricesProvider)) {
       business.add(
@@ -163,9 +189,15 @@ class _AppShellState extends ConsumerState<AppShell> {
           Icons.price_change_outlined,
           Icons.price_change,
           nextPage++,
+          'prices',
         ),
       );
-      optionalPages.add(const PriceBookScreen());
+      optionalPages.add(SectionTourHost(
+        id: 'prices',
+        steps: PriceBookScreen.tourSteps,
+        anchorFor: PriceBookScreen.tourAnchorFor,
+        child: const PriceBookScreen(),
+      ));
     }
     if (ref.watch(canViewReportsProvider)) {
       business.add(
@@ -174,15 +206,26 @@ class _AppShellState extends ConsumerState<AppShell> {
           Icons.insights_outlined,
           Icons.insights,
           nextPage++,
+          'reports',
         ),
       );
-      optionalPages.add(const ReportsScreen());
+      optionalPages.add(SectionTourHost(
+        id: 'reports',
+        steps: ReportsScreen.tourSteps,
+        anchorFor: ReportsScreen.tourAnchorFor,
+        child: const ReportsScreen(),
+      ));
     }
     if (ref.watch(canManageStaffProvider)) {
       business.add(
-        _Dest(t('nav.staff'), Icons.badge_outlined, Icons.badge, nextPage++),
+        _Dest(t('nav.staff'), Icons.badge_outlined, Icons.badge, nextPage++, 'staff'),
       );
-      optionalPages.add(const StaffScreen());
+      optionalPages.add(SectionTourHost(
+        id: 'staff',
+        steps: StaffScreen.tourSteps,
+        anchorFor: StaffScreen.tourAnchorFor,
+        child: const StaffScreen(),
+      ));
     }
     if (ref.watch(canManageStaffProvider)) {
       // Settings sits last: it is the rarest thing an owner opens.
@@ -192,6 +235,7 @@ class _AppShellState extends ConsumerState<AppShell> {
           Icons.settings_outlined,
           Icons.settings,
           nextPage++,
+          'settings',
         ),
       );
       optionalPages.add(const SettingsScreen());
@@ -203,16 +247,42 @@ class _AppShellState extends ConsumerState<AppShell> {
           Icons.storefront_outlined,
           Icons.storefront,
           nextPage++,
+          'vendors',
         ),
       );
-      optionalPages.add(const VendorsScreen());
+      optionalPages.add(SectionTourHost(
+        id: 'vendors',
+        steps: VendorsScreen.tourSteps,
+        anchorFor: VendorsScreen.tourAnchorFor,
+        child: const VendorsScreen(),
+      ));
     }
 
     final pages = <Widget>[
-      const HomeScreen(),
-      const CustomersScreen(),
-      const OrdersScreen(),
-      const ProductionScreen(),
+      SectionTourHost(
+        id: 'today',
+        steps: HomeScreen.tourSteps,
+        anchorFor: HomeScreen.tourAnchorFor,
+        child: const HomeScreen(),
+      ),
+      SectionTourHost(
+        id: 'customers',
+        steps: CustomersScreen.tourSteps,
+        anchorFor: CustomersScreen.tourAnchorFor,
+        child: const CustomersScreen(),
+      ),
+      SectionTourHost(
+        id: 'orders',
+        steps: OrdersScreen.tourSteps,
+        anchorFor: OrdersScreen.tourAnchorFor,
+        child: const OrdersScreen(),
+      ),
+      SectionTourHost(
+        id: 'production',
+        steps: ProductionScreen.tourSteps,
+        anchorFor: ProductionScreen.tourAnchorFor,
+        child: const ProductionScreen(),
+      ),
       ...optionalPages,
     ];
 
@@ -221,6 +291,17 @@ class _AppShellState extends ConsumerState<AppShell> {
       (destination) => destination.page == index,
       orElse: () => all.first,
     );
+
+    // Keep the section-tour hosts pointed at whichever tab is showing, so a
+    // screen's guide runs on first visit. Fires on every tab change — rail,
+    // bottom bar, and the counter's sign-in landing tab.
+    ref.listen(shellTabProvider, (previous, next) {
+      final dest = all.firstWhere(
+        (d) => d.page == next,
+        orElse: () => all.first,
+      );
+      ref.read(activeSectionProvider.notifier).state = dest.id;
+    });
 
     final body = IndexedStack(index: index, children: pages);
 
@@ -376,6 +457,12 @@ class _AppShellState extends ConsumerState<AppShell> {
                             await showDiagnosticsSheet(context);
                             return;
                           }
+                          if (value == 'sectionTour') {
+                            ref
+                                .read(sectionTourRequestProvider.notifier)
+                                .state = ref.read(activeSectionProvider);
+                            return;
+                          }
                           if (value == 'tour') {
                             ref.read(appTourProvider.notifier).start();
                             return;
@@ -425,6 +512,10 @@ class _AppShellState extends ConsumerState<AppShell> {
                           PopupMenuItem<String>(
                             value: 'diagnostics',
                             child: Text(t('menu.diagnostics')),
+                          ),
+                          PopupMenuItem<String>(
+                            value: 'sectionTour',
+                            child: Text(t('menu.sectionTour')),
                           ),
                           PopupMenuItem<String>(
                             value: 'tour',

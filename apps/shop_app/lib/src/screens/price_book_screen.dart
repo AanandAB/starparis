@@ -6,6 +6,7 @@ import 'package:starparis_sync/starparis_sync.dart';
 
 import '../providers.dart';
 import '../sales/price_book_api.dart';
+import '../tour/section_tour.dart';
 
 /// The owner's price book.
 ///
@@ -15,6 +16,34 @@ import '../sales/price_book_api.dart';
 /// the warning at the top is a fact, not a disclaimer.
 class PriceBookScreen extends ConsumerWidget {
   const PriceBookScreen({super.key});
+
+  /// The first-visit guide for the Price book screen.
+  static const List<TourStep> tourSteps = <TourStep>[
+    TourStep(
+      icon: Icons.price_change_outlined,
+      title: 'Prices',
+      body: 'Every rate the shop quotes lives here, per product and size.',
+    ),
+    TourStep(
+      anchor: 'header',
+      icon: Icons.tune_outlined,
+      title: 'Price tools',
+      body: 'Bulk adjust moves every rate by a percentage in one step.',
+    ),
+    TourStep(
+      anchor: 'new',
+      icon: Icons.percent_outlined,
+      title: 'Bulk adjust',
+      body: 'Tap it to raise or lower prices across the board.',
+    ),
+  ];
+
+  /// Resolves an anchor name to the element it spotlights.
+  static GlobalKey? tourAnchorFor(String? name) => switch (name) {
+        'header' => const GlobalObjectKey('prices-header'),
+        'new' => const GlobalObjectKey('prices-new'),
+        _ => null,
+      };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -33,10 +62,12 @@ class PriceBookScreen extends ConsumerWidget {
             StarSpace.md,
           ),
           child: ScreenHeader(
+            key: const GlobalObjectKey('prices-header'),
             title: 'Price book',
             subtitle: 'Version $version · changes apply to new orders only',
             actions: <Widget>[
               OutlinedButton.icon(
+                key: const GlobalObjectKey('prices-new'),
                 onPressed: () => _showBulkAdjust(context, ref, products),
                 icon: const Icon(Icons.percent, size: 18),
                 label: const Text('Bulk adjust'),

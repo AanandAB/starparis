@@ -9,6 +9,7 @@ import 'package:starparis_sync/starparis_sync.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../app_config.dart';
+import '../tour/section_tour.dart';
 import '../providers.dart';
 import '../sales/documents_service.dart';
 import '../sales/invoice_section.dart';
@@ -24,6 +25,37 @@ class OrdersScreen extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<OrdersScreen> createState() => _OrdersScreenState();
+
+  /// The first-visit guide for the Orders screen.
+  static const List<TourStep> tourSteps = <TourStep>[
+    TourStep(
+      icon: Icons.receipt_long_outlined,
+      title: 'Orders',
+      body: 'Every job starts here — quotes, jobs in production and '
+          'deliveries, all in one list that keeps working offline.',
+    ),
+    TourStep(
+      anchor: 'header',
+      icon: Icons.dashboard_outlined,
+      title: 'Your tools',
+      body: 'Select to bulk-update several jobs at once, or New order to '
+          'build a quote from the price book.',
+    ),
+    TourStep(
+      anchor: 'new',
+      icon: Icons.add,
+      title: 'Start a job',
+      body: 'Tap New order (or press Ctrl+N) to turn a quote into a job in '
+          'about two minutes.',
+    ),
+  ];
+
+  /// Resolves an anchor name to the element it spotlights.
+  static GlobalKey? tourAnchorFor(String? name) => switch (name) {
+        'header' => const GlobalObjectKey('orders-header'),
+        'new' => const GlobalObjectKey('orders-new'),
+        _ => null,
+      };
 }
 
 class _OrdersScreenState extends ConsumerState<OrdersScreen> {
@@ -158,6 +190,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
             StarSpace.md,
           ),
           child: ScreenHeader(
+            key: const GlobalObjectKey('orders-header'),
             title: 'Orders',
             subtitle: _selecting
                 ? '${_selected.length} of ${rows.length} selected'
@@ -177,6 +210,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
                       label: const Text('Select'),
                     ),
                     FilledButton.icon(
+                      key: const GlobalObjectKey('orders-new'),
                       onPressed: () => openOrderBuilder(context),
                       icon: const Icon(Icons.add, size: 18),
                       label: const Text('New order'),

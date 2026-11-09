@@ -12,6 +12,7 @@ import '../app_config.dart';
 import '../providers.dart';
 import '../sales/number_prefixes.dart';
 import '../sales/receipt_transport.dart';
+import '../tour/section_tour.dart';
 
 /// One line the counter is ringing up. The unit price starts at a chip's
 /// default and stays editable — a walk-in sale has no price engine, so the
@@ -35,6 +36,35 @@ class QuickSaleScreen extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<QuickSaleScreen> createState() => _QuickSaleScreenState();
+
+  /// The first-visit guide for the Quick sale screen.
+  static const List<TourStep> tourSteps = <TourStep>[
+    TourStep(
+      icon: Icons.point_of_sale_outlined,
+      title: 'Quick sale',
+      body: 'Sell walk-in items fast — tap a service chip, then confirm.',
+    ),
+    TourStep(
+      anchor: 'header',
+      icon: Icons.shopping_basket_outlined,
+      title: 'Basket and total',
+      body: 'Your basket lists every line; the running total and payment '
+          'method live here.',
+    ),
+    TourStep(
+      anchor: 'new',
+      icon: Icons.check_circle_outline,
+      title: 'Take payment',
+      body: 'Confirm records the sale and prints a receipt.',
+    ),
+  ];
+
+  /// Resolves an anchor name to the element it spotlights.
+  static GlobalKey? tourAnchorFor(String? name) => switch (name) {
+        'header' => const GlobalObjectKey('pos-header'),
+        'new' => const GlobalObjectKey('pos-new'),
+        _ => null,
+      };
 }
 
 class _QuickSaleScreenState extends ConsumerState<QuickSaleScreen> {
@@ -294,6 +324,7 @@ class _QuickSaleScreenState extends ConsumerState<QuickSaleScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           ScreenHeader(
+            key: const GlobalObjectKey('pos-header'),
             title: 'Quick sale',
             subtitle: 'Walk-in sale — paid now, no invoice.',
           ),
@@ -392,6 +423,7 @@ class _QuickSaleScreenState extends ConsumerState<QuickSaleScreen> {
             ),
           const SizedBox(height: StarSpace.md),
           FilledButton.icon(
+            key: const GlobalObjectKey('pos-new'),
             onPressed: _busy || _lines.isEmpty ? null : _confirm,
             icon: const Icon(Icons.check_circle_outline, size: 18),
             label: Text(

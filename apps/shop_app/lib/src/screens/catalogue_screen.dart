@@ -5,6 +5,7 @@ import 'package:starparis_domain/starparis_domain.dart';
 import 'package:starparis_sync/starparis_sync.dart';
 
 import '../app_config.dart';
+import '../tour/section_tour.dart';
 import '../providers.dart';
 import '../sales/catalogue_admin_service.dart';
 
@@ -16,6 +17,34 @@ import '../sales/catalogue_admin_service.dart';
 /// shop-wide, so a tablet that has been offline for a week must not invent one.
 class CatalogueScreen extends ConsumerWidget {
   const CatalogueScreen({super.key});
+
+  /// The first-visit guide for the Catalogue screen.
+  static const List<TourStep> tourSteps = <TourStep>[
+    TourStep(
+      icon: Icons.inventory_2_outlined,
+      title: 'Catalogue',
+      body: 'Your products and services, with their markups and price breaks.',
+    ),
+    TourStep(
+      anchor: 'header',
+      icon: Icons.add_box_outlined,
+      title: 'Add a product',
+      body: 'New products and services are created here.',
+    ),
+    TourStep(
+      anchor: 'new',
+      icon: Icons.add,
+      title: 'Add',
+      body: 'Tap Add to create a product or service.',
+    ),
+  ];
+
+  /// Resolves an anchor name to the element it spotlights.
+  static GlobalKey? tourAnchorFor(String? name) => switch (name) {
+        'header' => const GlobalObjectKey('catalogue-header'),
+        'new' => const GlobalObjectKey('catalogue-new'),
+        _ => null,
+      };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -32,12 +61,14 @@ class CatalogueScreen extends ConsumerWidget {
       padding: const EdgeInsets.all(StarSpace.lg),
       children: <Widget>[
         ScreenHeader(
+          key: const GlobalObjectKey('catalogue-header'),
           title: 'Catalogue',
           subtitle:
               'What the shop sells. A product names its press and its finishing '
               'steps, so the price follows the work rather than a guess.',
           actions: <Widget>[
             FilledButton.icon(
+              key: const GlobalObjectKey('catalogue-new'),
               onPressed: () => _add(context, ref, machines, operations),
               icon: const Icon(Icons.add, size: 18),
               label: const Text('Add product'),

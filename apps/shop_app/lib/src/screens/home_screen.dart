@@ -6,6 +6,7 @@ import 'package:starparis_sync/starparis_sync.dart';
 
 import '../providers.dart';
 import '../sales/till_sheet.dart';
+import '../tour/section_tour.dart';
 import 'orders_screen.dart';
 
 /// Tab indices in the shell: Today, Customers, Orders, Production, [Prices],
@@ -30,6 +31,27 @@ abstract final class HomeTabs {
 /// dead connection — which is the point of the whole product.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
+
+  /// The first-visit guide for the Today screen.
+  static const List<TourStep> tourSteps = <TourStep>[
+    TourStep(
+      icon: Icons.dashboard_outlined,
+      title: 'Today',
+      body: 'Your morning dashboard: cash, jobs due, and what needs attention.',
+    ),
+    TourStep(
+      anchor: 'new',
+      icon: Icons.bolt_outlined,
+      title: 'Quick actions',
+      body: 'Start a new order straight from here.',
+    ),
+  ];
+
+  /// Resolves an anchor name to the element it spotlights.
+  static GlobalKey? tourAnchorFor(String? name) => switch (name) {
+        'new' => const GlobalObjectKey('today-new'),
+        _ => null,
+      };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -307,6 +329,7 @@ class _Greeting extends StatelessWidget {
         ),
         if (onNewOrder != null)
           FilledButton.icon(
+            key: const GlobalObjectKey('today-new'),
             onPressed: onNewOrder,
             icon: const Icon(Icons.add, size: 18),
             label: Text(newOrderLabel),

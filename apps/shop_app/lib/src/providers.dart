@@ -1,6 +1,7 @@
 import 'dart:ui' show Locale;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:starparis_documents/starparis_documents.dart';
 import 'package:starparis_sync/starparis_sync.dart';
 
@@ -240,3 +241,10 @@ class ShellTab extends Notifier<int> {
 
 final NotifierProvider<ShellTab, int> shellTabProvider =
     NotifierProvider<ShellTab, int>(ShellTab.new);
+
+/// The id of the section currently in view (e.g. 'today', 'orders',
+/// 'customers', 'production', plus the optional pages). The shell sets this
+/// when a tab is selected; [SectionTourHost] watches it to run a screen's
+/// guide on first visit.
+final StateProvider<String?> activeSectionProvider =
+    StateProvider<String?>((ref) => 'today');
