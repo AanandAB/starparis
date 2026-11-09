@@ -458,7 +458,10 @@ class _OrderBuilderScreenState extends ConsumerState<OrderBuilderScreen> {
               ),
               _Section(
                 title: 'Due and priority',
-                child: Row(
+                child: Wrap(
+                  spacing: StarSpace.md,
+                  runSpacing: StarSpace.sm,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: <Widget>[
                     OutlinedButton.icon(
                       onPressed: () async {
@@ -481,7 +484,6 @@ class _OrderBuilderScreenState extends ConsumerState<OrderBuilderScreen> {
                             : '${_dueAt!.day}/${_dueAt!.month}/${_dueAt!.year}',
                       ),
                     ),
-                    const SizedBox(width: StarSpace.md),
                     SegmentedButton<Priority>(
                       segments: const <ButtonSegment<Priority>>[
                         ButtonSegment<Priority>(
@@ -539,49 +541,45 @@ class _OrderBuilderScreenState extends ConsumerState<OrderBuilderScreen> {
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(StarSpace.lg),
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                child: price == null
-                    ? Text(
-                        'Pick a product to see the price',
-                        style: theme.textTheme.bodySmall,
-                      )
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          Text(
-                            'Total incl. VAT',
-                            style: theme.textTheme.labelSmall,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final total = price == null
+                  ? Text(
+                      'Pick a product to see the price',
+                      style: theme.textTheme.bodySmall,
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(
+                          'Total incl. VAT',
+                          style: theme.textTheme.labelSmall,
+                        ),
+                        // The running total counts up when a size, finish or
+                        // quantity changes, so a repricing is felt, not read.
+                        AnimatedCount(
+                          value: price.grandTotal.raw,
+                          format: (fils) => Fils(fils).aedLabel,
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            fontFeatures: const <FontFeature>[
+                              FontFeature.tabularFigures(),
+                            ],
+                            color: price.grandTotal.isNegative
+                                ? theme.colorScheme.error
+                                : null,
                           ),
-                          // The running total counts up when a size, finish or
-                          // quantity changes, so a repricing is felt, not read.
-                          AnimatedCount(
-                            value: price.grandTotal.raw,
-                            format: (fils) => Fils(fils).aedLabel,
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              fontFeatures: const <FontFeature>[
-                                FontFeature.tabularFigures(),
-                              ],
-                              color: price.grandTotal.isNegative
-                                  ? theme.colorScheme.error
-                                  : null,
-                            ),
-                          ),
-                        ],
-                      ),
-              ),
-              const SizedBox(width: StarSpace.md),
-              OutlinedButton(
+                        ),
+                      ],
+                    );
+              final saveAsQuote = OutlinedButton(
                 onPressed: _saving || price == null || _customerId == null
                     ? null
                     : () => _confirm(asQuote: true),
                 child: const Text('Save as quote'),
-              ),
-              const SizedBox(width: StarSpace.sm),
-              FilledButton.icon(
+              );
+              final confirmOrder = FilledButton.icon(
                 onPressed: _saving || price == null || _customerId == null
                     ? null
                     : _confirm,
@@ -593,8 +591,38 @@ class _OrderBuilderScreenState extends ConsumerState<OrderBuilderScreen> {
                       )
                     : const Icon(Icons.check, size: 18),
                 label: const Text('Confirm order'),
-              ),
-            ],
+              );
+
+              if (constraints.maxWidth < StarBreakpoints.compact) {
+                // On a phone the total and the two actions stack: the buttons
+                // side by side below, the total above — nothing can squeeze
+                // the price into one letter per line.
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    total,
+                    const SizedBox(height: StarSpace.md),
+                    Row(
+                      children: <Widget>[
+                        Expanded(child: saveAsQuote),
+                        const SizedBox(width: StarSpace.sm),
+                        Expanded(child: confirmOrder),
+                      ],
+                    ),
+                  ],
+                );
+              }
+              return Row(
+                children: <Widget>[
+                  Expanded(child: total),
+                  const SizedBox(width: StarSpace.md),
+                  saveAsQuote,
+                  const SizedBox(width: StarSpace.sm),
+                  confirmOrder,
+                ],
+              );
+            },
           ),
         ),
       ),
