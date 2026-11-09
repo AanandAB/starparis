@@ -41,31 +41,52 @@ class CustomersScreen extends ConsumerWidget {
             StarSpace.lg,
             StarSpace.md,
           ),
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                child: TextField(
-                  onChanged: (value) =>
-                      ref.read(searchQueryProvider.notifier).set(value),
-                  decoration: const InputDecoration(
-                    hintText: 'Search by phone, name or company',
-                    prefixIcon: Icon(Icons.search),
-                  ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final search = TextField(
+                onChanged: (value) =>
+                    ref.read(searchQueryProvider.notifier).set(value),
+                decoration: const InputDecoration(
+                  hintText: 'Search by phone, name or company',
+                  prefixIcon: Icon(Icons.search),
                 ),
-              ),
-              const SizedBox(width: StarSpace.md),
-              FilledButton.icon(
+              );
+              final newButton = FilledButton.icon(
                 onPressed: () => showNewCustomerSheet(context),
                 icon: const Icon(Icons.person_add_alt_1_outlined, size: 18),
                 label: const Text('New customer'),
-              ),
-              const SizedBox(width: StarSpace.md),
-              OutlinedButton.icon(
+              );
+              final exportButton = OutlinedButton.icon(
                 onPressed: () => _exportCustomers(context, ref),
                 icon: const Icon(Icons.file_download_outlined, size: 18),
                 label: const Text('Export'),
-              ),
-            ],
+              );
+              if (constraints.maxWidth < StarBreakpoints.compact) {
+                // The buttons drop below the search field, so a phone never
+                // squeezes the field (and its search icon) out of sight.
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    search,
+                    const SizedBox(height: StarSpace.sm),
+                    Wrap(
+                      spacing: StarSpace.sm,
+                      runSpacing: StarSpace.sm,
+                      children: <Widget>[newButton, exportButton],
+                    ),
+                  ],
+                );
+              }
+              return Row(
+                children: <Widget>[
+                  Expanded(child: search),
+                  const SizedBox(width: StarSpace.md),
+                  newButton,
+                  const SizedBox(width: StarSpace.md),
+                  exportButton,
+                ],
+              );
+            },
           ),
         ),
         const Divider(height: 1),

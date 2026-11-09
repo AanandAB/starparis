@@ -33,45 +33,85 @@ class ScreenHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final narrow = MediaQuery.sizeOf(context).width < StarBreakpoints.compact;
+
+    final titleBlock = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          title,
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.6,
+          ),
+        ),
+        if (subtitle != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              subtitle!,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+      ],
+    );
+
+    final back = onBack == null
+        ? null
+        : Padding(
+            padding: const EdgeInsets.only(right: StarSpace.xs, top: 2),
+            child: IconButton(
+              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+              onPressed: onBack,
+              icon: const Icon(Icons.arrow_back),
+            ),
+          );
+
+    final hasExtras = trailing != null || actions.isNotEmpty;
+
+    if (narrow) {
+      // On a phone the trailing/actions move to their own line so a wide
+      // control (a mode selector, a month stepper, a New-customer button) can
+      // never starve the title into one character per line.
+      return Padding(
+        padding: const EdgeInsets.only(bottom: StarSpace.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                ?back,
+                Expanded(child: titleBlock),
+              ],
+            ),
+            if (hasExtras) ...<Widget>[
+              const SizedBox(height: StarSpace.sm),
+              Wrap(
+                spacing: StarSpace.sm,
+                runSpacing: StarSpace.sm,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: <Widget>[
+                  ?trailing,
+                  ...actions,
+                ],
+              ),
+            ],
+          ],
+        ),
+      );
+    }
 
     return Padding(
       padding: const EdgeInsets.only(bottom: StarSpace.lg),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          if (onBack != null)
-            Padding(
-              padding: const EdgeInsets.only(right: StarSpace.xs, top: 2),
-              child: IconButton(
-                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-                onPressed: onBack,
-                icon: const Icon(Icons.arrow_back),
-              ),
-            ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  title,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.6,
-                  ),
-                ),
-                if (subtitle != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: Text(
-                      subtitle!,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
+          ?back,
+          Expanded(child: titleBlock),
           if (trailing != null) ...<Widget>[
             const SizedBox(width: StarSpace.md),
             trailing!,
