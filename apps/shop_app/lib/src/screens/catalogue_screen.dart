@@ -86,7 +86,11 @@ class CatalogueScreen extends ConsumerWidget {
                       'outsourced' => Icons.storefront_outlined,
                       _ => Icons.print_outlined,
                     }, size: 20),
-                    title: Text(products[i].nameEn),
+                    title: Text(
+                      products[i].nameEn,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     subtitle: Text(
                       <String>[
                         products[i].code,

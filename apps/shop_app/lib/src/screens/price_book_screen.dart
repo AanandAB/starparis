@@ -148,10 +148,12 @@ class _RuleRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return ListTile(
-      title: Text(rule.label),
+      title: Text(rule.label, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: Text(
         '$productName · ${rule.phase} · ${rule.basis.replaceAll('_', ' ')}'
         '${rule.active ? '' : ' · inactive'}',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: theme.textTheme.bodySmall?.copyWith(
           color: theme.colorScheme.onSurfaceVariant,
         ),

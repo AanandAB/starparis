@@ -567,7 +567,7 @@ Widget _row({
     dense: true,
     onTap: onTap,
     leading: const Icon(Icons.edit_outlined, size: 18),
-    title: Text(title),
+    title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
     subtitle: Text(
       subtitle,
       maxLines: 1,

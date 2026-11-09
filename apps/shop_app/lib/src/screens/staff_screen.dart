@@ -211,13 +211,20 @@ class _StaffRow extends StatelessWidget {
             ),
           ),
         ),
-        title: Text(member.name, style: theme.textTheme.bodyMedium),
+        title: Text(
+          member.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.bodyMedium,
+        ),
         subtitle: Text(
           <String>[
             member.roleLabel,
             member.phone,
             if (member.branchName != null) member.branchName!,
           ].join(' · '),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),

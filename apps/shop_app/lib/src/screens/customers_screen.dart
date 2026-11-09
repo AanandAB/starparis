@@ -129,7 +129,11 @@ class CustomersScreen extends ConsumerWidget {
                           style: TextStyle(color: theme.colorScheme.primary),
                         ),
                       ),
-                      title: Text(customer.name),
+                      title: Text(
+                        customer.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       subtitle: Text(
                         <String>[
                           if (customer.company != null &&
