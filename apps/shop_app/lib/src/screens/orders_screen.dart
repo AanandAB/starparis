@@ -434,6 +434,34 @@ class _SelectionBar extends StatelessWidget {
     final theme = Theme.of(context);
     final enabled = selectedCount > 0 && !busy;
 
+    final selectAll = TextButton.icon(
+      onPressed: busy ? null : onToggleSelectAll,
+      icon: Icon(
+        allSelected ? Icons.check_box : Icons.check_box_outline_blank,
+        size: 18,
+      ),
+      label: Text(allSelected ? 'Clear' : 'Select all'),
+    );
+    final count = Text(
+      '$selectedCount of $totalCount selected',
+      style: theme.textTheme.bodySmall?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+      ),
+    );
+    final delete = OutlinedButton.icon(
+      onPressed: enabled ? onDelete : null,
+      icon: const Icon(Icons.delete_outline, size: 18),
+      label: const Text('Delete'),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: theme.colorScheme.error,
+        side: enabled
+            ? BorderSide(
+                color: theme.colorScheme.error.withValues(alpha: 0.6),
+              )
+            : null,
+      ),
+    );
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         StarSpace.lg,
@@ -441,40 +469,36 @@ class _SelectionBar extends StatelessWidget {
         StarSpace.lg,
         StarSpace.xs,
       ),
-      child: Row(
-        children: <Widget>[
-          TextButton.icon(
-            onPressed: busy ? null : onToggleSelectAll,
-            icon: Icon(
-              allSelected ? Icons.check_box : Icons.check_box_outline_blank,
-              size: 18,
-            ),
-            label: Text(allSelected ? 'Clear' : 'Select all'),
-          ),
-          const SizedBox(width: StarSpace.sm),
-          Text(
-            '$selectedCount of $totalCount selected',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const Spacer(),
-          _StatusMenu(enabled: enabled, onStatus: onStatus),
-          const SizedBox(width: StarSpace.sm),
-          OutlinedButton.icon(
-            onPressed: enabled ? onDelete : null,
-            icon: const Icon(Icons.delete_outline, size: 18),
-            label: const Text('Delete'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: theme.colorScheme.error,
-              side: enabled
-                  ? BorderSide(
-                      color: theme.colorScheme.error.withValues(alpha: 0.6),
-                    )
-                  : null,
-            ),
-          ),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < StarBreakpoints.compact) {
+            // On a phone these five controls cannot share one line; the
+            // Delete button on the far right was the one getting cut off.
+            // Wrap them so every control stays fully visible.
+            return Wrap(
+              spacing: StarSpace.sm,
+              runSpacing: StarSpace.sm,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: <Widget>[
+                selectAll,
+                count,
+                _StatusMenu(enabled: enabled, onStatus: onStatus),
+                delete,
+              ],
+            );
+          }
+          return Row(
+            children: <Widget>[
+              selectAll,
+              const SizedBox(width: StarSpace.sm),
+              count,
+              const Spacer(),
+              _StatusMenu(enabled: enabled, onStatus: onStatus),
+              const SizedBox(width: StarSpace.sm),
+              delete,
+            ],
+          );
+        },
       ),
     );
   }
