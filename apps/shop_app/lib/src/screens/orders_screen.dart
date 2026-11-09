@@ -261,79 +261,104 @@ class _OrderRow extends StatelessWidget {
     final pendingNumber = order.numberDisplay.startsWith('T-');
     final pendingUpload = order.version == 0;
     final status = _orderStatus(order.status);
+    final details = <String>[
+      '${order.itemCount} item${order.itemCount == 1 ? '' : 's'}',
+      order.priority == 'normal' ? 'standard' : order.priority,
+      if (order.dueAt != null) 'due ${order.dueAt!.day}/${order.dueAt!.month}',
+    ].join(' · ');
 
+    // A hand-rolled row rather than a ListTile: the number block and the
+    // status chip each have a real width, and on a phone a ListTile's fixed
+    // leading + trailing squeeze the name down to nothing. Three stacked
+    // lines — name + total, number + status, details — never fight for room.
     return PressableCard(
       onTap: selecting ? onToggle : () => showOrderSheet(context, order),
-      padding: EdgeInsets.zero,
-      child: ListTile(
-        leading: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            if (selecting)
-              Padding(
-                padding: const EdgeInsets.only(right: StarSpace.xs),
-                child: Checkbox(
-                  value: selected,
-                  onChanged: (_) => onToggle?.call(),
-                ),
-              ),
-            SizedBox(
-              width: 76,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    order.numberDisplay,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontFeatures: const <FontFeature>[
-                        FontFeature.tabularFigures(),
-                      ],
-                    ),
-                  ),
-                  if (pendingNumber)
-                    Text(
-                      'pending',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: StarColors.statusPaused,
-                      ),
-                    ),
-                ],
+      padding: const EdgeInsets.all(StarSpace.md),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          if (selecting)
+            Padding(
+              padding: const EdgeInsets.only(right: StarSpace.xs),
+              child: Checkbox(
+                value: selected,
+                onChanged: (_) => onToggle?.call(),
               ),
             ),
-          ],
-        ),
-        title: Text(order.customerName ?? 'Customer'),
-        subtitle: Text(
-          <String>[
-            '${order.itemCount} item${order.itemCount == 1 ? '' : 's'}',
-            order.priority == 'normal' ? 'standard' : order.priority,
-            if (order.dueAt != null)
-              'due ${order.dueAt!.day}/${order.dueAt!.month}',
-          ].join(' · '),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: <Widget>[
-            MoneyText(Fils(order.totalFils), emphasise: true),
-            const SizedBox(height: 4),
-            if (pendingUpload)
-              const StatusChip(
-                label: 'Waiting to upload',
-                tone: StatusTone.paused,
-                icon: Icons.cloud_upload_outlined,
-              )
-            else
-              StatusChip(
-                label: status.label,
-                tone: status.tone,
-                icon: status.icon,
-              ),
-          ],
-        ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        order.customerName ?? 'Customer',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: StarSpace.sm),
+                    MoneyText(Fils(order.totalFils), emphasise: true),
+                  ],
+                ),
+                const SizedBox(height: StarSpace.xs),
+                Row(
+                  children: <Widget>[
+                    Flexible(
+                      child: Text(
+                        order.numberDisplay,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontFeatures: const <FontFeature>[
+                            FontFeature.tabularFigures(),
+                          ],
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                    if (pendingNumber) ...<Widget>[
+                      const SizedBox(width: StarSpace.xs),
+                      Text(
+                        'pending',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: StarColors.statusPaused,
+                        ),
+                      ),
+                    ],
+                    const Spacer(),
+                    if (pendingUpload)
+                      const StatusChip(
+                        label: 'Waiting to upload',
+                        tone: StatusTone.paused,
+                        icon: Icons.cloud_upload_outlined,
+                      )
+                    else
+                      StatusChip(
+                        label: status.label,
+                        tone: status.tone,
+                        icon: status.icon,
+                      ),
+                  ],
+                ),
+                const SizedBox(height: StarSpace.xs),
+                Text(
+                  details,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
