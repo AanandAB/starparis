@@ -323,7 +323,7 @@ class _ProductDialogState extends State<_ProductDialog> {
     return AlertDialog(
       title: const Text('Add a product or service'),
       content: SizedBox(
-        width: 560,
+        width: dialogWidth(context, max: 560),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -580,7 +580,7 @@ class _NumbersDialogState extends State<_NumbersDialog> {
     return AlertDialog(
       title: Text(widget.product.nameEn),
       content: SizedBox(
-        width: 420,
+        width: dialogWidth(context, max: 420),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
@@ -730,7 +730,7 @@ class _BreaksDialogState extends ConsumerState<_BreaksDialog> {
     return AlertDialog(
       title: Text('Price breaks — ${widget.product.nameEn}'),
       content: SizedBox(
-        width: 460,
+        width: dialogWidth(context, max: 460),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[

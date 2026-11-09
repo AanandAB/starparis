@@ -9,6 +9,7 @@ library;
 export 'src/theme.dart';
 export 'src/tokens.dart';
 export 'src/widgets/animated_count.dart';
+export 'src/widgets/dialog_width.dart';
 export 'src/widgets/empty_state.dart';
 export 'src/widgets/glass_panel.dart';
 export 'src/widgets/money_text.dart';

@@ -331,7 +331,7 @@ class _NewStaffDialogState extends State<_NewStaffDialog> {
     return AlertDialog(
       title: const Text('Add a person'),
       content: SizedBox(
-        width: 460,
+        width: dialogWidth(context, max: 460),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -485,7 +485,7 @@ class _EditStaffDialogState extends State<_EditStaffDialog> {
     return AlertDialog(
       title: Text(widget.member.name),
       content: SizedBox(
-        width: 460,
+        width: dialogWidth(context, max: 460),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,

@@ -364,7 +364,7 @@ class _BulkAdjustDialogState extends ConsumerState<_BulkAdjustDialog> {
     return AlertDialog(
       title: const Text('Bulk price adjust'),
       content: SizedBox(
-        width: 460,
+        width: dialogWidth(context, max: 460),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,

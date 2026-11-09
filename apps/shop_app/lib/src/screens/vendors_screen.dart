@@ -350,7 +350,7 @@ class _NewVendorDialogState extends State<_NewVendorDialog> {
     return AlertDialog(
       title: const Text('Add a vendor'),
       content: SizedBox(
-        width: 440,
+        width: dialogWidth(context, max: 440),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
@@ -485,7 +485,7 @@ class _NewVendorJobDialogState extends State<_NewVendorJobDialog> {
     return AlertDialog(
       title: const Text('Hand work to a vendor'),
       content: SizedBox(
-        width: 480,
+        width: dialogWidth(context, max: 480),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,

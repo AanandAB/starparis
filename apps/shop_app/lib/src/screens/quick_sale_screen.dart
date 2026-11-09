@@ -448,6 +448,64 @@ class _BasketLineTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    final name = Text(
+      line.description,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: theme.textTheme.titleSmall?.copyWith(
+        fontWeight: FontWeight.w600,
+      ),
+    );
+    final unit = Text(
+      '${line.quantity} × ${Fils(line.unitFils).aedLabel}',
+      style: theme.textTheme.bodySmall?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+      ),
+    );
+    final nameColumn = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        name,
+        const SizedBox(height: 2),
+        unit,
+      ],
+    );
+    final stepper = <Widget>[
+      IconButton(
+        onPressed: () => onQuantity(-1),
+        icon: const Icon(Icons.remove_circle_outline, size: 20),
+        tooltip: 'One fewer',
+      ),
+      SizedBox(
+        width: 28,
+        child: Text(
+          '${line.quantity}',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.titleMedium,
+        ),
+      ),
+      IconButton(
+        onPressed: () => onQuantity(1),
+        icon: const Icon(Icons.add_circle_outline, size: 20),
+        tooltip: 'One more',
+      ),
+    ];
+    final editPrice = TextButton(
+      onPressed: onEditPrice,
+      child: Text(Fils(line.unitFils).aedLabel),
+    );
+    final amount = SizedBox(
+      width: 96,
+      child: MoneyText(Fils(line.amountFils), emphasise: true),
+    );
+    final remove = IconButton(
+      onPressed: onRemove,
+      icon: const Icon(Icons.close, size: 20),
+      tooltip: 'Remove',
+    );
+
     return Material(
       color: theme.colorScheme.surfaceContainerLow,
       borderRadius: BorderRadius.circular(StarRadius.card),
@@ -456,60 +514,45 @@ class _BasketLineTile extends StatelessWidget {
           horizontal: StarSpace.md,
           vertical: StarSpace.sm,
         ),
-        child: Row(
-          children: <Widget>[
-            Expanded(
-              child: Column(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // On a phone the single row is too wide: the name, two stepper
+            // buttons, the unit-price button and the amount all compete, and
+            // the name collapses into vertical letters. Stack instead — name
+            // and amount on top, the stepper and unit price underneath.
+            if (constraints.maxWidth < 420) {
+              return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text(
-                    line.description,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                  Row(
+                    children: <Widget>[
+                      Expanded(child: nameColumn),
+                      const SizedBox(width: StarSpace.sm),
+                      amount,
+                      remove,
+                    ],
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${line.quantity} × ${Fils(line.unitFils).aedLabel}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+                  const SizedBox(height: StarSpace.xs),
+                  Row(
+                    children: <Widget>[
+                      ...stepper,
+                      const SizedBox(width: StarSpace.sm),
+                      editPrice,
+                    ],
                   ),
                 ],
-              ),
-            ),
-            IconButton(
-              onPressed: () => onQuantity(-1),
-              icon: const Icon(Icons.remove_circle_outline, size: 20),
-              tooltip: 'One fewer',
-            ),
-            SizedBox(
-              width: 28,
-              child: Text(
-                '${line.quantity}',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.titleMedium,
-              ),
-            ),
-            IconButton(
-              onPressed: () => onQuantity(1),
-              icon: const Icon(Icons.add_circle_outline, size: 20),
-              tooltip: 'One more',
-            ),
-            TextButton(
-              onPressed: onEditPrice,
-              child: Text(Fils(line.unitFils).aedLabel),
-            ),
-            SizedBox(
-              width: 96,
-              child: MoneyText(Fils(line.amountFils), emphasise: true),
-            ),
-            IconButton(
-              onPressed: onRemove,
-              icon: const Icon(Icons.close, size: 20),
-              tooltip: 'Remove',
-            ),
-          ],
+              );
+            }
+            return Row(
+              children: <Widget>[
+                Expanded(child: nameColumn),
+                ...stepper,
+                editPrice,
+                amount,
+                remove,
+              ],
+            );
+          },
         ),
       ),
     );

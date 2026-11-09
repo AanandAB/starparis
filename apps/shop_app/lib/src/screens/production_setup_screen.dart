@@ -732,7 +732,7 @@ class _MaterialDialogState extends State<_MaterialDialog> {
     return AlertDialog(
       title: Text(_editing ? 'Edit paper' : 'Add paper'),
       content: SizedBox(
-        width: 560,
+        width: dialogWidth(context, max: 560),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -957,7 +957,7 @@ class _MachineDialogState extends State<_MachineDialog> {
     return AlertDialog(
       title: Text(_editing ? 'Edit press' : 'Add a press'),
       content: SizedBox(
-        width: 560,
+        width: dialogWidth(context, max: 560),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1203,7 +1203,7 @@ class _OperationDialogState extends State<_OperationDialog> {
     return AlertDialog(
       title: Text(_editing ? 'Edit finishing step' : 'Add a finishing step'),
       content: SizedBox(
-        width: 560,
+        width: dialogWidth(context, max: 560),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
