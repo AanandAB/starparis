@@ -75,6 +75,7 @@ class _AppShellState extends ConsumerState<AppShell> {
 
     final index = ref.watch(shellTabProvider);
     final t = ref.watch(stringsProvider);
+    final anchors = ref.watch(tourAnchorsProvider);
     final theme = Theme.of(context);
     final width = MediaQuery.sizeOf(context).width;
     final useRail =
@@ -279,6 +280,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                     actions: <Widget>[
                       if (useRail)
                         SizedBox(
+                          key: anchors.search,
                           width: 340,
                           child: InkWell(
                             onTap: () => showTrackSheet(context),
@@ -330,7 +332,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                           ),
                         ),
                       const SizedBox(width: StarSpace.md),
-                      const SyncStatusChip(),
+                      SyncStatusChip(key: anchors.sync),
                       if (useRail) ...<Widget>[
                         // F5 is a keyboard shortcut, so its key-cap is a desktop
                         // affordance — like the Ctrl K hint, it stays off the phone bar.
@@ -339,6 +341,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                       ],
                       const SizedBox(width: StarSpace.sm),
                       PopupMenuButton<String>(
+                        key: anchors.menu,
                         tooltip: session.name,
                         icon: CircleAvatar(
                           radius: 15,
@@ -451,13 +454,16 @@ class _AppShellState extends ConsumerState<AppShell> {
               body: useRail
                   ? Row(
                       children: <Widget>[
-                        _Rail(
-                          work: work,
-                          people: people,
-                          business: business,
-                          selected: index,
-                          extended: wide,
-                          onSelect: _select,
+                        KeyedSubtree(
+                          key: anchors.rail,
+                          child: _Rail(
+                            work: work,
+                            people: people,
+                            business: business,
+                            selected: index,
+                            extended: wide,
+                            onSelect: _select,
+                          ),
                         ),
                         const VerticalDivider(width: 1),
                         Expanded(child: body),

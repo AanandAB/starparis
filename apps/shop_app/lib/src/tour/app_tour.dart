@@ -5,23 +5,50 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:starparis_design/starparis_design.dart';
 
 import '../providers.dart';
+import '../screens/home_screen.dart' show HomeTabs;
 
-/// One step of the guided tour. Written for a brand-new counter clerk, so each
-/// step names one screen and what it is for — no jargon, no feature checklist.
+/// Named targets the tour can spotlight.
+///
+/// They all live in the shell — the navigation rail, the search box, the sync
+/// chip, the user menu — so they are laid out for the whole session and a step
+/// can point at one regardless of which screen is showing underneath.
+class TourAnchors {
+  final GlobalKey rail = GlobalKey();
+  final GlobalKey search = GlobalKey();
+  final GlobalKey sync = GlobalKey();
+  final GlobalKey menu = GlobalKey();
+
+  GlobalKey? forName(String? name) => switch (name) {
+        'rail' => rail,
+        'search' => search,
+        'sync' => sync,
+        'menu' => menu,
+        _ => null,
+      };
+}
+
+final Provider<TourAnchors> tourAnchorsProvider =
+    Provider<TourAnchors>((ref) => TourAnchors());
+
+/// One step of the guided tour.
+///
+/// [anchor] names the shell element to spotlight (null for the welcome and
+/// closing cards, which show centred instead). [tab] is the shell tab to open
+/// first, so the screen behind the spotlight matches what the step explains.
 class AppTourStep {
   const AppTourStep({
-    required this.icon,
     required this.title,
     required this.body,
-    this.tip,
+    this.icon = Icons.info_outline,
+    this.anchor,
+    this.tab,
   });
 
-  final IconData icon;
   final String title;
   final String body;
-
-  /// An optional one-line "how" hint, usually a keyboard shortcut.
-  final String? tip;
+  final IconData icon;
+  final String? anchor;
+  final int? tab;
 }
 
 /// The tour, in the order a new clerk first walks the app.
@@ -30,72 +57,78 @@ const List<AppTourStep> appTourSteps = <AppTourStep>[
     icon: Icons.local_print_shop_outlined,
     title: 'Welcome to Star Paris',
     body:
-        'This is your shop\'s command centre. A job moves from a quote, to the '
-        'production floor, to an invoice and a payment — all in one place, and '
-        'it keeps working even with no internet.',
-    tip:
-        'Tap through in a minute — you can replay this any time from the menu.',
+        'A job moves from a quote, to the floor, to an invoice — all in one '
+        'place, and it keeps working with no internet. Let\'s look around in '
+        'under a minute.',
   ),
   AppTourStep(
+    anchor: 'rail',
+    tab: HomeTabs.home,
     icon: Icons.dashboard_outlined,
-    title: 'Today is your dashboard',
+    title: 'This is your navigation',
     body:
-        'The screen you land on. Every number is a door: what\'s in production, '
-        'what\'s overdue, what\'s due today, and the work waiting for you.',
-    tip: 'Tap any figure to jump to the list behind it.',
+        'Today, Orders, Customers and Production live in this rail. Tap any '
+        'one to jump to that screen — the highlight shows you where to look.',
   ),
   AppTourStep(
+    anchor: 'rail',
+    tab: HomeTabs.orders,
     icon: Icons.receipt_long_outlined,
-    title: 'Orders — where every job starts',
+    title: 'Orders — every job starts here',
     body:
-        'Build a quote, convert it to an order, invoice it, and WhatsApp the '
-        'customer — all from the order. Each one gets a unique job number.',
-    tip: 'Press Ctrl+N to start a new order from anywhere.',
+        'Open Orders, then tap "New order" (or press Ctrl+N) to build a quote '
+        'and turn it into a job.',
   ),
   AppTourStep(
+    anchor: 'rail',
+    tab: HomeTabs.customers,
     icon: Icons.people_outline,
     title: 'Customers — find anyone in seconds',
     body:
-        'Search by name or phone number. Open a customer to see their orders, '
-        'their balance, and hand them a statement.',
+        'Search by name or phone, then tap a customer for their orders, '
+        'balance and a statement.',
   ),
   AppTourStep(
+    anchor: 'rail',
+    tab: HomeTabs.production,
     icon: Icons.view_kanban_outlined,
     title: 'The production board',
     body:
-        'Every job is a card in a column — design, print, finish, QC, delivery. '
-        'Claim, start and finish each stage as the work moves, so everyone sees '
-        'exactly where a job is.',
-    tip: 'Switch between Board, My work and Vendors at the top.',
+        'Every job is a card in a column. Claim, start and finish each stage '
+        'so everyone sees where a job is.',
   ),
   AppTourStep(
-    icon: Icons.price_change_outlined,
-    title: 'Prices — you set them, no developer',
-    body:
-        'Edit any rate and see the effect on a sample quote before you save. '
-        'Every change is recorded, so you always know who changed what and why.',
-    tip: 'Owner only — this is locked for other roles.',
-  ),
-  AppTourStep(
+    anchor: 'search',
     icon: Icons.search,
-    title: 'Track — answer "where\'s my order?"',
+    title: 'Answer "where\'s my order?"',
     body:
-        'Type a job number, invoice number, phone or customer name and the '
-        'answer comes back grouped — jobs, invoices, customers. Works offline.',
-    tip: 'Press Ctrl+K from anywhere to open it.',
+        'Type a job number, invoice, phone or name here — the answer comes '
+        'back grouped. Works offline. Press Ctrl+K from anywhere.',
   ),
   AppTourStep(
-    icon: Icons.point_of_sale_outlined,
-    title: 'You\'re ready',
+    anchor: 'sync',
+    icon: Icons.cloud_outlined,
+    title: 'Online, offline or syncing',
     body:
-        'That\'s the whole loop: sell, make, bill, collect. When in doubt, '
-        'Ctrl+K finds the job and the sync chip in the top bar tells you the '
-        'connection state.',
-    tip: 'F5 syncs now. Replay this tour any time from the user menu.',
+        'This chip tells you the connection state. The app keeps working '
+        'offline and syncs when the network returns.',
+  ),
+  AppTourStep(
+    anchor: 'menu',
+    icon: Icons.account_circle_outlined,
+    title: 'Your account lives here',
+    body:
+        'Cash drawer, theme, language and sign out. You can replay this tour '
+        'any time from this menu.',
+  ),
+  AppTourStep(
+    icon: Icons.check_circle_outline,
+    title: 'You\'re ready',
+    body: 'F5 syncs now, Ctrl+K finds a job, Ctrl+N starts an order. Go make '
+        'something.',
   ),
 ];
 
-/// The tour's live state: whether it is showing and which step is current.
 @immutable
 class AppTourState {
   const AppTourState({required this.active, required this.step});
@@ -106,11 +139,9 @@ class AppTourState {
   bool get isLast => step >= appTourSteps.length - 1;
 }
 
-/// Drives the tour and remembers that it has been seen.
-///
-/// Persisted to the same local meta table the theme and price-book version
-/// already use (key `tour_seen`), so the tour plays once on first login and
-/// never again unless it is replayed — no new store, no new dependency.
+/// Drives the tour, remembers it has been seen, and switches the shell tab to
+/// match the step (so the screen behind the spotlight is the one being
+/// explained).
 class AppTourController extends Notifier<AppTourState> {
   static const String _metaKey = 'tour_seen';
 
@@ -130,23 +161,27 @@ class AppTourController extends Notifier<AppTourState> {
     }
   }
 
-  void start() => state = const AppTourState(active: true, step: 0);
+  void _go(int step) {
+    state = AppTourState(active: true, step: step);
+    final tab = appTourSteps[step].tab;
+    if (tab != null) ref.read(shellTabProvider.notifier).select(tab);
+  }
+
+  void start() => _go(0);
 
   void next() {
     if (state.isLast) {
       finish();
       return;
     }
-    state = AppTourState(active: true, step: state.step + 1);
+    _go(state.step + 1);
   }
 
   void back() {
     if (state.step == 0) return;
-    state = AppTourState(active: true, step: state.step - 1);
+    _go(state.step - 1);
   }
 
-  /// Marks the tour seen and dismisses it. Best effort: if the write fails the
-  /// tour simply plays again next login rather than corrupting anything.
   Future<void> finish() async {
     state = AppTourState(active: false, step: state.step);
     try {
@@ -158,70 +193,192 @@ class AppTourController extends Notifier<AppTourState> {
 final NotifierProvider<AppTourController, AppTourState> appTourProvider =
     NotifierProvider<AppTourController, AppTourState>(AppTourController.new);
 
-/// The full-screen guided tour: a dimmed scrim over the app and an animated
-/// glass card that walks through [appTourSteps] one at a time.
-class AppTourOverlay extends ConsumerWidget {
+/// The coach-mark overlay: dims the app, punches a spotlight hole over the
+/// element the current step is about, draws a highlight border around it, and
+/// anchors a small tooltip beside it. The app stays visible so the user can
+/// actually see what is being pointed at.
+class AppTourOverlay extends ConsumerStatefulWidget {
   const AppTourOverlay({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AppTourOverlay> createState() => _AppTourOverlayState();
+}
+
+class _AppTourOverlayState extends ConsumerState<AppTourOverlay> {
+  Rect? _targetRect;
+  GlobalKey? _key;
+
+  @override
+  Widget build(BuildContext context) {
     final tour = ref.watch(appTourProvider);
     if (!tour.active) return const SizedBox.shrink();
 
-    final theme = Theme.of(context);
     final step = appTourSteps[tour.step];
+    final anchors = ref.watch(tourAnchorsProvider);
+    final key = anchors.forName(step.anchor);
+
+    if (key != _key) {
+      _key = key;
+      _targetRect = null;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) => _measure(key));
+
+    final theme = Theme.of(context);
+    final screen = MediaQuery.sizeOf(context);
 
     return Stack(
       children: <Widget>[
-        // The scrim: dims the app and swallows every tap, so the user cannot
-        // wander off mid-tour. Tapping it does nothing on purpose — the only
-        // way out is Skip or Done, so the tour is never dismissed by accident.
         Positioned.fill(
           child: IgnorePointer(
-            child: AnimatedContainer(
-              duration: StarMotion.standard,
-              curve: StarMotion.easeOut,
-              color: Colors.black.withValues(alpha: 0.58),
+            child: CustomPaint(
+              painter: _SpotlightPainter(_targetRect),
             ),
           ),
         ),
-        Center(
-          child: AnimatedSwitcher(
+        if (_targetRect != null)
+          AnimatedPositioned.fromRect(
             duration: StarMotion.standard,
-            switchInCurve: StarMotion.easeOut,
-            switchOutCurve: StarMotion.easeInOut,
-            transitionBuilder: (child, animation) {
-              final slide = Tween<Offset>(
-                begin: const Offset(0, 0.08),
-                end: Offset.zero,
-              ).animate(animation);
-              return FadeTransition(
-                opacity: animation,
-                child: SlideTransition(position: slide, child: child),
-              );
-            },
-            child: _TourCard(
-              key: ValueKey<int>(tour.step),
-              step: step,
-              index: tour.step,
-              total: appTourSteps.length,
-              isLast: tour.isLast,
-              onBack: tour.step == 0
-                  ? null
-                  : () => ref.read(appTourProvider.notifier).back(),
-              onNext: () => ref.read(appTourProvider.notifier).next(),
-              onSkip: () => ref.read(appTourProvider.notifier).finish(),
-              theme: theme,
+            curve: StarMotion.easeOut,
+            rect: _targetRect!.inflate(6),
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(StarRadius.card),
+                  border: Border.all(color: StarColors.petrol, width: 2),
+                  boxShadow: <BoxShadow>[
+                    BoxShadow(
+                      color: StarColors.petrol.withValues(alpha: 0.35),
+                      blurRadius: 16,
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-        ),
+        if (_targetRect != null)
+          _anchoredTooltip(tour, step, theme, screen)
+        else
+          _centeredCard(tour, step, theme),
       ],
+    );
+  }
+
+  void _measure(GlobalKey? key) {
+    if (key == null) {
+      if (_targetRect != null) setState(() => _targetRect = null);
+      return;
+    }
+    final ctx = key.currentContext;
+    if (ctx == null) return;
+    final box = ctx.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize || !box.attached) return;
+    final rect = box.localToGlobal(Offset.zero) & box.size;
+    if (rect != _targetRect) setState(() => _targetRect = rect);
+  }
+
+  Widget _anchoredTooltip(
+    AppTourState tour,
+    AppTourStep step,
+    ThemeData theme,
+    Size screen,
+  ) {
+    const double maxWidth = 320;
+    const double gap = 12;
+    // The card is roughly this tall; use it to decide below vs above so the
+    // tooltip never falls off the screen.
+    const double estimateHeight = 170;
+    final target = _targetRect!;
+    final fitsBelow =
+        target.bottom + gap + estimateHeight < screen.height - 8;
+    final top = (fitsBelow
+            ? target.bottom + gap
+            : target.top - gap - estimateHeight)
+        .clamp(8.0, screen.height - estimateHeight - 8.0);
+    final left = (target.center.dx - maxWidth / 2)
+        .clamp(8.0, screen.width - maxWidth - 8.0);
+
+    return AnimatedPositioned(
+      duration: StarMotion.standard,
+      curve: StarMotion.easeOut,
+      top: top,
+      left: left,
+      width: maxWidth,
+      child: AnimatedSwitcher(
+        duration: StarMotion.fast,
+        switchInCurve: StarMotion.easeOut,
+        switchOutCurve: StarMotion.easeInOut,
+        transitionBuilder: (child, animation) => FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, 0.05),
+              end: Offset.zero,
+            ).animate(animation),
+            child: child,
+          ),
+        ),
+        child: _TooltipCard(
+          key: ValueKey<int>(tour.step),
+          step: step,
+          index: tour.step,
+          total: appTourSteps.length,
+          isLast: tour.isLast,
+          onBack: tour.step == 0
+              ? null
+              : () => ref.read(appTourProvider.notifier).back(),
+          onNext: () => ref.read(appTourProvider.notifier).next(),
+          onSkip: () => ref.read(appTourProvider.notifier).finish(),
+          theme: theme,
+        ),
+      ),
+    );
+  }
+
+  Widget _centeredCard(
+    AppTourState tour,
+    AppTourStep step,
+    ThemeData theme,
+  ) {
+    return Center(
+      child: AnimatedSwitcher(
+        duration: StarMotion.standard,
+        switchInCurve: StarMotion.easeOut,
+        switchOutCurve: StarMotion.easeInOut,
+        transitionBuilder: (child, animation) => FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, 0.08),
+              end: Offset.zero,
+            ).animate(animation),
+            child: child,
+          ),
+        ),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 440),
+          child: _TooltipCard(
+            key: ValueKey<int>(tour.step),
+            step: step,
+            index: tour.step,
+            total: appTourSteps.length,
+            isLast: tour.isLast,
+            onBack: tour.step == 0
+                ? null
+                : () => ref.read(appTourProvider.notifier).back(),
+            onNext: () => ref.read(appTourProvider.notifier).next(),
+            onSkip: () => ref.read(appTourProvider.notifier).finish(),
+            theme: theme,
+          ),
+        ),
+      ),
     );
   }
 }
 
-class _TourCard extends StatelessWidget {
-  const _TourCard({
+/// A compact glass card: icon + title + body, then Back / dots / Next. Kept
+/// small on purpose — it is a hint beside the spotlight, not the whole screen.
+class _TooltipCard extends StatelessWidget {
+  const _TooltipCard({
     super.key,
     required this.step,
     required this.index,
@@ -244,103 +401,86 @@ class _TourCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(StarSpace.lg),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 480),
-        child: GlassPanel(
-          borderRadius: BorderRadius.circular(StarRadius.card),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              StarSpace.xl,
-              StarSpace.xl,
-              StarSpace.xl,
-              StarSpace.md,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+    return GlassPanel(
+      borderRadius: BorderRadius.circular(StarRadius.card),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          StarSpace.md,
+          StarSpace.md,
+          StarSpace.md,
+          StarSpace.sm,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                // The icon scales in with a soft elastic settle, so each new step
-                // feels like a fresh reveal rather than a text swap.
-                TweenAnimationBuilder<double>(
-                  tween: Tween<double>(begin: 0.5, end: 1),
-                  duration: StarMotion.standard,
-                  curve: Curves.easeOutBack,
-                  builder: (context, value, child) =>
-                      Transform.scale(scale: value, child: child),
-                  child: Container(
-                    padding: const EdgeInsets.all(StarSpace.md),
-                    decoration: BoxDecoration(
-                      color: StarColors.petrol.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(StarRadius.chip),
-                    ),
-                    child: Icon(step.icon, size: 30, color: StarColors.petrol),
+                Container(
+                  padding: const EdgeInsets.all(StarSpace.sm),
+                  decoration: BoxDecoration(
+                    color: StarColors.petrol.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(StarRadius.chip),
                   ),
+                  child: Icon(step.icon, size: 20, color: StarColors.petrol),
                 ),
-                const SizedBox(height: StarSpace.lg),
-                Text(step.title, style: theme.textTheme.headlineSmall),
-                const SizedBox(height: StarSpace.sm),
-                Text(
-                  step.body,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    height: 1.5,
-                  ),
-                ),
-                if (step.tip != null) ...<Widget>[
-                  const SizedBox(height: StarSpace.md),
-                  Row(
+                const SizedBox(width: StarSpace.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Icon(
-                        Icons.lightbulb_outline,
-                        size: 16,
-                        color: theme.colorScheme.onSurfaceVariant,
+                      Text(
+                        step.title,
+                        style: theme.textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
-                      const SizedBox(width: StarSpace.sm),
-                      Expanded(
-                        child: Text(
-                          step.tip!,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                            fontWeight: FontWeight.w600,
-                          ),
+                      const SizedBox(height: 2),
+                      Text(
+                        step.body,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          height: 1.4,
                         ),
                       ),
                     ],
                   ),
-                ],
-                const SizedBox(height: StarSpace.lg),
-                Row(
-                  children: <Widget>[
-                    TextButton(
-                      onPressed: onSkip,
-                      child: Text(isLast ? 'Done' : 'Skip'),
-                    ),
-                    const Spacer(),
-                    _ProgressDots(index: index, total: total),
-                    const Spacer(),
-                    IconButton.filled(
-                      tooltip: 'Next',
-                      onPressed: onNext,
-                      icon: Icon(
-                        isLast ? Icons.check_rounded : Icons.arrow_forward,
-                      ),
-                    ),
-                  ],
                 ),
-                const SizedBox(height: StarSpace.sm),
               ],
             ),
-          ),
+            const SizedBox(height: StarSpace.sm),
+            Row(
+              children: <Widget>[
+                if (onBack != null)
+                  IconButton(
+                    tooltip: 'Back',
+                    onPressed: onBack,
+                    icon: const Icon(Icons.arrow_back, size: 18),
+                  )
+                else
+                  TextButton(
+                    onPressed: onSkip,
+                    child: Text(isLast ? 'Done' : 'Skip'),
+                  ),
+                const Spacer(),
+                _Dots(index: index, total: total),
+                const Spacer(),
+                IconButton.filled(
+                  tooltip: 'Next',
+                  onPressed: onNext,
+                  icon: Icon(isLast ? Icons.check_rounded : Icons.arrow_forward),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _ProgressDots extends StatelessWidget {
-  const _ProgressDots({required this.index, required this.total});
+class _Dots extends StatelessWidget {
+  const _Dots({required this.index, required this.total});
 
   final int index;
   final int total;
@@ -355,8 +495,8 @@ class _ProgressDots extends StatelessWidget {
             duration: StarMotion.fast,
             curve: StarMotion.easeOut,
             margin: const EdgeInsets.symmetric(horizontal: 3),
-            width: i == index ? 22 : 7,
-            height: 7,
+            width: i == index ? 18 : 6,
+            height: 6,
             decoration: BoxDecoration(
               color: i == index
                   ? StarColors.petrol
@@ -367,4 +507,38 @@ class _ProgressDots extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Dims the whole screen except a rounded hole over [hole]. When [hole] is
+/// null (the welcome / closing cards) it dims evenly, with no cutout.
+class _SpotlightPainter extends CustomPainter {
+  _SpotlightPainter(this.hole);
+
+  final Rect? hole;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final dim = Paint()..color = Colors.black.withValues(alpha: 0.6);
+    final full = Offset.zero & size;
+
+    if (hole == null) {
+      canvas.drawRect(full, dim);
+      return;
+    }
+
+    final cutout = RRect.fromRectAndRadius(
+      hole!.inflate(8),
+      const Radius.circular(12),
+    );
+    final fullPath = Path()..addRect(full);
+    final holePath = Path()..addRRect(cutout);
+    canvas.drawPath(
+      Path.combine(PathOperation.difference, fullPath, holePath),
+      dim,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_SpotlightPainter oldDelegate) =>
+      oldDelegate.hole != hole;
 }
