@@ -248,3 +248,9 @@ final NotifierProvider<ShellTab, int> shellTabProvider =
 /// guide on first visit.
 final StateProvider<String?> activeSectionProvider =
     StateProvider<String?>((ref) => 'today');
+
+/// True while the get-started tour is running. Section tours watch this and
+/// stay silent so the two never overlap — a section guide would otherwise
+/// spotlight a screen that the global tour just switched away from.
+final StateProvider<bool> globalTourActiveProvider =
+    StateProvider<bool>((ref) => false);

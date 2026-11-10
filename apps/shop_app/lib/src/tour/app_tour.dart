@@ -154,6 +154,7 @@ class AppTourController extends Notifier<AppTourState> {
 
   void _go(int step) {
     state = AppTourState(active: true, step: step);
+    ref.read(globalTourActiveProvider.notifier).state = true;
     final tab = appTourStepTabs[step];
     if (tab != null) ref.read(shellTabProvider.notifier).select(tab);
   }
@@ -175,6 +176,7 @@ class AppTourController extends Notifier<AppTourState> {
 
   Future<void> finish() async {
     state = AppTourState(active: false, step: state.step);
+    ref.read(globalTourActiveProvider.notifier).state = false;
     try {
       await ref.read(bootstrapProvider).db.setMeta(_metaKey, '1');
     } catch (_) {}

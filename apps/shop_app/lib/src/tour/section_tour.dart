@@ -99,8 +99,12 @@ class _SectionTourHostState extends ConsumerState<SectionTourHost> {
   Widget build(BuildContext context) {
     final active = ref.watch(activeSectionProvider) == widget.id;
     final requested = ref.watch(sectionTourRequestProvider) == widget.id;
-    // Show on request (replay) or on first visit to an unseen section.
-    final show = requested || (active && _checked && !_seen);
+    // Show on request (replay) or on first visit to an unseen section — but
+    // never while the get-started tour is running, or the two would stack and
+    // a section guide would spotlight a screen the global tour just left.
+    final globalTourActive = ref.watch(globalTourActiveProvider);
+    final show =
+        !globalTourActive && (requested || (active && _checked && !_seen));
 
     return Stack(
       children: <Widget>[

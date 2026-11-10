@@ -292,15 +292,15 @@ class _AppShellState extends ConsumerState<AppShell> {
       orElse: () => all.first,
     );
 
-    // Keep the section-tour hosts pointed at whichever tab is showing, so a
-    // screen's guide runs on first visit. Fires on every tab change — rail,
-    // bottom bar, and the counter's sign-in landing tab.
-    ref.listen(shellTabProvider, (previous, next) {
-      final dest = all.firstWhere(
-        (d) => d.page == next,
-        orElse: () => all.first,
-      );
-      ref.read(activeSectionProvider.notifier).state = dest.id;
+    // Keep the section-tour hosts pointed at the visible tab. Set on a
+    // post-frame callback rather than ref.listen: a listen only fires on
+    // change and is attached after the session loads, so it can miss the
+    // initial tab and the counter's sign-in landing tab. Setting every frame
+    // is a no-op when the value is unchanged.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(activeSectionProvider.notifier).state = current.id;
+      }
     });
 
     final body = IndexedStack(index: index, children: pages);
