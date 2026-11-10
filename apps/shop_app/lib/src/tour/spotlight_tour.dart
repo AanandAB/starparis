@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:starparis_design/starparis_design.dart';
 
@@ -129,18 +131,21 @@ class _SpotlightOverlayState extends State<SpotlightOverlay> {
   ) {
     const double maxWidth = 320;
     const double gap = 12;
-    // The card is roughly this tall; use it to decide below vs above so the
-    // tooltip never falls off the screen.
-    const double estimateHeight = 170;
+    // The card is capped at this height (see _tip), so the placement math is
+    // exact rather than a guess — which keeps the Next button on screen.
+    const double cardHeight = 240;
     final target = _targetRect!;
-    final fitsBelow =
-        target.bottom + gap + estimateHeight < screen.height - 8;
-    final top = (fitsBelow
+    final spaceBelow = screen.height - target.bottom - gap - 8;
+    final spaceAbove = target.top - gap - 8;
+    final placeBelow = spaceBelow >= cardHeight || spaceBelow >= spaceAbove;
+    final double top = (placeBelow
             ? target.bottom + gap
-            : target.top - gap - estimateHeight)
-        .clamp(8.0, screen.height - estimateHeight - 8.0);
-    final left = (target.center.dx - maxWidth / 2)
-        .clamp(8.0, screen.width - maxWidth - 8.0);
+            : target.top - gap - cardHeight)
+        .clamp(8.0, math.max(8.0, screen.height - cardHeight - 8.0))
+        .toDouble();
+    final double left = (target.center.dx - maxWidth / 2)
+        .clamp(8.0, math.max(8.0, screen.width - maxWidth - 8.0))
+        .toDouble();
 
     return AnimatedPositioned(
       duration: StarMotion.standard,
@@ -162,30 +167,33 @@ class _SpotlightOverlayState extends State<SpotlightOverlay> {
   }
 
   Widget _tip(TourStep step, bool isLast, ThemeData theme) {
-    return AnimatedSwitcher(
-      duration: StarMotion.fast,
-      switchInCurve: StarMotion.easeOut,
-      switchOutCurve: StarMotion.easeInOut,
-      transitionBuilder: (child, animation) => FadeTransition(
-        opacity: animation,
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 0.05),
-            end: Offset.zero,
-          ).animate(animation),
-          child: child,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 240),
+      child: AnimatedSwitcher(
+        duration: StarMotion.fast,
+        switchInCurve: StarMotion.easeOut,
+        switchOutCurve: StarMotion.easeInOut,
+        transitionBuilder: (child, animation) => FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, 0.05),
+              end: Offset.zero,
+            ).animate(animation),
+            child: child,
+          ),
         ),
-      ),
-      child: TourTipCard(
-        key: ValueKey<int>(widget.index),
-        step: step,
-        index: widget.index,
-        total: widget.steps.length,
-        isLast: isLast,
-        onBack: widget.index == 0 ? null : widget.onBack,
-        onNext: widget.onNext,
-        onSkip: widget.onDone,
-        theme: theme,
+        child: TourTipCard(
+          key: ValueKey<int>(widget.index),
+          step: step,
+          index: widget.index,
+          total: widget.steps.length,
+          isLast: isLast,
+          onBack: widget.index == 0 ? null : widget.onBack,
+          onNext: widget.onNext,
+          onSkip: widget.onDone,
+          theme: theme,
+        ),
       ),
     );
   }
@@ -248,12 +256,16 @@ class TourTipCard extends StatelessWidget {
                     children: <Widget>[
                       Text(
                         step.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.titleMedium
                             ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         step.body,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                           height: 1.4,

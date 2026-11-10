@@ -614,36 +614,37 @@ class _AppShellState extends ConsumerState<AppShell> {
       context: context,
       showDragHandle: true,
       builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            ListTile(
-              leading: const Icon(Icons.point_of_sale_outlined),
-              title: const Text('Cash drawer'),
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                showTillSheet(context);
-              },
-            ),
-            for (final destination in business)
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
               ListTile(
-                leading: Icon(destination.icon),
-                title: Text(destination.label),
+                leading: const Icon(Icons.point_of_sale_outlined),
+                title: const Text('Cash drawer'),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
-                  _select(destination.page);
+                  showTillSheet(context);
                 },
               ),
-            ListTile(
-              leading: const Icon(Icons.sync_problem_outlined),
-              title: const Text('Sync diagnostics'),
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                showDiagnosticsSheet(context);
-              },
-            ),
-            const SizedBox(height: StarSpace.sm),
-          ],
+              for (final destination in business)
+                ListTile(
+                  leading: Icon(destination.icon),
+                  title: Text(destination.label),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _select(destination.page);
+                  },
+                ),
+              ListTile(
+                leading: const Icon(Icons.sync_problem_outlined),
+                title: const Text('Sync diagnostics'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  showDiagnosticsSheet(context);
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
