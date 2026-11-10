@@ -72,10 +72,15 @@ class _SpotlightOverlayState extends State<SpotlightOverlay> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _measure(key));
 
     final theme = Theme.of(context);
-    final screen = MediaQuery.sizeOf(context);
     final isLast = widget.index >= widget.steps.length - 1;
 
-    return Stack(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // The overlay's own size, not the window's: a section tour's overlay
+        // lives inside the shell's IndexedStack cell, so using the window size
+        // would push the tooltip off the cell.
+        final screen = constraints.biggest;
+        return Stack(
       children: <Widget>[
         Positioned.fill(
           child: IgnorePointer(
@@ -106,7 +111,9 @@ class _SpotlightOverlayState extends State<SpotlightOverlay> {
           _anchoredTip(step, isLast, theme, screen)
         else
           _centeredTip(step, isLast, theme),
-      ],
+        ],
+      );
+      },
     );
   }
 
@@ -119,7 +126,18 @@ class _SpotlightOverlayState extends State<SpotlightOverlay> {
     if (ctx == null) return;
     final box = ctx.findRenderObject() as RenderBox?;
     if (box == null || !box.hasSize || !box.attached) return;
-    final rect = box.localToGlobal(Offset.zero) & box.size;
+    final globalRect = box.localToGlobal(Offset.zero) & box.size;
+
+    // Convert from global to this overlay's own coordinates. The get-started
+    // overlay fills the whole window so its (0,0) is the window's (0,0), but a
+    // section tour's overlay sits inside the shell's IndexedStack cell, which
+    // is pushed down by the app bar (and in from the rail). Without this the
+    // hole, border and tooltip would be offset by exactly that amount.
+    final overlayBox = context.findRenderObject() as RenderBox?;
+    final localTopLeft = overlayBox == null
+        ? Offset.zero
+        : overlayBox.globalToLocal(globalRect.topLeft);
+    final rect = localTopLeft & globalRect.size;
     if (rect != _targetRect) setState(() => _targetRect = rect);
   }
 
